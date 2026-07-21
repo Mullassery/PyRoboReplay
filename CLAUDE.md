@@ -2,11 +2,13 @@
 
 ## Product Vision
 
-**PyRoboReplay** is the debugging engine for autonomous robot systems. It reconstructs mission history, replays individual sensor streams and holistic timelines, identifies causal relationships between events, and diagnoses root causes of failures—filling the critical gap left by pure visualization tools.
+**PyRoboReplay** is an **AI-agent-first debugging engine** for autonomous robot systems. It reconstructs mission history, replays individual sensor streams, and outputs structured analysis that autonomous agents (Claude Code, Cursor, Codex, etc.) can interpret to understand robot behavior and diagnose failures.
 
-Where Foxglove Studio shows "what happened," PyRoboReplay answers "why did it happen?" and "will it happen again?"
+Where Foxglove Studio shows "what happened," PyRoboReplay answers "why did it happen?" in a way that **both humans and AI agents can understand**.
 
 The platform is:
+- **AI-Agent-Native**: Structured JSON/text output, scriptable CLI, designed for agent integration
+- **CLI-First**: Terminal-native, no GUI dependencies, scriptable pipelines
 - **Sensor-native**: Replay lidar, camera, IMU, odometry, costmaps individually or holistically
 - **Causal**: Track event relationships, not isolated datapoints
 - **Forensic**: Immutable audit trails, deterministic replay, compliance-ready
@@ -22,6 +24,22 @@ PyRoboReplay solves this: unified mission history, causal event graph, automated
 ### Elevator Pitch
 
 For warehouse operators, drone companies, and robotics researchers debugging mission failures, PyRoboReplay is the analysis platform that transforms fragmented sensor data into actionable diagnoses. Unlike Foxglove (viewer-only) or ROS tools (passive), PyRoboReplay answers: "Why did the robot fail?" and "How do we prevent it?"
+
+### AI-Agent Integration
+
+PyRoboReplay is designed as a **tool for autonomous AI agents**. It outputs structured analysis that agents can interpret:
+- **Structured JSON**: Mission analysis, event timelines, causal relationships
+- **Scriptable CLI**: Every command has a machine-readable output format
+- **Human-Readable Reports**: Easy for agents to parse and present to humans
+- **Integration-Ready**: Built for Claude Code, Cursor, Codex, and custom agent frameworks
+
+Example agent workflow:
+```
+Agent: "Why did the robot stop at t=1050?"
+→ PyRoboReplay: analyzes mission, outputs JSON with causal chain
+→ Agent: Interprets JSON, finds root cause, suggests fix
+→ Agent: Reports to human in natural language
+```
 
 ## The Problem We Solve
 
