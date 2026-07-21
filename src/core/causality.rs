@@ -154,6 +154,201 @@ impl CausalGraph {
         }
     }
 
+    /// Query: "What caused this event?"
+    /// Returns ranked list of causal hypotheses with confidence scores
+    pub fn query_what_caused(
+        &self,
+        target_event_idx: usize,
+        events: &[MissionEvent],
+    ) -> CausalQuery {
+        let direct_causes = self.get_direct_causes(target_event_idx);
+        let total_links = direct_causes.len();
+
+        let mut hypotheses = Vec::new();
+
+        for cause_link in direct_causes {
+            let cause_chain = self.trace_causes(cause_link.source_event_idx, 10);
+
+            for chain in cause_chain {
+                let total_time_gap = if let (Some(first_event), Some(last_event)) =
+                    (events.get(chain.event_chain[0]), events.get(*chain.event_chain.last().unwrap()))
+                {
+                    (last_event.timestamp() - first_event.timestamp()).num_milliseconds()
+                } else {
+                    cause_link.time_gap_ms
+                };
+
+                let explanation = self._generate_explanation(
+                    &chain.event_chain,
+                    events,
+                    &cause_link.relationship_type,
+                );
+
+                hypotheses.push(CausalHypothesis {
+                    chain,
+                    confidence: cause_link.confidence,
+                    explanation,
+                    direct_cause_type: Some(cause_link.relationship_type.clone()),
+                    total_time_gap_ms: total_time_gap,
+                });
+            }
+        }
+
+        // Sort by confidence (descending)
+        hypotheses.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
+
+        CausalQuery {
+            target_event_idx,
+            hypotheses,
+            total_links_found: total_links,
+        }
+    }
+
+    /// Query: "What did this event cause?"
+    /// Returns ranked list of effects (events caused by this event)
+    pub fn query_what_effects(
+        &self,
+        source_event_idx: usize,
+        events: &[MissionEvent],
+    ) -> CausalQuery {
+        let direct_effects = self.get_direct_effects(source_event_idx);
+        let total_links = direct_effects.len();
+
+        let mut hypotheses = Vec::new();
+
+        for effect_link in direct_effects {
+            let effect_chain = self.trace_causes(effect_link.target_event_idx, 10);
+
+            for chain in effect_chain {
+                let total_time_gap = if let (Some(first_event), Some(last_event)) =
+                    (events.get(source_event_idx), events.get(*chain.event_chain.last().unwrap()))
+                {
+                    (last_event.timestamp() - first_event.timestamp()).num_milliseconds()
+                } else {
+                    effect_link.time_gap_ms
+                };
+
+                let explanation = self._generate_explanation_forward(
+                    source_event_idx,
+                    &chain.event_chain,
+                    events,
+                    &effect_link.relationship_type,
+                );
+
+                hypotheses.push(CausalHypothesis {
+                    chain,
+                    confidence: effect_link.confidence,
+                    explanation,
+                    direct_cause_type: Some(effect_link.relationship_type.clone()),
+                    total_time_gap_ms: total_time_gap,
+                });
+            }
+        }
+
+        // Sort by confidence (descending)
+        hypotheses.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
+
+        CausalQuery {
+            target_event_idx: source_event_idx,
+            hypotheses,
+            total_links_found: total_links,
+        }
+    }
+
+    fn _generate_explanation(
+        &self,
+        event_chain: &[usize],
+        events: &[MissionEvent],
+        relationship_type: &str,
+    ) -> String {
+        if event_chain.is_empty() {
+            return "Unknown causal chain".to_string();
+        }
+
+        let chain_desc = event_chain
+            .iter()
+            .take(3)
+            .map(|&idx| events.get(idx).map(|e| e.event_type()).unwrap_or("?"))
+            .collect::<Vec<_>>()
+            .join(" → ");
+
+        let suffix = if event_chain.len() > 3 {
+            format!(" → ... ({} total)", event_chain.len())
+        } else {
+            String::new()
+        };
+
+        match relationship_type {
+            "obstacle_triggered_nav" => {
+                format!("Obstacle detection triggered navigation: {}{}", chain_desc, suffix)
+            }
+            "lidar_detected_obstacle" => {
+                format!(
+                    "Lidar scan detected obstacle leading to: {}{}",
+                    chain_desc, suffix
+                )
+            }
+            "costmap_influenced_nav" => {
+                format!(
+                    "Costmap update influenced navigation decision: {}{}",
+                    chain_desc, suffix
+                )
+            }
+            "imu_caused_motion" => {
+                format!("IMU acceleration caused motion change: {}{}", chain_desc, suffix)
+            }
+            _ => {
+                format!("Causal relationship ({}): {}{}", relationship_type, chain_desc, suffix)
+            }
+        }
+    }
+
+    fn _generate_explanation_forward(
+        &self,
+        _source_idx: usize,
+        event_chain: &[usize],
+        events: &[MissionEvent],
+        relationship_type: &str,
+    ) -> String {
+        if event_chain.is_empty() {
+            return "Unknown downstream effects".to_string();
+        }
+
+        let chain_desc = event_chain
+            .iter()
+            .take(3)
+            .map(|&idx| events.get(idx).map(|e| e.event_type()).unwrap_or("?"))
+            .collect::<Vec<_>>()
+            .join(" → ");
+
+        let suffix = if event_chain.len() > 3 {
+            format!(" → ... ({} total)", event_chain.len())
+        } else {
+            String::new()
+        };
+
+        match relationship_type {
+            "obstacle_triggered_nav" => {
+                format!("Triggered navigation decision: {}{}", chain_desc, suffix)
+            }
+            "lidar_detected_obstacle" => {
+                format!("Led to obstacle detection: {}{}", chain_desc, suffix)
+            }
+            "costmap_influenced_nav" => {
+                format!("Influenced navigation: {}{}", chain_desc, suffix)
+            }
+            "imu_caused_motion" => {
+                format!("Caused motion changes: {}{}", chain_desc, suffix)
+            }
+            _ => {
+                format!(
+                    "Caused downstream effects ({}): {}{}",
+                    relationship_type, chain_desc, suffix
+                )
+            }
+        }
+    }
+
     /// Get all links
     pub fn links(&self) -> &[CausalLink] {
         &self.links
@@ -166,7 +361,7 @@ impl CausalGraph {
 }
 
 /// Represents a causal chain (sequence of events)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CausalChain {
     /// Indices of events in the chain (earliest to latest)
     pub event_chain: Vec<usize>,
@@ -185,6 +380,32 @@ impl CausalChain {
     pub fn length(&self) -> usize {
         self.event_chain.len()
     }
+}
+
+/// Result of a causal query
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CausalQuery {
+    /// The event that was queried
+    pub target_event_idx: usize,
+    /// Ranked list of causal hypotheses (sorted by confidence)
+    pub hypotheses: Vec<CausalHypothesis>,
+    /// Total number of causal links found
+    pub total_links_found: usize,
+}
+
+/// A hypothesis about what caused an event
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CausalHypothesis {
+    /// The causal chain leading to the event
+    pub chain: CausalChain,
+    /// Confidence score (0.0-1.0)
+    pub confidence: f32,
+    /// Human-readable explanation
+    pub explanation: String,
+    /// Relationship type of the direct cause
+    pub direct_cause_type: Option<String>,
+    /// Time from root cause to target event
+    pub total_time_gap_ms: i64,
 }
 
 /// Builder for constructing causal graphs from event sequences
@@ -376,5 +597,114 @@ mod tests {
 
         let chains = graph.trace_causes(0, 3);
         assert!(chains.len() > 0);
+    }
+
+    #[test]
+    fn test_causal_hypothesis_creation() {
+        let hypothesis = CausalHypothesis {
+            chain: CausalChain::new(vec![0, 1], 0.9),
+            confidence: 0.9,
+            explanation: "Test cause".to_string(),
+            direct_cause_type: Some("test_type".to_string()),
+            total_time_gap_ms: 500,
+        };
+
+        assert_eq!(hypothesis.confidence, 0.9);
+        assert_eq!(hypothesis.chain.length(), 2);
+    }
+
+    #[test]
+    fn test_query_what_caused() {
+        use crate::core::event::Location;
+
+        let base_time = chrono::Utc::now();
+        let events = vec![
+            MissionEvent::ObstacleDetected {
+                robot_id: "robot_1".to_string(),
+                timestamp: base_time,
+                location: Location {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                obstacle_type: "static".to_string(),
+                confidence: Some(0.95),
+            },
+            MissionEvent::NavigationDecision {
+                robot_id: "robot_1".to_string(),
+                timestamp: base_time + chrono::Duration::milliseconds(500),
+                decision_type: "path_replan".to_string(),
+                rationale: None,
+            },
+        ];
+
+        let mut graph = CausalGraph::new();
+        let link = CausalLink::new(0, 1, "obstacle_triggered_nav".to_string(), 0.95, 500);
+        graph.add_link(link);
+
+        let query = graph.query_what_caused(1, &events);
+        assert_eq!(query.target_event_idx, 1);
+        assert_eq!(query.total_links_found, 1);
+        assert!(query.hypotheses.len() > 0);
+    }
+
+    #[test]
+    fn test_query_what_effects() {
+        use crate::core::event::Location;
+
+        let base_time = chrono::Utc::now();
+        let events = vec![
+            MissionEvent::ObstacleDetected {
+                robot_id: "robot_1".to_string(),
+                timestamp: base_time,
+                location: Location {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                obstacle_type: "static".to_string(),
+                confidence: Some(0.95),
+            },
+            MissionEvent::NavigationDecision {
+                robot_id: "robot_1".to_string(),
+                timestamp: base_time + chrono::Duration::milliseconds(500),
+                decision_type: "path_replan".to_string(),
+                rationale: None,
+            },
+        ];
+
+        let mut graph = CausalGraph::new();
+        let link = CausalLink::new(0, 1, "obstacle_triggered_nav".to_string(), 0.95, 500);
+        graph.add_link(link);
+
+        let query = graph.query_what_effects(0, &events);
+        assert_eq!(query.target_event_idx, 0);
+        assert_eq!(query.total_links_found, 1);
+        assert!(query.hypotheses.len() > 0);
+    }
+
+    #[test]
+    fn test_hypothesis_ranking() {
+        let mut hypotheses = vec![
+            CausalHypothesis {
+                chain: CausalChain::new(vec![0], 0.5),
+                confidence: 0.5,
+                explanation: "Low confidence".to_string(),
+                direct_cause_type: Some("type1".to_string()),
+                total_time_gap_ms: 1000,
+            },
+            CausalHypothesis {
+                chain: CausalChain::new(vec![1], 0.9),
+                confidence: 0.9,
+                explanation: "High confidence".to_string(),
+                direct_cause_type: Some("type2".to_string()),
+                total_time_gap_ms: 500,
+            },
+        ];
+
+        hypotheses.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
+
+        assert_eq!(hypotheses[0].confidence, 0.9);
+        assert_eq!(hypotheses[1].confidence, 0.5);
     }
 }

@@ -126,8 +126,16 @@ All Phase 1 objectives delivered. Total: **11 integration tests passing**, **350
   - 7 unit tests, demo example with obstacle avoidance scenario
   - ~350 LOC implementation
 
+- [x] **Task #16**: Causal query engine ("what caused this failure?") ✅ COMPLETE
+  - CausalQuery & CausalHypothesis structures
+  - query_what_caused(): backward causality tracing
+  - query_what_effects(): forward causality tracing
+  - Ranked hypotheses with confidence scores
+  - Natural language explanations for each hypothesis
+  - 4 new unit tests (total 11), demo with multi-event scenario
+  - ~400 LOC implementation
+
 ### Remaining Objectives
-- [ ] Causal query engine ("what caused this failure?")
 - [ ] Interactive causal visualization (flowcharts)
 - [ ] Counterfactual reasoning ("if this event didn't happen...")
 
