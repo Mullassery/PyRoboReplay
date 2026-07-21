@@ -115,17 +115,23 @@ All Phase 1 objectives delivered. Total: **11 integration tests passing**, **350
 
 ---
 
-## Phase 3: Causal Analysis Engine (Planned, Weeks 17-22)
+## Phase 3: Causal Analysis Engine (In Progress, Weeks 17-22)
 
 **Gap solved**: Causality invisible (30% of debugging time)
 
-### Objectives (Not Started)
-- [ ] Event dependency graph (temporal causal links)
+### Completed Tasks
+- [x] **Task #15**: Event dependency graph (temporal causal links) ✅ COMPLETE
+  - CausalGraph, CausalLink, CausalChain structures
+  - CausalGraphBuilder with heuristic rule inference
+  - 7 unit tests, demo example with obstacle avoidance scenario
+  - ~350 LOC implementation
+
+### Remaining Objectives
 - [ ] Causal query engine ("what caused this failure?")
 - [ ] Interactive causal visualization (flowcharts)
 - [ ] Counterfactual reasoning ("if this event didn't happen...")
 
-### Estimated Scope: 800-1200 LOC
+### Scope So Far: 350 LOC (target: 800-1200 total)
 
 ---
 
