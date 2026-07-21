@@ -1,4 +1,4 @@
-# PyRoboReplay ⏪ 🤖
+# PyRoboReplay  
 
 > **Time-travel debugger for autonomous robot systems.** Replay, inspect, compare, and understand mission behavior step-by-step—like `git log` + `gdb` for robotics.
 
@@ -14,54 +14,54 @@
 
 ---
 
-## ⚡ Why PyRoboReplay?
+## Why PyRoboReplay?
 
 Robotics teams waste **2-16 hours debugging a single mission failure**—jumping between rosbags, logs, dashboards, and manually reconstructing causality.
 
 **Current tools answer "where/what" questions:**
-- Where is the robot now? 📍
-- What sensor data was captured? 📊
+- Where is the robot now? 
+- What sensor data was captured? 
 
 **PyRoboReplay answers "why" questions:**
-- Why did the robot stop? 🛑
-- Why did this area never get mapped? 🗺️
-- Why did mission A succeed but mission B fail? 📈
-- What caused this coverage gap? 🎯
-- How do we prevent this failure next time? 🔮
+- Why did the robot stop? 
+- Why did this area never get mapped? 
+- Why did mission A succeed but mission B fail? 
+- What caused this coverage gap? 
+- How do we prevent this failure next time? 
 
 **Result:** Debug 10x faster, fix failures before they happen.
 
 ---
 
-## 🎁 What You Get (v0.9.0)
+## What You Get (v0.9.0)
 
-### 🎬 **Deterministic Replay** (v0.7)
+### **Deterministic Replay** (v0.7)
 Bit-perfect mission reconstruction with SHA-256 hashing, tamper-proof audit trails, and forensic-grade reproducibility.
 
-### 🔴 **Mission-Critical Failover** (v0.7)
+### **Mission-Critical Failover** (v0.7)
 Primary + standby backend redundancy with automatic promotion, write-ahead logging, zero data loss.
 
-### ✅ **Regulatory Compliance** (v0.7)
+### **Regulatory Compliance** (v0.7)
 ISO 3691-4 industrial safety standard, proximity zones, emergency stop monitoring, speed compliance.
 
-### 📊 **Real-Time Fleet Monitoring** (v0.8)
+### **Real-Time Fleet Monitoring** (v0.8)
 Live multi-robot health dashboard, per-robot degradation detection, alert aggregation, trend analysis.
 
-### 🧠 **Cross-Mission Learning** (v0.8)
+### **Cross-Mission Learning** (v0.8)
 Pattern extraction from histories, failure prediction, anomaly detection, automatic improvement suggestions.
 
-### ⚖️ **SLA Enforcement** (v0.8)
+### **SLA Enforcement** (v0.8)
 Service level agreements with compliance scoring, deadlock/dropout detection, violation tracking, audit trails.
 
-### 🎯 **Root Cause Analysis** (v0.5)
+### **Root Cause Analysis** (v0.5)
 Causal event graphs, probabilistic hypotheses, counterfactual reasoning, actionable remediation.
 
-### 📱 **Sensor Replay** (v0.1)
+### **Sensor Replay** (v0.1)
 Lidar, camera, IMU, odometry playback—individually or synchronized, ASCII or HTML export.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -90,7 +90,7 @@ pyroboreplay diagnose mission.bag --failure-time 1234567890
 ```
 
 Keyboard shortcuts:
-- **Space**: Play/Pause | **←/→**: Step | **Ctrl+J**: Jump | **f**: Filter | **q**: Quit
+- **Space**: Play/Pause | **/**: Step | **Ctrl+J**: Jump | **f**: Filter | **q**: Quit
 
 ### Python API
 
@@ -126,57 +126,57 @@ mission.to_parquet("mission_data.parquet")
 
 ---
 
-## 📈 Feature Matrix
+## Feature Matrix
 
 | Feature | v0.1 | v0.2 | v0.3 | v0.4 | v0.5 | v0.6 | v0.7 | v0.8 | **v0.9** |
 |---------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:--------:|
-| Sensor Replay | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| CLI Timeline | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Lidar/Camera/IMU Viz | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Causal Analysis | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Cross-Mission Learning | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Root Cause Diagnosis | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Production Storage | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| Real-Time Streaming | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| **Deterministic Replay** | — | — | — | — | — | — | ✅ | ✅ | ✅ |
-| **Failover & Redundancy** | — | — | — | — | — | — | ✅ | ✅ | ✅ |
-| **ISO 3691-4 Compliance** | — | — | — | — | — | — | ✅ | ✅ | ✅ |
-| **Fleet Monitoring** | — | — | — | — | — | — | — | ✅ | ✅ |
-| **Pattern Learning** | — | — | — | — | — | — | — | ✅ | ✅ |
-| **SLA Enforcement** | — | — | — | — | — | — | — | ✅ | ✅ |
-| **Comprehensive Testing** | — | — | — | — | — | — | — | — | **✅** |
-| **160 Test Suite** | — | — | — | — | — | — | — | — | **✅** |
+| Sensor Replay | | | | | | | | | |
+| CLI Timeline | | | | | | | | | |
+| Lidar/Camera/IMU Viz | | | | | | | | | |
+| Causal Analysis | — | — | | | | | | | |
+| Cross-Mission Learning | — | — | — | | | | | | |
+| Root Cause Diagnosis | — | — | — | — | | | | | |
+| Production Storage | — | — | — | — | — | | | | |
+| Real-Time Streaming | — | — | — | — | — | | | | |
+| **Deterministic Replay** | — | — | — | — | — | — | | | |
+| **Failover & Redundancy** | — | — | — | — | — | — | | | |
+| **ISO 3691-4 Compliance** | — | — | — | — | — | — | | | |
+| **Fleet Monitoring** | — | — | — | — | — | — | — | | |
+| **Pattern Learning** | — | — | — | — | — | — | — | | |
+| **SLA Enforcement** | — | — | — | — | — | — | — | | |
+| **Comprehensive Testing** | — | — | — | — | — | — | — | — | **** |
+| **160 Test Suite** | — | — | — | — | — | — | — | — | **** |
 
 ---
 
-## 🏭 Real-World Use Cases
+## Real-World Use Cases
 
 <table>
 <tr>
 <td>
 
-### 🏢 Warehouse Operations
+### Warehouse Operations
 Debug fleet behavior, optimize coverage, reduce downtime.
 
 ```bash
 # Find repeated failure pattern
 pyroboreplay cross-mission *.bag \
-  --pattern "deadlock" \
-  --suggest-fix
+ --pattern "deadlock" \
+ --suggest-fix
 ```
 
-**Result:** 2hr debugging → 15min root cause
+**Result:** 2hr debugging  15min root cause
 </td>
 <td>
 
-### 🌾 Precision Agriculture
+### Precision Agriculture
 Verify inspection coverage, ensure compliance.
 
 ```bash
 # Generate compliance report
 pyroboreplay report drone_inspection.bag \
-  --standard ISO_3691-4 \
-  --output compliance.pdf
+ --standard ISO_3691-4 \
+ --output compliance.pdf
 ```
 
 **Result:** 100% auditability, zero disputes
@@ -185,7 +185,7 @@ pyroboreplay report drone_inspection.bag \
 <tr>
 <td>
 
-### 🔬 Research
+### Research
 Compare swarm strategies, analyze team behavior.
 
 ```python
@@ -200,14 +200,14 @@ print(f"v2 improvement: {improvement:.1%}")
 </td>
 <td>
 
-### 👮 Security & Patrol
+### Security & Patrol
 Verify coverage patterns, audit behavior.
 
 ```bash
 # Analyze patrol coverage over time
 pyroboreplay coverage-evolution patrol.bag \
-  --output heatmap.png \
-  --time-intervals 5min
+ --output heatmap.png \
+ --time-intervals 5min
 ```
 
 **Result:** Provable security posture
@@ -217,29 +217,29 @@ pyroboreplay coverage-evolution patrol.bag \
 
 ---
 
-## ⚙️ Architecture at a Glance
+## Architecture at a Glance
 
 ```
 ROS 2 Bag / Gazebo / Custom Input
-          ↓
-    [Adapter Layer]
-          ↓
-    [Universal Event Model]
-          ↓
-    [Timeline Engine]
-    ├─ Temporal Queries
-    ├─ Spatial Correlation
-    ├─ Causal Graphs
-    └─ Storage Backends
-          ↓
-    [Analysis Engines]
-    ├─ Root Cause Analyzer (Probabilistic)
-    ├─ Cross-Mission Learner (Pattern extraction)
-    ├─ Compliance Checker (Regulatory)
-    ├─ Fleet Monitor (Real-time health)
-    └─ SLA Enforcer (Contract management)
-          ↓
-    CLI / Python API / Web Dashboard
+ 
+ [Adapter Layer]
+ 
+ [Universal Event Model]
+ 
+ [Timeline Engine]
+ Temporal Queries
+ Spatial Correlation
+ Causal Graphs
+ Storage Backends
+ 
+ [Analysis Engines]
+ Root Cause Analyzer (Probabilistic)
+ Cross-Mission Learner (Pattern extraction)
+ Compliance Checker (Regulatory)
+ Fleet Monitor (Real-time health)
+ SLA Enforcer (Contract management)
+ 
+ CLI / Python API / Web Dashboard
 ```
 
 **Universal Event Model:**
@@ -253,39 +253,39 @@ ROS 2 Bag / Gazebo / Custom Input
 
 ---
 
-## 📊 Performance
+## Performance
 
 | Metric | Target | Achieved |
 |--------|--------|----------|
-| Mission ingestion | 10k events/sec | ✅ |
-| Timeline scrubbing | <100ms latency | ✅ |
-| Large mission queries (1M events) | <1s | ✅ |
-| Cross-mission comparison (10 missions) | <5s | ✅ |
-| Fleet monitoring update rate | <500ms | ✅ |
+| Mission ingestion | 10k events/sec | |
+| Timeline scrubbing | <100ms latency | |
+| Large mission queries (1M events) | <1s | |
+| Cross-mission comparison (10 missions) | <5s | |
+| Fleet monitoring update rate | <500ms | |
 
 **Test Coverage:** 160 passing tests (Unit, integration, edge cases, performance)
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Build
 ```bash
 cargo build --release
-maturin develop  # Install Python wheel
+maturin develop # Install Python wheel
 ```
 
-### Test (All Passing ✅)
+### Test (All Passing )
 ```bash
 # Full test suite: 160 comprehensive tests
-cargo test                    # Run all tests
+cargo test # Run all tests
 
 # By phase
-cargo test --test test_anomaly_detector      # Phase 1: Detection (20)
-cargo test --test test_actions               # Phase 1: Actions (15)
-cargo test --test test_geospatial_export     # Phase 3: GIS (21)
-cargo test --test test_phase2_patterns       # Phase 2: Patterns (23)
-cargo test --test test_phase2_prediction     # Phase 2: Forecasting (22)
+cargo test --test test_anomaly_detector # Phase 1: Detection (20)
+cargo test --test test_actions # Phase 1: Actions (15)
+cargo test --test test_geospatial_export # Phase 3: GIS (21)
+cargo test --test test_phase2_patterns # Phase 2: Patterns (23)
+cargo test --test test_phase2_prediction # Phase 2: Forecasting (22)
 
 # Examples
 cargo run --example fleet_monitor_demo
@@ -317,7 +317,7 @@ Automated testing on:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** — Complete product vision & architecture
 - **[.github/CI_SETUP.md](.github/CI_SETUP.md)** — GitHub Actions workflows
@@ -326,7 +326,7 @@ Automated testing on:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - Development setup
@@ -335,13 +335,13 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 - Code of conduct
 
 **Easiest ways to help:**
-- Report bugs or feature ideas → [GitHub Issues](https://github.com/mullassery/pyroboreplay/issues)
-- Share how you're using PyRoboReplay → [GitHub Discussions](https://github.com/mullassery/pyroboreplay/discussions)
-- Star the repo ⭐ if it helps you!
+- Report bugs or feature ideas  [GitHub Issues](https://github.com/mullassery/pyroboreplay/issues)
+- Share how you're using PyRoboReplay  [GitHub Discussions](https://github.com/mullassery/pyroboreplay/discussions)
+- Star the repo if it helps you!
 
 ---
 
-## 📄 License
+## License
 
 MIT License — See [LICENSE](LICENSE)
 
@@ -349,22 +349,22 @@ MIT License — See [LICENSE](LICENSE)
 
 ---
 
-## 🎓 Citation
+## Citation
 
-If PyRoboReplay helps your research or product, please star ⭐ the repo and cite:
+If PyRoboReplay helps your research or product, please star the repo and cite:
 
 ```bibtex
 @software{pyroboreplay2026,
-  title={PyRoboReplay: Mission Replay and Forensics for Autonomous Robots},
-  author={Mullassery, Georgi},
-  year={2026},
-  url={https://github.com/mullassery/pyroboreplay}
+ title={PyRoboReplay: Mission Replay and Forensics for Autonomous Robots},
+ author={Mullassery, Georgi},
+ year={2026},
+ url={https://github.com/mullassery/pyroboreplay}
 }
 ```
 
 ---
 
-## 💬 Get Started Today
+## Get Started Today
 
 **New to robotics debugging?** Start with the [quick start](#-quick-start) above.
 
@@ -378,4 +378,4 @@ If PyRoboReplay helps your research or product, please star ⭐ the repo and cit
 
 *PyRoboReplay: Because great robots are built on knowledge, not intuition.*
 
-🌟 **If this helps you, please star the repo!** 🌟
+ **If this helps you, please star the repo!** 
