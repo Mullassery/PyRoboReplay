@@ -1,5 +1,6 @@
 pub mod adapters;
 pub mod core;
+pub mod cli;
 
 use pyo3::prelude::*;
 
