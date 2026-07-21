@@ -1,6 +1,7 @@
 pub mod adapters;
 pub mod core;
 pub mod cli;
+pub mod storage;
 
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
