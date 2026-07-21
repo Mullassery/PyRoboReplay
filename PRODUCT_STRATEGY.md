@@ -19,9 +19,9 @@ This document maps the path from current workflows to a unified observability op
 
 ---
 
-## Part 1: Current Robotics Debugging Workflows
+## Part 1: Robotics Debugging Workflows
 
-### 1.1 Typical Failure Investigation (Current State)
+### 1.1 Current State: Fragmented Debugging (Status Quo)
 
 ```
 Incident Reported (Robot Stuck/Collision/Coverage Gap)
@@ -49,44 +49,229 @@ Write incident report (manual document)
 Repeat for similar failures (no cross-mission pattern detection)
 ```
 
-**Time spent**: 2-16 hours per incident  
-**Manual steps**: 15-20  
-**Context switches**: 8-12  
-**Data conversions**: 6-8
+**Cost**: 2-16 hours per incident | **Context switches**: 8-12 | **Data conversions**: 6-8
 
-### 1.2 Pain Points in Current Workflow
+### 1.2 Desired State: Library-First Debugging (PyRoboReplay)
 
-| Category | Pain Point | Impact |
-|----------|-----------|--------|
-| **Data Fragmentation** | Sensor data scattered across rosbags, CSVs, image directories | 40% of debugging time wasted on data location/format conversion |
-| **Temporal Misalignment** | Cameras on one clock, LiDAR on another, GPS with drift | "Which frame corresponds to which scan?" becomes a manual task |
-| **Perception Opacity** | Can watch robot move, but can't see what it *perceives* | Engineers guess about detection failures vs. planning failures |
-| **No Correlation** | Video is separate from LiDAR is separate from planning decisions | Impossible to instantly see "camera frame + LiDAR scan + planner state" together |
-| **Manual Analysis** | Every investigation starts from zero | No pattern library, no anomaly detection, no cross-mission learning |
-| **Reporting Friction** | Export screenshots, create video clips, write manual summaries | 2-4 hours per incident just on reporting |
-| **No Prediction** | After debugging 10 similar failures, still can't predict the 11th | Reactive-only posture |
+**Workflow 1: Quick Failure Analysis (5 minutes)**
 
-### 1.3 Team Workflows by Role
+```python
+from pyroboreplay import Mission
+
+# Load mission
+mission = Mission.from_ros_bag("warehouse_mission_042.bag")
+
+# Detect failures automatically
+failures = mission.detect_failures()
+print(f"Found {len(failures)} anomalies")
+# Output: Found 3 anomalies
+#   1. near_collision @ t=234.5 (confidence: 0.94)
+#   2. localization_uncertainty @ t=456.2 (confidence: 0.88)
+#   3. navigation_deadlock @ t=589.1 (confidence: 0.91)
+
+# Analyze root cause of first failure
+failure = failures[0]
+root_cause = mission.analyze_failure(failure.timestamp, window_seconds=5)
+
+print(root_cause.primary_hypothesis)
+# Output: "Obstacle detected at 2.5m, planner conservative reacted correctly"
+#         Confidence: 0.94
+#         Evidence: LiDAR + Camera + Costmap + Velocity command alignment
+
+# Export for GIS review
+mission.to_geojson("failure_analysis.geojson")
+print("✓ Opened in QGIS → No further debugging needed")
+```
+
+**Workflow 2: Fleet-Wide Pattern Detection (10 minutes)**
+
+```python
+from pyroboreplay import Mission, CrossMissionAnalyzer
+from pathlib import Path
+
+# Load all missions from last week
+missions = [
+    Mission.from_ros_bag(f) 
+    for f in Path("warehouse_bags/").glob("2026-07-*.bag")
+]
+
+# Analyze cross-mission patterns
+analyzer = CrossMissionAnalyzer(missions)
+
+# Find geospatial failure zones
+failure_zones = analyzer.find_failure_zones()
+for zone in failure_zones:
+    print(f"Zone {zone.id}: {len(zone.failures)} failures")
+    print(f"  Recommendation: {zone.recommendation}")
+
+# Export fleet heatmap
+analyzer.export_fleet_coverage("fleet_coverage.tif")
+print("✓ Opened in QGIS → Fleet insights visible")
+
+# Predict future failures
+prediction = analyzer.predict_next_failure(current_robot_state)
+if prediction.confidence > 0.7:
+    print(f"⚠️ ALERT: Robot likely to fail in zone {prediction.zone}")
+    print(f"   Action: {prediction.recommended_action}")
+```
+
+**Workflow 3: Compliance Reporting (3 minutes)**
+
+```python
+from pyroboreplay import Mission, ComplianceReport
+
+# Load mission
+mission = Mission.from_ros_bag("delivery_run.bag")
+
+# Generate compliance report
+report = ComplianceReport(
+    standard="ISO_3691_4",
+    mission=mission
+)
+
+# Export report
+report.to_pdf("compliance_report.pdf")
+report.to_geojson("compliance_violations.geojson")
+
+print(report.summary())
+# Output: Compliance Score: 98.5%
+#         ✓ Speed limits maintained in 5 zones
+#         ✓ Emergency stop response: 234ms (target: <500ms)
+#         ✗ Proximity zone alert @ t=456 (minor violation)
+```
+
+**Workflow 4: Notebook-Based Investigation (15 minutes)**
+
+```python
+# Jupyter Notebook: Investigate warehouse collision near Zone C
+from pyroboreplay import Mission
+import matplotlib.pyplot as plt
+import geopandas as gpd
+
+mission = Mission.from_ros_bag("warehouse_mission_042.bag")
+
+# Find collision event
+collision = mission.detected_failures()[0]
+
+# Extract events around collision (±2 seconds)
+window = mission.events_around(collision.timestamp, window_seconds=2)
+
+# Visualize sensor alignment
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+# Camera at collision time
+camera = mission.get_camera_frame(collision.timestamp)
+axes[0,0].imshow(camera.image)
+axes[0,0].set_title(f"Camera @ t={collision.timestamp:.2f}")
+
+# LiDAR at collision time
+lidar = mission.get_lidar_scan(collision.timestamp)
+axes[0,1].scatter(lidar.x, lidar.y, c=lidar.intensity, s=1)
+axes[0,1].set_title("LiDAR")
+
+# Planner decision
+planner = mission.get_planner_state(collision.timestamp)
+axes[1,0].plot(planner.path[:, 0], planner.path[:, 1], 'b-', label='Path')
+axes[1,0].plot(mission.robot_x, mission.robot_y, 'r*', markersize=15, label='Robot')
+axes[1,0].set_title("Planner Decision")
+axes[1,0].legend()
+
+# Timeline of events
+events = window.events
+axes[1,1].barh(range(len(events)), [e.timestamp for e in events])
+axes[1,1].set_yticks(range(len(events)))
+axes[1,1].set_yticklabels([e.event_type for e in events])
+axes[1,1].set_title("Event Timeline")
+
+plt.tight_layout()
+plt.show()
+
+# Export findings to GIS
+mission.to_geojson("investigation_findings.geojson")
+print("Insights saved. Ready for team review.")
+```
+
+### 1.2 Pain Points Solved by PyRoboReplay
+
+| Pain Point | Current Workaround | PyRoboReplay Solution |
+|-----------|-------------------|----------------------|
+| **Data Fragmentation** | Manual collection of logs, CSVs, videos | Unified Mission API; load once with `Mission.from_ros_bag()` |
+| **Temporal Misalignment** | Manual timestamp correlation | Automatic clock sync + interpolation; `mission.get_pose(t)` at any timestamp |
+| **Perception Opacity** | Watch video, guess what robot saw | Access detection results directly: `mission.get_camera_frame(t).detections` |
+| **No Correlation** | Scrub video, then check logs separately | Query multiple sensors at same time: `mission.synchronized_windows()` |
+| **Manual Failure Diagnosis** | Scrub for hours, build hypothesis | Automated: `mission.detect_failures()` + `mission.analyze_failure(t)` |
+| **Reporting Friction** | Export screenshots, write docs manually | Automatic: `mission.to_geojson()` + `mission.to_geotiff()` for GIS |
+| **No Pattern Learning** | Repeat same debugging 10+ times | Cross-mission analysis: `analyzer.find_failure_zones()` + prediction |
+| **No Actionable Insights** | Raw data; engineers must synthesize | Structured output with confidence scores and recommendations |
+
+### 1.3 Library Usage by Role
 
 **Fleet Operator (Warehouse):**
-- "Why did Robot #3 stop at waypoint 5?"
-- Current: SSH into device, pull bag, open Foxglove, scrub video
-- Goal: Click mission, see failure highlighted, read explanation, apply fix
+- Problem: "Why did Robot #3 stop at waypoint 5?"
+- PyRoboReplay solution:
+```python
+mission = Mission.from_ros_bag("robot_3_mission.bag")
+failures = mission.detect_failures()  # 2 minutes
+root_cause = mission.analyze_failure(failures[0].timestamp)
+print(root_cause.explanation)  # "Obstacle at 2.5m, planner conservative reacted correctly"
+mission.to_geojson("incident.geojson")  # Open in QGIS
+```
 
 **Robotics Engineer (Startup):**
-- "Did my new perception filter actually help?"
-- Current: Record side-by-side missions, manually compare footage, measure metrics
-- Goal: Compare missions side-by-side with automatic delta analysis
+- Problem: "Did my new perception filter actually help?"
+- PyRoboReplay solution:
+```python
+missions_v1 = [Mission.from_ros_bag(f) for f in old_missions]
+missions_v2 = [Mission.from_ros_bag(f) for f in new_missions]
+
+analyzer_v1 = CrossMissionAnalyzer(missions_v1)
+analyzer_v2 = CrossMissionAnalyzer(missions_v2)
+
+improvement = (
+    analyzer_v2.failure_rate() - analyzer_v1.failure_rate()
+)
+print(f"Failure reduction: {improvement:.1%}")  # "Failure reduction: -45%"
+```
 
 **Researcher (University):**
-- "How did swarm strategy A vs B perform across 50 missions?"
-- Current: Export bags, write custom Python scripts, generate matplotlib plots
-- Goal: Query missions programmatically, get cross-mission insights automatically
+- Problem: "How did swarm strategy A vs B perform across 50 missions?"
+- PyRoboReplay solution:
+```python
+from pyroboreplay import Mission, CrossMissionAnalyzer
+import matplotlib.pyplot as plt
+
+missions = [Mission.from_ros_bag(f) for f in all_bags]
+analyzer = CrossMissionAnalyzer(missions)
+
+# Access directly via library, no manual data extraction
+coverage_a = analyzer.average_coverage(strategy='A')
+coverage_b = analyzer.average_coverage(strategy='B')
+deadlock_a = analyzer.deadlock_rate(strategy='A')
+deadlock_b = analyzer.deadlock_rate(strategy='B')
+
+plt.plot([coverage_a, coverage_b], label=['Strategy A', 'Strategy B'])
+plt.savefig('results.png')
+```
 
 **Safety/Compliance Officer (Regulated Industry):**
-- "Prove this robot never violated speed limits in restricted zones"
-- Current: Export logs, verify manually, create audit trail document
-- Goal: Generate compliance report with tamper-proof replay validation
+- Problem: "Prove this robot never violated speed limits in restricted zones"
+- PyRoboReplay solution:
+```python
+from pyroboreplay import Mission, ComplianceReport
+
+mission = Mission.from_ros_bag("delivery_mission.bag")
+report = ComplianceReport(
+    standard="ISO_3691_4",
+    mission=mission,
+    speed_limits={'zone_A': 2.0, 'zone_B': 1.5}  # m/s
+)
+
+report.to_pdf("compliance_audit.pdf")
+report.to_geojson("violations.geojson")
+
+print(f"Compliance Score: {report.compliance_score:.1%}")
+print(f"Violations: {len(report.violations)}")  # Audit-ready
+```
 
 ---
 
@@ -665,57 +850,94 @@ m.save("mission_map.html")
 
 ---
 
-## Part 6: Product Roadmap
+## Part 6: Product Roadmap (Library-Centric)
 
-### 6.1 Vision: Observability OS for Robotics
+### 6.1 Vision: Observability Foundation Library for Robotics
 
-**Year 1 (v0.8 → v1.0): Core Intelligence**
-- ✅ Sensor replay foundation
-- ✅ Multi-sensor synchronization
-- ✅ Camera-centric debugging
-- Automated failure detection
-- Root cause diagnosis engine
-- Cross-mission pattern learning
-- Geospatial export (GeoTIFF, GeoPackage)
-- Production-scale storage (PostgreSQL/BigQuery)
-- Forensic-grade audit trails
+PyRoboReplay is **not a tool you use**. It's **an API you import**. The roadmap is about library capabilities, not UI features.
 
-**Year 2 (v1.0 → v1.5): Fleet Intelligence**
-- Real-time fleet monitoring dashboard
-- Anomaly prediction model training
-- Multi-robot coordination analysis
-- QGIS plugin for mission replay
-- GIS-based fleet analytics
-- Drift detection across geospatial zones
-- Compliance reporting (ISO 3691-4, etc.)
+**Year 1 (v0.8 → v1.0): Core Intelligence APIs**
+- ✅ Sensor replay foundation (`Mission.from_ros_bag()`)
+- ✅ Multi-sensor synchronization (`mission.get_pose(t)`)
+- ✅ Temporal event queries (`mission.events_in_range()`)
+- ✅ JSON/CSV export for analysis pipelines
+- **NEW**: Anomaly detection API (`mission.detect_failures()`)
+- **NEW**: Root cause analysis API (`mission.analyze_failure(t)`)
+- **NEW**: Cross-mission analysis API (`CrossMissionAnalyzer`)
+- **NEW**: Geospatial export API (`mission.to_geotiff()`, `to_geojson()`)
+- **NEW**: Production storage backends (PostgreSQL, BigQuery)
+- **NEW**: Compliance reporting API (`ComplianceReport`)
 
-**Year 3 (v1.5 → v2.0): Autonomous Insights**
-- LLM-powered mission explanation
-- Automatic incident report generation
-- Recommended action engine (with confidence)
-- Self-improving model based on operator feedback
-- Multi-mission trajectory optimization
-- Fleet route optimization based on historical failures
+**Year 2 (v1.0 → v1.5): Intelligence Scaling**
+- Real-time mission ingestion API (`mission.stream_from_ros_live()`)
+- Anomaly prediction API (`analyzer.predict_failure()`)
+- Multi-robot coordination analysis (`fleet_analyzer.analyze_coordination()`)
+- Drift detection across missions (`analyzer.find_drift_zones()`)
+- Batch processing helpers for 100+ missions
+- Machine learning integration (`mission.train_failure_predictor()`)
+- Custom detector framework (user-defined anomaly rules)
 
-### 6.2 Immediate Priorities (Next 12 Weeks)
+**Year 3 (v1.5 → v2.0): Autonomous Analysis**
+- LLM integration for natural language explanations (`mission.explain()`)
+- Automatic incident report generation (`mission.generate_report()`)
+- Recommended action engine (`failure.recommend_actions()`)
+- Self-improving feedback loops (`analyzer.learn_from_feedback()`)
+- Fleet optimization API (`fleet.optimize_routes()`)
+- Advanced causal reasoning (`mission.counterfactual_analysis()`)
 
-**Phase 1: Failure Detection + Diagnosis (Weeks 1-6)**
-- Build anomaly detector for 8 event types
-- Implement root cause hypothesis ranking
-- Add failure event markers to timeline UI
-- Write failure detection tests (30+ scenarios)
+### 6.2 Immediate Implementation (Next 12 Weeks)
 
-**Phase 2: Cross-Mission Learning (Weeks 7-10)**
-- Build mission database (PostgreSQL backend)
-- Implement pattern clustering algorithm
-- Create "death zone" detection
-- Build cross-mission comparison UI
+**Phase 1: Failure Detection + Diagnosis APIs (Weeks 1-6)**
 
-**Phase 3: Geospatial Export (Weeks 11-12)**
-- Implement GeoTIFF export for coverage maps
-- Create GeoPackage writer for event markers
-- Add KML export for Google Earth
-- Build QGIS style templates
+```python
+# New APIs to implement
+mission.detect_failures()  # → List[Failure]
+mission.analyze_failure(timestamp)  # → RootCauseAnalysis
+failure.explain()  # → String (human-readable)
+failure.recommend_actions()  # → List[Action]
+```
+
+**Deliverables:**
+- 8 detectable failure types (near-collision, localization loss, deadlock, etc.)
+- Root cause hypothesis ranking with confidence scores
+- 30+ unit tests covering failure scenarios
+- Documentation + examples for Jupyter notebooks
+
+**Phase 2: Cross-Mission Learning APIs (Weeks 7-10)**
+
+```python
+# New APIs to implement
+analyzer = CrossMissionAnalyzer(missions)
+analyzer.find_failure_zones()  # → List[Zone]
+analyzer.find_perception_patterns()  # → Dict[Pattern, Frequency]
+analyzer.predict_failure(robot_state)  # → Prediction
+analyzer.recommend_fleet_improvements()  # → List[Recommendation]
+```
+
+**Deliverables:**
+- Mission database schema (PostgreSQL)
+- Pattern clustering algorithm (density-based)
+- Geospatial zone detection
+- Fleet-wide analytics API
+- 20+ integration tests
+
+**Phase 3: Geospatial Export APIs (Weeks 11-12)**
+
+```python
+# New APIs to implement
+mission.to_geotiff()  # Coverage raster
+mission.to_geojson()  # Event markers
+mission.to_geopackage()  # All layers
+mission.to_shapefile()  # Vector paths
+analyzer.export_fleet_coverage()  # Aggregate raster
+```
+
+**Deliverables:**
+- GeoTIFF writer (coverage + uncertainty bands)
+- GeoJSON writer (events + properties)
+- GeoPackage writer (multi-layer)
+- CRS handling (preserve or reproject)
+- 10+ export format tests
 
 ---
 
