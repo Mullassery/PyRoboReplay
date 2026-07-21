@@ -9,6 +9,8 @@ use core::event::{MissionEvent, MissionRecord};
 use core::Timeline;
 use core::anomaly_detector::{AnomalyDetector, Failure as RustFailure};
 use core::root_cause::{RootCauseAnalysis as RustRootCauseAnalysis, RootCauseHypothesis as RustHypothesis};
+use core::explanation::ExplanationGenerator;
+use core::failure_actions::{ActionRecommender, Action as RustAction};
 use adapters::ros2::Ros2Adapter;
 use adapters::MissionAdapter;
 
@@ -218,6 +220,93 @@ impl Mission {
         };
 
         Ok(RootCauseAnalysis::from_rust_analysis(rust_analysis))
+    }
+
+    /// Get a human-readable explanation of a failure
+    ///
+    /// Args:
+    ///     timestamp (float): Unix timestamp in seconds
+    ///
+    /// Returns:
+    ///     str: Natural language explanation of what happened and why
+    ///
+    /// Example:
+    ///     failures = mission.detect_failures()
+    ///     explanation = mission.explain_failure(failures[0].get_timestamp())
+    ///     print(explanation)
+    pub fn explain_failure(&self, timestamp: f64) -> PyResult<String> {
+        // Find failure event at or near this timestamp
+        let secs = timestamp.floor() as i64;
+        let nanos = ((timestamp - secs as f64) * 1_000_000_000.0) as u32;
+        let target_timestamp = chrono::DateTime::<chrono::Utc>::from_timestamp(secs, nanos)
+            .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyValueError, _>("Invalid timestamp"))?;
+
+        // Find all failures near this timestamp
+        let detector = AnomalyDetector::new(self.inner.events.clone());
+        let failures = detector.detect_all();
+
+        // Find the closest failure to this timestamp
+        let failure_opt = failures
+            .iter()
+            .min_by_key(|f| {
+                let diff = f.timestamp - target_timestamp;
+                let abs_diff = if diff.num_seconds() < 0 { -diff } else { diff };
+                abs_diff.num_milliseconds()
+            });
+
+        match failure_opt {
+            Some(failure) => Ok(ExplanationGenerator::explain(failure)),
+            None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "No failure found near the specified timestamp",
+            )),
+        }
+    }
+
+    /// Get recommended actions to mitigate or prevent a failure
+    ///
+    /// Args:
+    ///     timestamp (float): Unix timestamp in seconds
+    ///
+    /// Returns:
+    ///     List[Action]: Prioritized actions (P0 highest priority)
+    ///
+    /// Example:
+    ///     failures = mission.detect_failures()
+    ///     actions = mission.recommend_actions(failures[0].get_timestamp())
+    ///     for action in actions:
+    ///         print(f"{action.get_priority()}: {action.get_description()}")
+    pub fn recommend_actions(&self, timestamp: f64) -> PyResult<Vec<Action>> {
+        // Find failure event at or near this timestamp
+        let secs = timestamp.floor() as i64;
+        let nanos = ((timestamp - secs as f64) * 1_000_000_000.0) as u32;
+        let target_timestamp = chrono::DateTime::<chrono::Utc>::from_timestamp(secs, nanos)
+            .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyValueError, _>("Invalid timestamp"))?;
+
+        // Find all failures near this timestamp
+        let detector = AnomalyDetector::new(self.inner.events.clone());
+        let failures = detector.detect_all();
+
+        // Find the closest failure to this timestamp
+        let failure_opt = failures
+            .iter()
+            .min_by_key(|f| {
+                let diff = f.timestamp - target_timestamp;
+                let abs_diff = if diff.num_seconds() < 0 { -diff } else { diff };
+                abs_diff.num_milliseconds()
+            });
+
+        match failure_opt {
+            Some(failure) => {
+                let rust_actions = ActionRecommender::recommend(failure);
+                Ok(rust_actions
+                    .into_iter()
+                    .map(|a| Action::from_rust_action(a))
+                    .collect())
+            }
+            None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "No failure found near the specified timestamp",
+            )),
+        }
     }
 }
 
@@ -453,6 +542,63 @@ impl RootCauseAnalysis {
     }
 }
 
+/// Python wrapper for a recommended action to mitigate a failure
+#[pyclass]
+pub struct Action {
+    priority: String,
+    description: String,
+    impact: String,
+    complexity: String,
+    implementation: String,
+}
+
+impl Action {
+    fn from_rust_action(rust_action: RustAction) -> Self {
+        Action {
+            priority: rust_action.priority,
+            description: rust_action.description,
+            impact: rust_action.impact,
+            complexity: rust_action.complexity,
+            implementation: rust_action.implementation,
+        }
+    }
+}
+
+#[pymethods]
+impl Action {
+    /// Get priority level (P0, P1, or P2)
+    pub fn get_priority(&self) -> String {
+        self.priority.clone()
+    }
+
+    /// Get action description
+    pub fn get_description(&self) -> String {
+        self.description.clone()
+    }
+
+    /// Get expected impact (high, medium, or low)
+    pub fn get_impact(&self) -> String {
+        self.impact.clone()
+    }
+
+    /// Get implementation complexity (easy, medium, or hard)
+    pub fn get_complexity(&self) -> String {
+        self.complexity.clone()
+    }
+
+    /// Get detailed implementation steps
+    pub fn get_implementation(&self) -> String {
+        self.implementation.clone()
+    }
+
+    pub fn __repr__(&self) -> String {
+        format!(
+            "Action({}, priority={}, impact={})",
+            self.description, self.priority, self.impact
+        )
+    }
+}
+
 #[pymodule]
 fn pyroboreplay(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Mission>()?;
@@ -460,6 +606,7 @@ fn pyroboreplay(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Failure>()?;
     m.add_class::<Hypothesis>()?;
     m.add_class::<RootCauseAnalysis>()?;
+    m.add_class::<Action>()?;
 
     // Module docstring
     m.setattr(

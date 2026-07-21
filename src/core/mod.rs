@@ -14,6 +14,8 @@ pub mod deterministic_replay;
 pub mod compliance;
 pub mod cross_mission;
 pub mod anomaly_detector;
+pub mod explanation;
+pub mod failure_actions;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -41,3 +43,5 @@ pub use cross_mission::{
     MissionPattern, MissionOccurrence, PatternMatch, PatternLibrary, CrossMissionAnalyzer,
 };
 pub use anomaly_detector::{Failure, AnomalyDetector};
+pub use explanation::ExplanationGenerator;
+pub use failure_actions::{Action, ActionRecommender};
