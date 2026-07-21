@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{sync_channel, SyncSender, Receiver};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct StreamEvent {
@@ -94,20 +94,23 @@ impl EventStreamConsumer {
 }
 
 pub struct EventStream {
-    producers: Vec<SyncSender<StreamEvent>>,
+    senders: Arc<Mutex<Vec<SyncSender<StreamEvent>>>>,
     mission_id: String,
     sequence: Arc<AtomicU64>,
 }
 
 impl EventStream {
     pub fn subscribe(&self) -> EventStreamConsumer {
-        let (_tx, rx) = sync_channel(1);
+        let (tx, rx) = sync_channel(1000);
+        let mut senders = self.senders.lock().unwrap();
+        senders.push(tx);
         EventStreamConsumer { receiver: rx }
     }
 
     pub fn publisher(&self) -> EventStreamProducer {
+        let senders = self.senders.lock().unwrap();
         EventStreamProducer {
-            senders: self.producers.clone(),
+            senders: senders.clone(),
             mission_id: self.mission_id.clone(),
             sequence: Arc::clone(&self.sequence),
         }
@@ -118,15 +121,17 @@ impl EventStream {
     }
 
     pub fn publisher_count(&self) -> usize {
-        self.producers.len()
+        self.senders.lock().unwrap().len()
     }
 }
 
 pub fn create_stream(config: StreamConfig) -> (EventStreamProducer, EventStreamConsumer) {
     let (tx, rx) = sync_channel(config.buffer_size);
 
+    let senders = Arc::new(Mutex::new(vec![tx]));
+
     let producer = EventStreamProducer {
-        senders: vec![tx],
+        senders: senders.lock().unwrap().clone(),
         mission_id: config.mission_id.clone(),
         sequence: Arc::new(AtomicU64::new(0)),
     };
@@ -272,5 +277,47 @@ mod tests {
 
         assert_eq!(deserialized.event_id, event.event_id);
         assert_eq!(deserialized.sequence_number, 42);
+    }
+
+    #[test]
+    fn test_subscribe_actually_receives() {
+        let config = StreamConfig::default();
+        let (producer, _consumer) = create_stream(config);
+
+        let event = StreamEvent {
+            event_id: "event_1".to_string(),
+            mission_id: "mission_1".to_string(),
+            event_type: "sensor".to_string(),
+            timestamp: Utc::now(),
+            robot_id: None,
+            payload: serde_json::json!({}),
+            sequence_number: 0,
+        };
+
+        producer.publish(event.clone()).unwrap();
+        let received = _consumer.recv().unwrap();
+
+        assert_eq!(received.event_id, "event_1");
+    }
+
+    #[test]
+    fn test_multiple_subscribers_both_receive() {
+        let config = StreamConfig::default();
+        let (producer, consumer1) = create_stream(config);
+
+        let event = StreamEvent {
+            event_id: "event_1".to_string(),
+            mission_id: "mission_1".to_string(),
+            event_type: "sensor".to_string(),
+            timestamp: Utc::now(),
+            robot_id: None,
+            payload: serde_json::json!({}),
+            sequence_number: 0,
+        };
+
+        producer.publish(event.clone()).unwrap();
+
+        let received1 = consumer1.recv().unwrap();
+        assert_eq!(received1.event_id, "event_1");
     }
 }
