@@ -1,8 +1,19 @@
 # Phase 1: Failure Detection & Diagnosis APIs (Weeks 1-6)
 
-**Status**: Starting  
+**Status**: Week 1 Complete ✅  
 **Goal**: Expose failure detection and root cause analysis as public Python APIs  
 **Scope**: 8 detectable failure types + diagnosis engine + 30+ unit tests
+
+## Progress
+
+- [x] **Week 1 (Complete)**: Task 1.1 & 1.2 - Failure Detection API
+  - ✅ AnomalyDetector with 8 failure types
+  - ✅ Python `mission.detect_failures()` API
+  - ✅ Failure data structure (Python-friendly)
+  - ✅ Evidence collection for each failure
+  - ✅ Code builds successfully
+
+- **Week 2-3 (Next)**: Task 1.3 & 1.4 - Root Cause Analysis
 
 ---
 

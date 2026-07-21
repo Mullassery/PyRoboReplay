@@ -8,6 +8,7 @@ use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
 use core::Timeline;
 use core::anomaly_detector::{AnomalyDetector, Failure as RustFailure};
+use core::root_cause::{RootCauseAnalysis as RustRootCauseAnalysis, RootCauseHypothesis as RustHypothesis};
 use adapters::ros2::Ros2Adapter;
 use adapters::MissionAdapter;
 
@@ -152,6 +153,72 @@ impl Mission {
             .map(|f| Failure::from_rust_failure(f))
             .collect())
     }
+
+    /// Analyze root causes for a specific failure timestamp
+    ///
+    /// Args:
+    ///     timestamp (float): Unix timestamp in seconds
+    ///
+    /// Returns:
+    ///     RootCauseAnalysis with primary hypothesis and ranked alternatives
+    ///
+    /// Example:
+    ///     failures = mission.detect_failures()
+    ///     first_failure = failures[0]
+    ///     analysis = mission.analyze_failure(first_failure.get_timestamp())
+    ///     print(analysis.get_primary_hypothesis())
+    pub fn analyze_failure(&self, timestamp: f64) -> PyResult<RootCauseAnalysis> {
+        use core::root_cause::RootCauseAnalyzer;
+        use core::causality::CausalGraphBuilder;
+
+        // Find failure event at or near this timestamp
+        let secs = timestamp.floor() as i64;
+        let nanos = ((timestamp - secs as f64) * 1_000_000_000.0) as u32;
+        let target_timestamp = chrono::DateTime::<chrono::Utc>::from_timestamp(secs, nanos)
+            .ok_or_else(|| PyErr::new::<pyo3::exceptions::PyValueError, _>("Invalid timestamp"))?;
+
+        // Find the closest event to this timestamp
+        let failure_idx = self
+            .inner
+            .events
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, e)| {
+                let diff = e.timestamp() - target_timestamp;
+                let abs_diff = if diff.num_seconds() < 0 { -diff } else { diff };
+                abs_diff.num_milliseconds()
+            })
+            .map(|(idx, _)| idx);
+
+        let failure_idx = match failure_idx {
+            Some(idx) => idx,
+            None => {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                    "No events found near timestamp",
+                ))
+            }
+        };
+
+        // Build causal graph
+        let mut builder = CausalGraphBuilder::new(self.inner.events.clone());
+        let graph = builder.build();
+
+        // Analyze failure
+        let mut analyzer = RootCauseAnalyzer::new(self.inner.events.clone());
+        analyzer = analyzer.with_causal_graph(graph);
+
+        let analysis_opt = analyzer.analyze_failure(failure_idx);
+        let rust_analysis = match analysis_opt {
+            Some(a) => a,
+            None => {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                    "Could not analyze failure at this timestamp",
+                ))
+            }
+        };
+
+        Ok(RootCauseAnalysis::from_rust_analysis(rust_analysis))
+    }
 }
 
 /// Python wrapper for an Event
@@ -287,11 +354,112 @@ impl Failure {
     }
 }
 
+/// Python wrapper for a root cause hypothesis
+#[pyclass]
+#[derive(Clone)]
+pub struct Hypothesis {
+    description: String,
+    confidence: f32,
+    causal_chain: Vec<String>,
+}
+
+#[pymethods]
+impl Hypothesis {
+    /// Get hypothesis description
+    pub fn get_description(&self) -> String {
+        self.description.clone()
+    }
+
+    /// Get confidence score (0.0-1.0)
+    pub fn get_confidence(&self) -> f32 {
+        self.confidence
+    }
+
+    /// Get causal chain (event sequence)
+    pub fn get_causal_chain(&self) -> Vec<String> {
+        self.causal_chain.clone()
+    }
+
+    pub fn __repr__(&self) -> String {
+        format!(
+            "Hypothesis(confidence={:.2}, chain_length={})",
+            self.confidence,
+            self.causal_chain.len()
+        )
+    }
+}
+
+/// Python wrapper for root cause analysis result
+#[pyclass]
+pub struct RootCauseAnalysis {
+    primary_hypothesis: String,
+    hypotheses: Vec<Hypothesis>,
+    diagnostic_confidence: f32,
+}
+
+impl RootCauseAnalysis {
+    fn from_rust_analysis(rust_analysis: RustRootCauseAnalysis) -> Self {
+        let primary_hypothesis = rust_analysis
+            .most_likely_cause
+            .as_ref()
+            .map(|h| h.explanation.clone())
+            .unwrap_or_else(|| "Unknown cause".to_string());
+
+        let hypotheses = rust_analysis
+            .hypotheses
+            .iter()
+            .map(|h| Hypothesis {
+                description: h.explanation.clone(),
+                confidence: h.confidence,
+                causal_chain: h
+                    .causal_chain
+                    .iter()
+                    .map(|idx| format!("event_{}", idx))
+                    .collect(),
+            })
+            .collect();
+
+        RootCauseAnalysis {
+            primary_hypothesis,
+            hypotheses,
+            diagnostic_confidence: rust_analysis.diagnostic_confidence,
+        }
+    }
+}
+
+#[pymethods]
+impl RootCauseAnalysis {
+    /// Get primary (most likely) hypothesis
+    pub fn get_primary_hypothesis(&self) -> String {
+        self.primary_hypothesis.clone()
+    }
+
+    /// Get all ranked hypotheses
+    pub fn get_hypotheses(&self) -> Vec<Hypothesis> {
+        self.hypotheses.clone()
+    }
+
+    /// Get diagnostic confidence (0.0-1.0)
+    pub fn get_diagnostic_confidence(&self) -> f32 {
+        self.diagnostic_confidence
+    }
+
+    pub fn __repr__(&self) -> String {
+        format!(
+            "RootCauseAnalysis(confidence={:.2}, hypotheses={})",
+            self.diagnostic_confidence,
+            self.hypotheses.len()
+        )
+    }
+}
+
 #[pymodule]
 fn pyroboreplay(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Mission>()?;
     m.add_class::<Event>()?;
     m.add_class::<Failure>()?;
+    m.add_class::<Hypothesis>()?;
+    m.add_class::<RootCauseAnalysis>()?;
 
     // Module docstring
     m.setattr(
