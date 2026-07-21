@@ -9,6 +9,7 @@ pub mod multi_robot;
 pub mod root_cause;
 pub mod counterfactual;
 pub mod recommendation;
+pub mod diagnostic_report;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -25,3 +26,4 @@ pub use multi_robot::{MultiRobotCoordinationAnalyzer, CoordinationEvent, Communi
 pub use root_cause::{RootCauseAnalyzer, RootCauseAnalysis, RootCauseHypothesis, FailureMode, DiagnosticStats};
 pub use counterfactual::{CounterfactualAnalyzer, CounterfactualAnalysis, CounterfactualScenario, ScenarioImpact, CriticalCausalLink, CounterfactualStats};
 pub use recommendation::{RecommendationEngine, Recommendation, RecommendationSet, RecommendationStats};
+pub use diagnostic_report::{DiagnosticReportGenerator, DiagnosticReport, ExecutiveSummary, DiagnosticSection, ReportFormat};
