@@ -122,16 +122,40 @@ See [CLAUDE.md](CLAUDE.md) for architecture details.
 | **Agronomist** | Review inspection coverage in fields |
 | **Security** | Analyze patrol patterns and coverage gaps |
 
-## Roadmap
+## Features (v0.2 ✅ Complete)
 
-| Phase | Timeline | Focus |
-|-------|----------|-------|
-| **v0.1** | Weeks 1-4 | Rust core, event model, ROS 2 stub |
-| **v0.2** | Weeks 5-8 | ROS 2 parser, CLI timeline scrubber |
-| **v1.0** | Weeks 9-30 | Web UI, PyTerrainMap integration, swarm analysis, production scale |
-| **v1.1+** | Future | AI root-cause analysis, multi-mission learning |
+### Phase 1: Sensor Replay Foundation (✅ v0.1)
+- Universal event model (5 sensor types: Lidar, Camera, IMU, Odometry, Costmap)
+- ROS 2 bag parser (.bag and .db3 formats)
+- CLI timeline scrubber with Ratatui UI
+- Individual sensor stream replay
+- Python API via PyO3 bindings
+
+### Phase 2: CLI-First Visualization (✅ v0.2)
+- **Lidar visualization**: 2D ASCII polar projection (bird's-eye view)
+- **Camera export**: Standalone HTML with timeline-based intelligent frame loading
+- **IMU visualization**: ASCII graphs for accelerometer, gyro, magnetometer
+- **Sensor metadata panel**: Real-time quality indicators, FPS, encoding, resolution
+- **Keyboard shortcuts**: 40+ commands with context-sensitive help
+- **JSON output**: All CLI commands support --json for AI-agent integration
+
+### Phase 3: Causal Analysis (Planned)
+- Event dependency graph construction
+- Causal query engine ("what caused this failure?")
+- Interactive causal visualization
+- Root-cause diagnosis engine
 
 See [ROADMAP.md](ROADMAP.md) for detailed phases and criteria.
+
+## Roadmap
+
+| Phase | Status | Timeline | Focus |
+|-------|--------|----------|-------|
+| **v0.1** | ✅ Complete | Weeks 1-4 | Rust core, event model, ROS 2 parser, CLI replay |
+| **v0.2** | ✅ Complete | Weeks 5-10 | Lidar/Camera/IMU visualization, sensor metadata, keyboard shortcuts |
+| **v0.3** | 📋 Planned | Weeks 11-16 | Causal analysis, event graphs, anomaly detection |
+| **v1.0** | 📋 Planned | Weeks 17-30 | Production scale, storage backends, forensic features |
+| **v1.1+** | 📋 Future | Beyond | Real-time fusion, compliance reporting, ML integration |
 
 ## Development
 
@@ -187,10 +211,28 @@ PyRoboReplay helps humans understand how robots explored. Other systems generate
 
 ## Documentation
 
+### Guides
 - [CLAUDE.md](CLAUDE.md) — Product vision, architecture, principles
 - [ROADMAP.md](ROADMAP.md) — Phase-by-phase development plan
-- [API Docs](docs/api.md) — Python/Rust API reference (coming soon)
-- [Examples](examples/) — Tutorial notebooks (coming soon)
+- [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) — Project tracking, metrics, progress
+
+### Features (v0.2)
+- [Keyboard Shortcuts](docs/KEYBOARD_SHORTCUTS.md) — 40+ commands, help system
+- [Lidar Visualization](docs/LIDAR_VISUALIZATION.md) — ASCII polar projection, interpretation guide
+- [Camera Export](docs/CAMERA_EXPORT.md) — Timeline-based HTML export, browser playback
+- [IMU Visualization](docs/IMU_VISUALIZATION.md) — ASCII graphs, peak detection, drift analysis
+- [Sensor Metadata](docs/SENSOR_METADATA.md) — Quality indicators, real-time statistics
+
+### Examples
+- [Lidar Visualization Demo](examples/lidar_visualization_demo.rs) — 5 scenarios
+- [Camera Export Demo](examples/camera_export_demo.rs) — HTML generation
+- [IMU Visualization Demo](examples/imu_visualization_demo.rs) — 5 signal patterns
+- [Sensor Metadata Demo](examples/sensor_metadata_demo.rs) — Quality assessment
+- [Keyboard Shortcuts Demo](examples/keyboard_shortcuts_demo.rs) — Help system
+
+### API Docs
+- [API.md](docs/API.md) — Python/Rust API reference
+- [QUICKSTART.md](docs/QUICKSTART.md) — 30-second tutorial
 
 ## License
 
