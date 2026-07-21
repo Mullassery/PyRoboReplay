@@ -4,14 +4,14 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "0.8.0"
-description = "Time-travel debugger for autonomous robots. Replay missions, analyze root causes, detect failures, enforce SLAs, monitor fleets in real-time."
+version = "0.9.0"
+description = "Production-grade observability platform for autonomous robots. Mission replay, root-cause analysis, failure prediction, fleet monitoring, SLA enforcement, and geospatial export. 160 comprehensive tests, Phase 1-2 complete."
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
