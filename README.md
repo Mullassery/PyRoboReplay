@@ -66,11 +66,10 @@ Lidar, camera, IMU, odometry playback—individually or synchronized, ASCII or H
 ### Installation
 
 ```bash
-# PyPI (recommended)
-pip install pyroboreplay==0.8.0
+pip install pyroboreplay
 
 # or with uv
-uv pip install pyroboreplay==0.8.0
+uv install pyroboreplay
 
 # From source
 git clone https://github.com/mullassery/pyroboreplay.git
