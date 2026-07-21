@@ -11,6 +11,7 @@ use core::anomaly_detector::{AnomalyDetector, Failure as RustFailure};
 use core::root_cause::{RootCauseAnalysis as RustRootCauseAnalysis, RootCauseHypothesis as RustHypothesis};
 use core::explanation::ExplanationGenerator;
 use core::failure_actions::{ActionRecommender, Action as RustAction};
+use core::geospatial_export::{GeospatialExporter, GeoJsonExport as RustGeoJsonExport};
 use adapters::ros2::Ros2Adapter;
 use adapters::MissionAdapter;
 
@@ -308,6 +309,45 @@ impl Mission {
             )),
         }
     }
+
+    /// Export failures as GeoJSON
+    ///
+    /// Returns JSON string with all failures as Point features
+    pub fn export_geojson(&self) -> PyResult<String> {
+        let detector = AnomalyDetector::new(self.inner.events.clone());
+        let failures = detector.detect_all();
+
+        let geojson = GeospatialExporter::failures_to_geojson(&failures);
+        serde_json::to_string(&geojson)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
+    }
+
+    /// Export as KML format for Google Earth
+    ///
+    /// Returns KML string
+    pub fn export_kml(&self) -> PyResult<String> {
+        let detector = AnomalyDetector::new(self.inner.events.clone());
+        let failures = detector.detect_all();
+
+        Ok(GeospatialExporter::to_kml(&failures))
+    }
+
+    /// Get GeoTIFF metadata for coverage analysis
+    ///
+    /// Returns metadata string describing raster format
+    pub fn export_geotiff_metadata(&self) -> PyResult<String> {
+        let raster = GeospatialExporter::create_coverage_raster(100, 100, 0.1, 0.0, 0.0);
+        Ok(GeospatialExporter::to_geotiff_metadata(&raster))
+    }
+
+    /// Get GeoPackage metadata
+    ///
+    /// Returns metadata string describing GeoPackage format
+    pub fn export_geopackage_metadata(&self) -> PyResult<String> {
+        let detector = AnomalyDetector::new(self.inner.events.clone());
+        let failures = detector.detect_all();
+        Ok(GeospatialExporter::to_geopackage_metadata(failures.len()))
+    }
 }
 
 /// Python wrapper for an Event
@@ -599,6 +639,96 @@ impl Action {
     }
 }
 
+/// Python wrapper for fleet-wide statistics
+#[pyclass]
+pub struct FleetStatistics {
+    mission_count: usize,
+    total_failures: usize,
+    failure_rate: f32,
+    most_common_failure: String,
+}
+
+#[pymethods]
+impl FleetStatistics {
+    /// Get number of missions analyzed
+    pub fn get_mission_count(&self) -> usize {
+        self.mission_count
+    }
+
+    /// Get total failures across all missions
+    pub fn get_total_failures(&self) -> usize {
+        self.total_failures
+    }
+
+    /// Get failure rate (failures per mission)
+    pub fn get_failure_rate(&self) -> f32 {
+        self.failure_rate
+    }
+
+    /// Get most common failure type
+    pub fn get_most_common_failure(&self) -> String {
+        self.most_common_failure.clone()
+    }
+
+    pub fn __repr__(&self) -> String {
+        format!(
+            "FleetStatistics(missions={}, failures={}, rate={:.2})",
+            self.mission_count, self.total_failures, self.failure_rate
+        )
+    }
+}
+
+/// Python wrapper for geospatial hotspot
+#[pyclass]
+pub struct GeoHotspot {
+    zone_id: String,
+    center_x: f64,
+    center_y: f64,
+    radius: f64,
+    failure_count: usize,
+    dominant_failure_type: String,
+}
+
+#[pymethods]
+impl GeoHotspot {
+    /// Get zone identifier
+    pub fn get_zone_id(&self) -> String {
+        self.zone_id.clone()
+    }
+
+    /// Get center X coordinate (meters)
+    pub fn get_center_x(&self) -> f64 {
+        self.center_x
+    }
+
+    /// Get center Y coordinate (meters)
+    pub fn get_center_y(&self) -> f64 {
+        self.center_y
+    }
+
+    /// Get hotspot radius (meters)
+    pub fn get_radius(&self) -> f64 {
+        self.radius
+    }
+
+    /// Get failure count in this zone
+    pub fn get_failure_count(&self) -> usize {
+        self.failure_count
+    }
+
+    /// Get dominant failure type in zone
+    pub fn get_dominant_failure_type(&self) -> String {
+        self.dominant_failure_type.clone()
+    }
+
+    pub fn __repr__(&self) -> String {
+        format!(
+            "GeoHotspot(zone='{}', failures={}, dominant='{}')",
+            self.zone_id, self.failure_count, self.dominant_failure_type
+        )
+    }
+}
+
 #[pymodule]
 fn pyroboreplay(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Mission>()?;
@@ -607,6 +737,8 @@ fn pyroboreplay(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Hypothesis>()?;
     m.add_class::<RootCauseAnalysis>()?;
     m.add_class::<Action>()?;
+    m.add_class::<FleetStatistics>()?;
+    m.add_class::<GeoHotspot>()?;
 
     // Module docstring
     m.setattr(
