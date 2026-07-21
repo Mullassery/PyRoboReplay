@@ -85,47 +85,52 @@
 
 ---
 
-## Phase 2: Web UI + Multi-Sensor Visualization (Weeks 11-16)
+## Phase 2: CLI-First Sensor Replay (Weeks 11-16)
 
-**Gap solved**: Accessibility, operator UX (warehouse ops prefer web)
+**Gap solved**: Complete sensor replay via CLI; camera visualization via browser
+
+**Design**: CLI-first all interactions. Minimize dependencies. Leverage browser for camera playback.
 
 ### Objectives
-- [ ] **Web dashboard with sensor replay**
-  - Side-by-side sensor views (lidar rendering, camera feed, IMU graphs, odometry plot)
-  - Toggle sensors on/off during playback
-  - Individual sensor timeline scrubbers (play lidar-only, pause, sync back to mission)
-  - Holistic view: robot trajectory + all observations overlaid
-  
-- [ ] **Backend API**
-  - `POST /missions/upload` - accept bag file, parse in background
-  - `GET /missions/{id}/sensors` - list available sensors
-  - `GET /missions/{id}/sensor/{sensor_name}/frames` - paginated frames
-  - `GET /missions/{id}/events` - all events with timestamps
-  - `WS /missions/{id}/stream` - real-time playback stream
-  
-- [ ] **Visualization layer**
-  - 2D/3D trajectory (interactive map view)
-  - Lidar point cloud renderer (Three.js)
-  - Camera feed playback (H.264 decoder)
-  - IMU graphs (acceleration, gyro, magnetometer)
-  - Costmap overlay with obstacle heatmap
-  
-- [ ] **Operator UX features**
-  - Bookmark important moments
-  - Annotation/notes on events
-  - Export analysis report (PDF)
-  - Share mission link with team
-  
-- [ ] **Docker + deployment**
-  - Docker image for local hosting
-  - Examples: AWS, GCP, Azure, K8s
-  - Single-robot and fleet configurations
+- [ ] **Enhanced CLI timeline scrubber**
+  - Display sensor metadata (frame rate, resolution, encoding)
+  - Multi-panel view: lidar stats, camera timestamp, IMU readings
+  - Keyboard shortcuts for sensor toggling during playback
+  - Statistics per sensor (avg frame rate, data quality, gaps)
+
+- [ ] **Lidar visualization in terminal**
+  - ASCII-art 2D lidar visualization (polar projection)
+  - Show range data, intensity, anomalies
+  - Real-time updates during replay
+
+- [ ] **IMU visualization in terminal**
+  - Graph accelerometer/gyro over time
+  - Peak detection (impacts, events)
+  - Drift visualization
+
+- [ ] **Camera replay via generated HTML**
+  - `pyroboreplay replay mission.bag --export-camera camera_replay.html`
+  - Generates standalone HTML file with embedded frames
+  - Open in browser: `open camera_replay.html`
+  - Play/pause/speed controls in browser
+  - Frame-by-frame navigation
+  - Lightweight (base64 encoded or extract frames)
+
+- [ ] **Odometry playback**
+  - Show pose over time (text + simple ASCII visualization)
+  - Velocity vectors
+  - Coordinate transformations
+
+- [ ] **Costmap/map visualization**
+  - ASCII heatmap in terminal
+  - Show obstacles, free space, unknown areas
 
 ### Acceptance Criteria
-- ✅ Web UI loads mission in <3 seconds
-- ✅ Sensor streams play smoothly at 30 FPS
-- ✅ Handle missions with 1M+ events
-- ✅ Team of 5+ operators can share missions
+- ✅ All 5 sensor types playable via CLI
+- ✅ Camera HTML export works (open in any browser)
+- ✅ Terminal visualizations responsive (<100ms update)
+- ✅ No external web server or dependencies
+- ✅ Single binary, everything included
 
 ---
 
@@ -319,10 +324,10 @@
   - Causality reports: "incident was triggered by Y, which was caused by Z"
   
 - [ ] **Real-time fleet monitoring (v1.1)**
-  - Live dashboard showing all active robots
-  - Historical context overlay (similar past missions)
+  - Real-time CLI display: current robot states, active alerts
+  - Historical context overlay (similar past missions via query)
   - Predictive diagnostics: "warning: this robot's pattern resembles failure #42"
-  - Autonomous intervention suggestions (sent to fleet manager)
+  - Autonomous intervention suggestions (CLI alerts sent to fleet manager)
   
 - [ ] **Advanced anomaly detection**
   - Behavioral anomalies (robot acting unusual for its type)

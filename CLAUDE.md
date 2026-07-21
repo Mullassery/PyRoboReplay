@@ -146,24 +146,29 @@ Goal is understanding, not just visualization. Every replay event answers: What 
 - **Day 1 student**: `pyroboreplay replay mission.bag` → timeline in 30 seconds
 - **Production operator**: Distributed event store, spatial correlation, multi-mission federation, real-time streaming, mission-critical SLAs
 
-## Core Features (Roadmap Order) - Aligned to Market Gaps
+## Core Features (Roadmap Order) - CLI-First, Aligned to Market Gaps
 
-### v0.1: Sensor Replay Foundation + ROS 2 Ingestion
+### v0.1: Sensor Replay Foundation + ROS 2 Ingestion ✅ DONE
 **Gap solved**: Data fragmentation (40% of debugging time)
-- Parse ROS 2 bag files → universal event model
-- Individual sensor stream replay (lidar, camera, IMU, odometry)
-- Holistic mission replay (all sensors synchronized)
-- In-memory timeline + temporal queries
-- CLI: play/pause/step forward/backward, jump to event
-- Test with real warehouse exploration mission
+- ✅ Parse ROS 2 bag files → universal event model
+- ✅ Individual sensor stream replay (lidar, camera, IMU, odometry)
+- ✅ Holistic mission replay (all sensors synchronized)
+- ✅ In-memory timeline + temporal queries
+- ✅ CLI: play/pause/step forward/backward, jump to event
+- ✅ Python API for programmatic access
 
-### v0.2: Web UI + Multi-Sensor Visualization
-**Gap solved**: Accessibility (currently ROS tools are CLI-only)
-- Web-based timeline scrubber (side-by-side sensor views)
-- Individual sensor stream playback (e.g., "replay only lidar")
-- Holistic 3D visualization (trajectory + obstacles + coverage)
-- Spatial context from PyTerrainMap
-- Event filtering, search, bookmarking
+### v0.2: Enhanced CLI + Camera Browser Export
+**Gap solved**: Complete sensor replay in CLI; camera visualization via browser
+- Enhanced CLI with multi-panel views (sensor stats, metadata, real-time graphs)
+- Terminal-based lidar visualization (ASCII 2D polar projection)
+- Terminal-based IMU visualization (graph rendering in terminal)
+- Terminal-based odometry display (pose + velocity vectors)
+- **Camera frame export to HTML**: `pyroboreplay replay mission.bag --export-camera camera.html`
+  - Generates standalone HTML file with embedded camera frames
+  - Opens in any browser for playback (no server needed)
+  - Frame-by-frame navigation, play/pause/speed controls
+  - Zero external dependencies
+- Event filtering and search via CLI
 
 ### v0.3: Causal Analysis Engine (NEW)
 **Gap solved**: Causality invisible (30% of debugging time)
