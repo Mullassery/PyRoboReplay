@@ -30,7 +30,7 @@ PyRoboReplay reconstructs and visualizes **replayable timelines of robot behavio
 - Custom telemetry streams
 - Digital twins
 
-Like Git for source code or Datadog for infrastructure, PyRoboReplay is observability for autonomous missions.
+PyRoboReplay is observability for autonomous missions—answers "why" questions instead of just "now" questions.
 
 ## Quick Start
 
@@ -99,7 +99,6 @@ No lock-in to ROS 2 or any single robotics framework.
 
 - **ROS 2 Adapter** (v0.1) — Parse bag files, extract topics
 - **Gazebo Adapter** (v0.2) — Simulation events
-- **Isaac Sim Adapter** (v0.3) — Isaac Sim telemetry
 - **Custom Adapter** — Implement `MissionAdapter` trait
 
 ### PyTerrainMap Integration
@@ -145,18 +144,6 @@ See [CLAUDE.md](CLAUDE.md) for architecture details.
 - Interactive causal visualization
 - Root-cause diagnosis engine
 
-See [ROADMAP.md](ROADMAP.md) for detailed phases and criteria.
-
-## Roadmap
-
-| Phase | Status | Timeline | Focus |
-|-------|--------|----------|-------|
-| **v0.1** | ✅ Complete | Weeks 1-4 | Rust core, event model, ROS 2 parser, CLI replay |
-| **v0.2** | ✅ Complete | Weeks 5-10 | Lidar/Camera/IMU visualization, sensor metadata, keyboard shortcuts |
-| **v0.3** | 📋 Planned | Weeks 11-16 | Causal analysis, event graphs, anomaly detection |
-| **v1.0** | 📋 Planned | Weeks 17-30 | Production scale, storage backends, forensic features |
-| **v1.1+** | 📋 Future | Beyond | Real-time fusion, compliance reporting, ML integration |
-
 ## Development
 
 ### Build from Source
@@ -188,7 +175,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 - **Not a SLAM system** — Use PyTerrainMap or your favorite SLAM
 - **Not a mapping engine** — Consume maps from existing systems
-- **Not a simulator** — Works with ROS 2, Gazebo, Isaac Sim, real robots
+- **Not a simulator** — Works with ROS 2, Gazebo, and real robots
 - **Not a path planner** — Observes navigation decisions, doesn't make them
 
 PyRoboReplay helps humans understand how robots explored. Other systems generate that knowledge.
