@@ -147,6 +147,91 @@ impl Timeline {
     pub fn mission_count(&self) -> usize {
         self.missions.len()
     }
+
+    /// Get all events of a specific sensor type (lidar, camera, imu, etc.)
+    pub fn get_sensor_frames(
+        &self,
+        mission_id: &str,
+        sensor_type: &str,
+    ) -> Result<Vec<&MissionEvent>, TimelineError> {
+        let mission = self.get_mission(mission_id)?;
+        Ok(mission
+            .events
+            .iter()
+            .filter(|e| e.sensor_type().map_or(false, |st| st == sensor_type))
+            .collect())
+    }
+
+    /// Get events matching multiple sensor types (e.g., lidar and camera)
+    pub fn get_multi_sensor_frames(
+        &self,
+        mission_id: &str,
+        sensor_types: &[&str],
+    ) -> Result<Vec<&MissionEvent>, TimelineError> {
+        let mission = self.get_mission(mission_id)?;
+        Ok(mission
+            .events
+            .iter()
+            .filter(|e| {
+                e.sensor_type()
+                    .map_or(false, |st| sensor_types.contains(&st))
+            })
+            .collect())
+    }
+
+    /// Get all available sensor types in a mission
+    pub fn get_available_sensors(&self, mission_id: &str) -> Result<Vec<String>, TimelineError> {
+        let mission = self.get_mission(mission_id)?;
+        let mut sensors = std::collections::HashSet::new();
+
+        for event in &mission.events {
+            if let Some(sensor) = event.sensor_type() {
+                sensors.insert(sensor.to_string());
+            }
+        }
+
+        let mut sensor_list: Vec<String> = sensors.into_iter().collect();
+        sensor_list.sort();
+        Ok(sensor_list)
+    }
+
+    /// Get all events at a specific timestamp (holistic view across all sensors)
+    pub fn get_events_at_timestamp(
+        &self,
+        mission_id: &str,
+        timestamp: DateTime<Utc>,
+    ) -> Result<Vec<&MissionEvent>, TimelineError> {
+        let mission = self.get_mission(mission_id)?;
+        Ok(mission
+            .events
+            .iter()
+            .filter(|e| e.timestamp() == timestamp)
+            .collect())
+    }
+
+    /// Get sensor frames within a time window (e.g., all lidar frames in range [t1, t2])
+    pub fn get_sensor_frames_in_range(
+        &self,
+        mission_id: &str,
+        sensor_type: &str,
+        start: DateTime<Utc>,
+        end: DateTime<Utc>,
+    ) -> Result<Vec<&MissionEvent>, TimelineError> {
+        if start > end {
+            return Err(TimelineError::InvalidTimeRange);
+        }
+
+        let mission = self.get_mission(mission_id)?;
+        Ok(mission
+            .events
+            .iter()
+            .filter(|e| {
+                let ts = e.timestamp();
+                let is_sensor = e.sensor_type().map_or(false, |st| st == sensor_type);
+                is_sensor && ts >= start && ts <= end
+            })
+            .collect())
+    }
 }
 
 impl Default for Timeline {
@@ -234,5 +319,95 @@ mod tests {
         timeline.jump_to_event(&mission_id, 0).unwrap();
         assert!(timeline.next_event(&mission_id).is_ok());
         assert!(timeline.previous_event(&mission_id).is_ok());
+    }
+
+    #[test]
+    fn test_get_sensor_frames() {
+        let mut timeline = Timeline::new();
+        let mut mission = MissionRecord::new("sensor_test");
+        let now = Utc::now();
+
+        // Add lidar frames
+        mission.add_event(MissionEvent::LidarScan {
+            robot_id: "robot_1".to_string(),
+            timestamp: now,
+            data: crate::core::event::LidarData {
+                ranges: vec![1.0, 2.0],
+                intensities: None,
+                frame_id: "laser".to_string(),
+                min_angle: -3.14,
+                max_angle: 3.14,
+                angle_increment: 0.01,
+                range_min: 0.0,
+                range_max: 30.0,
+            },
+        });
+
+        mission.add_event(MissionEvent::LidarScan {
+            robot_id: "robot_1".to_string(),
+            timestamp: now + chrono::Duration::seconds(1),
+            data: crate::core::event::LidarData {
+                ranges: vec![1.5, 2.5],
+                intensities: None,
+                frame_id: "laser".to_string(),
+                min_angle: -3.14,
+                max_angle: 3.14,
+                angle_increment: 0.01,
+                range_min: 0.0,
+                range_max: 30.0,
+            },
+        });
+
+        let mission_id = mission.id.to_string();
+        timeline.add_mission(mission);
+
+        // Query sensor frames
+        let lidar_frames = timeline.get_sensor_frames(&mission_id, "lidar").unwrap();
+        assert_eq!(lidar_frames.len(), 2);
+    }
+
+    #[test]
+    fn test_get_available_sensors() {
+        let mut timeline = Timeline::new();
+        let mut mission = MissionRecord::new("multi_sensor");
+        let now = Utc::now();
+
+        // Add different sensor types
+        mission.add_event(MissionEvent::LidarScan {
+            robot_id: "robot_1".to_string(),
+            timestamp: now,
+            data: crate::core::event::LidarData {
+                ranges: vec![],
+                intensities: None,
+                frame_id: "laser".to_string(),
+                min_angle: -3.14,
+                max_angle: 3.14,
+                angle_increment: 0.01,
+                range_min: 0.0,
+                range_max: 30.0,
+            },
+        });
+
+        mission.add_event(MissionEvent::CameraFrame {
+            robot_id: "robot_1".to_string(),
+            timestamp: now,
+            data: crate::core::event::CameraFrame {
+                sensor_id: "camera_1".to_string(),
+                frame_id: "camera".to_string(),
+                width: 640,
+                height: 480,
+                encoding: "rgb8".to_string(),
+                image_data: vec![],
+                camera_info: None,
+            },
+        });
+
+        let mission_id = mission.id.to_string();
+        timeline.add_mission(mission);
+
+        // Get available sensors
+        let sensors = timeline.get_available_sensors(&mission_id).unwrap();
+        assert!(sensors.contains(&"lidar".to_string()));
+        assert!(sensors.contains(&"camera".to_string()));
     }
 }
