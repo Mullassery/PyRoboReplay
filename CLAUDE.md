@@ -1,14 +1,27 @@
-# PyRoboReplay: Mission Replay & Spatial Intelligence Observatory
+# PyRoboReplay: Mission Debugging & Causal Analysis Platform
 
 ## Product Vision
 
-**PyRoboReplay** is a time-travel debugger for robot fleets that allows engineers to replay, inspect, compare, and understand autonomous missions step-by-step—just as developers use Git history, traces, and debuggers to understand software behavior.
+**PyRoboReplay** is the debugging engine for autonomous robot systems. It reconstructs mission history, replays individual sensor streams and holistic timelines, identifies causal relationships between events, and diagnoses root causes of failures—filling the critical gap left by pure visualization tools.
 
-The platform reconstructs and visualizes mission history from existing robotics systems without performing mapping, localization, SLAM, navigation, or terrain generation.
+Where Foxglove Studio shows "what happened," PyRoboReplay answers "why did it happen?" and "will it happen again?"
+
+The platform is:
+- **Sensor-native**: Replay lidar, camera, IMU, odometry, costmaps individually or holistically
+- **Causal**: Track event relationships, not isolated datapoints
+- **Forensic**: Immutable audit trails, deterministic replay, compliance-ready
+- **Diagnostic**: Probabilistic root-cause analysis, cross-mission pattern learning
+- **Agnostic**: Works with ROS 2, Gazebo, Isaac Sim, digital twins, custom telemetry
+
+### Why It Matters
+
+Robotics teams spend **2-16 hours debugging a single mission failure**—context-switching between rosbags, logs, dashboards, and maps. They manually reconstruct causality ("did obstacle at t=1000 cause stop at t=1050?"). They debug identical bugs repeatedly because failures aren't correlated across missions.
+
+PyRoboReplay solves this: unified mission history, causal event graph, automated diagnosis, cross-mission learning.
 
 ### Elevator Pitch
 
-For robotics teams debugging why missions failed or underperformed, PyRoboReplay is the observability platform that reconstructs replayable timelines of robot behavior from any robotics system (ROS 2, Gazebo, Isaac Sim, digital twins). Unlike simulators or bagfile viewers, PyRoboReplay answers the "why" questions: why was this area never mapped? Why did one robot repeatedly fail while others succeeded? When did an obstacle first appear?
+For warehouse operators, drone companies, and robotics researchers debugging mission failures, PyRoboReplay is the analysis platform that transforms fragmented sensor data into actionable diagnoses. Unlike Foxglove (viewer-only) or ROS tools (passive), PyRoboReplay answers: "Why did the robot fail?" and "How do we prevent it?"
 
 ## The Problem We Solve
 
@@ -31,20 +44,38 @@ Engineers currently investigate through fragmented tools (ROS bags, logs, sensor
 
 ### Universal Event Model
 
-All mission history is normalized to core event types:
+All mission history is normalized to core event types, enabling sensor-level and holistic replay:
 
 ```rust
 enum MissionEvent {
-    RobotPose { robot_id, timestamp, x, y, z, orientation },
-    SensorObservation { robot_id, timestamp, sensor_type, data },
-    NavigationDecision { robot_id, timestamp, decision_type, rationale },
-    ObstacleDetected { robot_id, timestamp, location, type },
-    CommunicationEvent { timestamp, from, to, event_type },
+    // Sensor streams (individually replayable)
+    LidarScan { robot_id, timestamp, frame_id, ranges, intensities },
+    CameraFrame { robot_id, timestamp, sensor_id, image_data, metadata },
+    IMUData { robot_id, timestamp, accel, gyro, magnetometer },
+    OdometryUpdate { robot_id, timestamp, pose, velocity, covariance },
+    
+    // Processed/fused state
+    RobotPose { robot_id, timestamp, x, y, z, orientation, confidence },
+    Costmap { robot_id, timestamp, resolution, origin, grid_data },
+    
+    // Navigation & coordination
+    NavigationDecision { robot_id, timestamp, decision_type, path, rationale },
+    ObstacleDetected { robot_id, timestamp, location, type, confidence },
+    
+    // Communication & fleet
+    CommunicationEvent { timestamp, from, to, event_type, data },
     CoordinationEvent { timestamp, robots_involved, event_type },
-    EnvironmentalChange { timestamp, location, change_type },
-    MissionLifecycle { timestamp, event_type }, // start, pause, resume, end
+    
+    // Environmental context
+    EnvironmentalChange { timestamp, location, change_type, description },
+    MissionLifecycle { timestamp, event_type, mission_id },
+    
+    // Causal relationships (v0.5+)
+    CausalLink { timestamp, source_event, target_event, relationship_type, confidence },
 }
 ```
+
+**Key feature**: Each sensor event is independently replayable (e.g., play just lidar over time) or holistically (play full mission with all sensors synchronized).
 
 ### Input Adapters (Pluggable)
 
@@ -82,13 +113,23 @@ mission.root_cause_analysis(failure_timestamp)
 mission.compare_with(other_mission)
 ```
 
-### PyTerrainMap Integration
+### PyTerrainMap & StatGuardian Integration
 
-PyRoboReplay embeds PyTerrainMap as a dependency to provide spatial context during replay:
-- PyTerrainMap owns: 3D reconstruction, real-time SLAM, traversability analysis, spatial knowledge graphs
-- PyRoboReplay owns: Historical replay, event correlation, mission timeline, coordination analysis, root-cause explanation
+PyRoboReplay embeds two key dependencies for spatial context and quality intelligence:
 
-This maintains architectural boundaries—PyRoboReplay doesn't duplicate mapping or localization work.
+**PyTerrainMap** (spatial layer):
+- Owns: 3D reconstruction, real-time SLAM, traversability analysis, spatial knowledge graphs
+- PyRoboReplay uses: Spatial context for causal analysis, coverage evolution, obstacle correlation
+
+**StatGuardian** (quality layer):
+- Owns: Data quality contracts, drift detection, anomaly detection
+- PyRoboReplay uses: High-accuracy anomaly flagging across all sensor streams, root-cause confidence scoring
+- Benefit: <2% false positive anomaly detection vs ~5% for rule-based detection
+
+This maintains architectural boundaries:
+- PyTerrainMap handles spatial reconstruction
+- StatGuardian handles data quality/contracts
+- PyRoboReplay orchestrates replay + causality + diagnosis
 
 ## Core Principles
 
@@ -105,44 +146,61 @@ Goal is understanding, not just visualization. Every replay event answers: What 
 - **Day 1 student**: `pyroboreplay replay mission.bag` → timeline in 30 seconds
 - **Production operator**: Distributed event store, spatial correlation, multi-mission federation, real-time streaming, mission-critical SLAs
 
-## Core Features (Roadmap Order)
+## Core Features (Roadmap Order) - Aligned to Market Gaps
 
-### v0.1: Timeline Scrubber + ROS 2 Ingestion
-- Parse ROS 2 bag files
-- Normalize to universal event model
-- In-memory timeline storage
-- CLI: play/pause/step/jump to events
-- Test with single-robot exploration mission
+### v0.1: Sensor Replay Foundation + ROS 2 Ingestion
+**Gap solved**: Data fragmentation (40% of debugging time)
+- Parse ROS 2 bag files → universal event model
+- Individual sensor stream replay (lidar, camera, IMU, odometry)
+- Holistic mission replay (all sensors synchronized)
+- In-memory timeline + temporal queries
+- CLI: play/pause/step forward/backward, jump to event
+- Test with real warehouse exploration mission
 
-### v0.2: Web UI + Spatial Visualization
-- Web-based timeline scrubber
-- Robot trajectory visualization
+### v0.2: Web UI + Multi-Sensor Visualization
+**Gap solved**: Accessibility (currently ROS tools are CLI-only)
+- Web-based timeline scrubber (side-by-side sensor views)
+- Individual sensor stream playback (e.g., "replay only lidar")
+- Holistic 3D visualization (trajectory + obstacles + coverage)
 - Spatial context from PyTerrainMap
-- Event filtering and search
+- Event filtering, search, bookmarking
 
-### v0.3: Swarm Coordination Analysis
-- Multi-robot visualization
-- Coverage overlap detection
-- Coordination event timeline
-- Congestion zone identification
+### v0.3: Causal Analysis Engine (NEW)
+**Gap solved**: Causality invisible (30% of debugging time)
+- Build event dependency graph
+- Link obstacles → navigation decisions → stops
+- Causal queries: "which events led to failure at t=5000?"
+- Temporal correlation window (e.g., events within 2s)
+- Visualization: causal flowcharts
 
-### v0.4: Advanced Event Queries
-- Event-centric replay (jump to failures, obstacles, communication loss)
-- Coverage evolution playback
-- Environmental change explorer
-- Multi-mission comparison
+### v0.4: Cross-Mission Pattern Learning
+**Gap solved**: Repeated failures (50% of debug effort)
+- Compare missions side-by-side (A vs B)
+- Identify similar failure patterns
+- Anomaly detection (this mission's failure unusual for this robot?)
+- Recommendation engine (if similar failure before, apply previous fix)
 
-### v1.0: Production Scale
+### v0.5: Root-Cause Diagnosis (NEW)
+**Gap solved**: Manual hypothesis generation
+- Probabilistic diagnosis: "Obstacle detected → navigation deadlock → battery drain"
+- Confidence scores for each hypothesis
+- Counterfactual reasoning: "if obstacle wasn't there, would mission succeed?"
+- Actionable recommendations
+
+### v1.0: Production Scale + Forensic Features
+**Gap solved**: Compliance & determinism requirements
 - Pluggable storage backends (PostgreSQL, BigQuery, S3)
-- Streaming event ingestion
-- Distributed replay engine
-- Mission-critical reliability
+- Streaming real-time ingestion (warehouse ops)
+- Immutable audit trails with cryptographic signatures
+- Deterministic, bit-perfect replay (defense/aerospace)
+- Mission-critical failover + redundancy
 
-### v1.1: AI-Powered Analysis
-- Root-cause analysis engine
-- Coverage gap explanations
-- Exploration efficiency metrics
-- Cross-mission learning
+### v1.1: Advanced Forensics & Real-Time Fusion
+**Gap solved**: Regulatory compliance + operational awareness
+- Real-time + historical fusion (live fleet + past missions)
+- Compliance reporting (audit-ready logs, chain-of-custody)
+- Forensic analysis for accidents/incidents
+- Integration with compliance frameworks (ISO 3691-4, etc.)
 
 ## Ideal Users
 
