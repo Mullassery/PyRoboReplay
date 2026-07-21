@@ -15,14 +15,14 @@ pub enum TimelineError {
 
 pub struct Timeline {
     missions: HashMap<String, MissionRecord>,
-    current_position: usize,
+    cursor_positions: HashMap<String, usize>,
 }
 
 impl Timeline {
     pub fn new() -> Self {
         Self {
             missions: HashMap::new(),
-            current_position: 0,
+            cursor_positions: HashMap::new(),
         }
     }
 
@@ -97,7 +97,7 @@ impl Timeline {
             return Err(TimelineError::IndexOutOfBounds);
         }
 
-        self.current_position = event_index;
+        self.cursor_positions.insert(mission_id.to_string(), event_index);
         Ok(&mission.events[event_index])
     }
 
@@ -107,9 +107,11 @@ impl Timeline {
             .get(mission_id)
             .ok_or(TimelineError::MissionNotFound)?;
 
-        if self.current_position + 1 < mission.events.len() {
-            self.current_position += 1;
-            Ok(Some(&mission.events[self.current_position]))
+        let current_pos = *self.cursor_positions.get(mission_id).unwrap_or(&0);
+        if current_pos + 1 < mission.events.len() {
+            let next_pos = current_pos + 1;
+            self.cursor_positions.insert(mission_id.to_string(), next_pos);
+            Ok(Some(&mission.events[next_pos]))
         } else {
             Ok(None)
         }
@@ -119,13 +121,15 @@ impl Timeline {
         &mut self,
         mission_id: &str,
     ) -> Result<Option<&MissionEvent>, TimelineError> {
-        if self.current_position > 0 {
-            self.current_position -= 1;
+        let current_pos = *self.cursor_positions.get(mission_id).unwrap_or(&0);
+        if current_pos > 0 {
+            let prev_pos = current_pos - 1;
+            self.cursor_positions.insert(mission_id.to_string(), prev_pos);
             let mission = self
                 .missions
                 .get(mission_id)
                 .ok_or(TimelineError::MissionNotFound)?;
-            Ok(Some(&mission.events[self.current_position]))
+            Ok(Some(&mission.events[prev_pos]))
         } else {
             Ok(None)
         }
@@ -137,8 +141,9 @@ impl Timeline {
             .get(mission_id)
             .ok_or(TimelineError::MissionNotFound)?;
 
-        if self.current_position < mission.events.len() {
-            Ok(Some(&mission.events[self.current_position]))
+        let current_pos = *self.cursor_positions.get(mission_id).unwrap_or(&0);
+        if current_pos < mission.events.len() {
+            Ok(Some(&mission.events[current_pos]))
         } else {
             Ok(None)
         }
@@ -409,5 +414,44 @@ mod tests {
         let sensors = timeline.get_available_sensors(&mission_id).unwrap();
         assert!(sensors.contains(&"lidar".to_string()));
         assert!(sensors.contains(&"camera".to_string()));
+    }
+
+    #[test]
+    fn test_independent_cursors_two_missions() {
+        let mut timeline = Timeline::new();
+        let mission1 = create_test_mission();
+        let mission2 = create_test_mission();
+        let m1_id = mission1.id.to_string();
+        let m2_id = mission2.id.to_string();
+
+        timeline.add_mission(mission1);
+        timeline.add_mission(mission2);
+
+        timeline.jump_to_event(&m1_id, 0).unwrap();
+        timeline.jump_to_event(&m2_id, 1).unwrap();
+
+        assert_eq!(timeline.current_event(&m1_id).unwrap().unwrap().timestamp(),
+                   timeline.get_mission(&m1_id).unwrap().events[0].timestamp());
+        assert_eq!(timeline.current_event(&m2_id).unwrap().unwrap().timestamp(),
+                   timeline.get_mission(&m2_id).unwrap().events[1].timestamp());
+    }
+
+    #[test]
+    fn test_cursor_resets_per_mission() {
+        let mut timeline = Timeline::new();
+        let mission1 = create_test_mission();
+        let mission2 = create_test_mission();
+        let m1_id = mission1.id.to_string();
+        let m2_id = mission2.id.to_string();
+
+        timeline.add_mission(mission1);
+        timeline.add_mission(mission2);
+
+        timeline.jump_to_event(&m1_id, 1).unwrap();
+        timeline.jump_to_event(&m2_id, 0).unwrap();
+        timeline.jump_to_event(&m1_id, 0).unwrap();
+
+        let evt1 = timeline.current_event(&m1_id).unwrap().unwrap();
+        assert_eq!(evt1.timestamp(), timeline.get_mission(&m1_id).unwrap().events[0].timestamp());
     }
 }

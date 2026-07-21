@@ -10,6 +10,8 @@ pub mod root_cause;
 pub mod counterfactual;
 pub mod recommendation;
 pub mod diagnostic_report;
+pub mod deterministic_replay;
+pub mod compliance;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -27,3 +29,9 @@ pub use root_cause::{RootCauseAnalyzer, RootCauseAnalysis, RootCauseHypothesis, 
 pub use counterfactual::{CounterfactualAnalyzer, CounterfactualAnalysis, CounterfactualScenario, ScenarioImpact, CriticalCausalLink, CounterfactualStats};
 pub use recommendation::{RecommendationEngine, Recommendation, RecommendationSet, RecommendationStats};
 pub use diagnostic_report::{DiagnosticReportGenerator, DiagnosticReport, ExecutiveSummary, DiagnosticSection, ReportFormat};
+pub use deterministic_replay::{DeterministicReplay, ReplayManifest, DeterministicReplayError, EventHasher};
+pub use compliance::{
+    ComplianceEvent, ComplianceReport, ComplianceReportGenerator, ComplianceConfig,
+    ComplianceViolation, ViolationType, ViolationSeverity, ProximityZoneEvent, EmergencyStopEvent,
+    SpeedComplianceEvent, OperatorPresenceEvent, ProximityZoneType,
+};
