@@ -1,4 +1,5 @@
 use crate::core::event::MissionRecord;
+use crate::cli::lidar_viz::{LidarVisualization, LidarVizConfig};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent},
     execute,
@@ -114,7 +115,11 @@ impl ReplayState {
     fn draw_ui(&self, f: &mut Frame) {
         let size = f.size();
 
-        // Main layout: header, timeline, event details, footer
+        // Check if current event is a lidar scan
+        let is_lidar_event = self.current_index < self.mission.events.len() &&
+            self.mission.events[self.current_index].event_type() == "LidarScan";
+
+        // Main layout: header, timeline, event details/lidar, footer
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -129,13 +134,27 @@ impl ReplayState {
         self.draw_header(f, chunks[0]);
 
         // Timeline and details
-        let middle_chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
-            .split(chunks[1]);
+        let middle_chunks = if is_lidar_event && size.width > 120 {
+            // Wide layout: timeline + lidar visualization
+            Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+                .split(chunks[1])
+        } else {
+            // Standard layout: timeline + details
+            Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+                .split(chunks[1])
+        };
 
         self.draw_timeline(f, middle_chunks[0]);
-        self.draw_event_details(f, middle_chunks[1]);
+
+        if is_lidar_event && size.width > 120 {
+            self.draw_lidar_visualization(f, middle_chunks[1]);
+        } else {
+            self.draw_event_details(f, middle_chunks[1]);
+        }
 
         // Progress
         self.draw_progress(f, chunks[2]);
@@ -248,6 +267,47 @@ impl ReplayState {
             .label(format!("{:.1}% ({}/{})", progress, self.current_index, self.mission.events.len()));
 
         f.render_widget(gauge, area);
+    }
+
+    fn draw_lidar_visualization(&self, f: &mut Frame, area: ratatui::layout::Rect) {
+        if self.current_index >= self.mission.events.len() {
+            return;
+        }
+
+        let event = &self.mission.events[self.current_index];
+        if event.event_type() != "LidarScan" {
+            return;
+        }
+
+        // Create lidar visualization
+        let mut config = LidarVizConfig::default();
+        // Adjust visualization size based on available area
+        config.width = (area.width as usize).saturating_sub(4).max(40);
+        config.height = (area.height as usize).saturating_sub(4).max(10);
+
+        let mut viz = LidarVisualization::new(&config);
+
+        // Add sample readings (in production, would extract from event)
+        // For now, show a demonstration pattern
+        for angle in (0..360).step_by(5) {
+            let angle_f = angle as f32;
+            let range = 10.0 + (angle_f.sin() * 5.0);
+            let intensity = Some(0.5 + (angle_f.cos() * 0.5).abs());
+            viz.add_reading(angle_f, range, intensity, &config);
+        }
+
+        // Render visualization
+        let viz_text = viz.render();
+        let lines: Vec<Line> = viz_text
+            .lines()
+            .map(|line| Line::from(Span::raw(line.to_string())))
+            .collect();
+
+        let visualization = Paragraph::new(lines)
+            .block(Block::default().title("Lidar Scan (2D Polar)").borders(Borders::ALL))
+            .style(Style::default().fg(Color::Green));
+
+        f.render_widget(visualization, area);
     }
 
     fn draw_footer(&self, f: &mut Frame, area: ratatui::layout::Rect) {

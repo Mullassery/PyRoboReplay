@@ -1,12 +1,18 @@
 pub mod args;
 pub mod replay_ui;
 pub mod json_output;
+pub mod lidar_viz;
+pub mod camera_export;
+pub mod imu_viz;
+pub mod sensor_stats;
+pub mod keyboard;
 
 use args::{Cli, Commands};
 use clap::Parser;
 use crate::adapters::{MissionAdapter, ros2::Ros2Adapter};
 use replay_ui::ReplayState;
 use json_output::{JsonResponse, MissionAnalysisJson};
+use camera_export::export_camera_to_html;
 use std::error::Error;
 use tracing_subscriber;
 
@@ -26,7 +32,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             end_time: _,
             robot: _,
             json: output_json,
-            export_camera: _,
+            export_camera,
         } => {
             tracing::info!("Replaying: {}", bag_file);
 
@@ -35,6 +41,15 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             let mission = adapter.read(&bag_file)?;
 
             tracing::info!("Loaded mission with {} events", mission.event_count());
+
+            // Handle camera export if requested
+            if let Some(export_path) = export_camera {
+                tracing::info!("Exporting camera frames to: {}", export_path);
+                export_camera_to_html(&mission, &export_path, None)?;
+                println!("✅ Camera frames exported to: {}", export_path);
+                println!("📖 Open in browser: open {}", export_path);
+                return Ok(());
+            }
 
             if output_json {
                 // Output mission analysis as JSON
