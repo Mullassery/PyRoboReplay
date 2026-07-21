@@ -12,6 +12,7 @@ pub mod recommendation;
 pub mod diagnostic_report;
 pub mod deterministic_replay;
 pub mod compliance;
+pub mod cross_mission;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -34,4 +35,7 @@ pub use compliance::{
     ComplianceEvent, ComplianceReport, ComplianceReportGenerator, ComplianceConfig,
     ComplianceViolation, ViolationType, ViolationSeverity, ProximityZoneEvent, EmergencyStopEvent,
     SpeedComplianceEvent, OperatorPresenceEvent, ProximityZoneType,
+};
+pub use cross_mission::{
+    MissionPattern, MissionOccurrence, PatternMatch, PatternLibrary, CrossMissionAnalyzer,
 };

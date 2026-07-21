@@ -59,6 +59,13 @@ impl StorageBackend for SqliteBackend {
                 report     TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY (mission_id) REFERENCES missions(mission_id) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS patterns (
+                pattern_id TEXT PRIMARY KEY,
+                pattern_type TEXT NOT NULL,
+                data TEXT NOT NULL,
+                occurrences INT NOT NULL DEFAULT 0,
+                last_seen TEXT NOT NULL
             );",
         )
         .map_err(|e| StorageError::ConnectionFailed(e.to_string()))?;
@@ -291,6 +298,61 @@ impl StorageBackend for SqliteBackend {
     }
 }
 
+impl SqliteBackend {
+    /// Store a pattern in the database
+    pub fn store_pattern(&self, pattern_id: &str, pattern_type: &str, data: &str, occurrences: i32) -> StorageResult<()> {
+        let conn = self.conn.lock().unwrap();
+        let conn = conn.as_ref().ok_or_else(|| {
+            StorageError::ConnectionFailed("Database not connected".to_string())
+        })?;
+
+        conn.execute(
+            "INSERT OR REPLACE INTO patterns (pattern_id, pattern_type, data, occurrences, last_seen) VALUES (?1, ?2, ?3, ?4, datetime('now'))",
+            params![pattern_id, pattern_type, data, occurrences],
+        )
+        .map_err(|e| Self::map_rusqlite_err(e, "Failed to store pattern"))?;
+
+        Ok(())
+    }
+
+    /// Retrieve all patterns
+    pub fn retrieve_all_patterns(&self) -> StorageResult<Vec<String>> {
+        let conn = self.conn.lock().unwrap();
+        let conn = conn.as_ref().ok_or_else(|| {
+            StorageError::ConnectionFailed("Database not connected".to_string())
+        })?;
+
+        let mut stmt = conn
+            .prepare("SELECT data FROM patterns ORDER BY last_seen DESC")
+            .map_err(|e| Self::map_rusqlite_err(e, "Failed to prepare patterns query"))?;
+
+        let patterns = stmt
+            .query_map([], |row| row.get(0))
+            .map_err(|e| Self::map_rusqlite_err(e, "Failed to query patterns"))?
+            .collect::<Result<Vec<String>, _>>()
+            .map_err(|e| Self::map_rusqlite_err(e, "Failed to collect patterns"))?;
+
+        Ok(patterns)
+    }
+
+    /// Retrieve a specific pattern
+    pub fn retrieve_pattern(&self, pattern_id: &str) -> StorageResult<String> {
+        let conn = self.conn.lock().unwrap();
+        let conn = conn.as_ref().ok_or_else(|| {
+            StorageError::ConnectionFailed("Database not connected".to_string())
+        })?;
+
+        conn.query_row(
+            "SELECT data FROM patterns WHERE pattern_id = ?1",
+            params![pattern_id],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| Self::map_rusqlite_err(e, "Failed to retrieve pattern"))?
+        .ok_or_else(|| StorageError::NotFound(pattern_id.to_string()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -466,5 +528,46 @@ mod tests {
         assert_eq!(stats.total_reports, 1);
         assert!(stats.connected);
         assert!(stats.storage_size_bytes.is_some());
+    }
+
+    #[test]
+    fn test_store_pattern() {
+        let mut backend = SqliteBackend::in_memory();
+        backend.connect().unwrap();
+
+        let pattern_data = r#"{"pattern_id": "p1", "type": "collision"}"#;
+        backend
+            .store_pattern("p1", "collision_risk", pattern_data, 1)
+            .unwrap();
+
+        let retrieved = backend.retrieve_pattern("p1").unwrap();
+        assert_eq!(retrieved, pattern_data);
+    }
+
+    #[test]
+    fn test_retrieve_all_patterns() {
+        let mut backend = SqliteBackend::in_memory();
+        backend.connect().unwrap();
+
+        backend
+            .store_pattern("p1", "type1", r#"{"pattern":1}"#, 1)
+            .unwrap();
+        backend
+            .store_pattern("p2", "type2", r#"{"pattern":2}"#, 2)
+            .unwrap();
+
+        let patterns = backend.retrieve_all_patterns().unwrap();
+        assert_eq!(patterns.len(), 2);
+    }
+
+    #[test]
+    fn test_retrieve_nonexistent_pattern() {
+        let mut backend = SqliteBackend::in_memory();
+        backend.connect().unwrap();
+
+        match backend.retrieve_pattern("nonexistent") {
+            Err(StorageError::NotFound(_)) => (),
+            _ => panic!("Expected NotFound error"),
+        }
     }
 }
