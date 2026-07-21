@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "0.6.0"
+version = "0.7.0"
 description = "Time-travel debugger for robot fleets - replay and analyze missions from ROS 2 bag files with sensor visualization"
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = {text = "MIT"}
