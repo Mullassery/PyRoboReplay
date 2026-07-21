@@ -8,6 +8,7 @@ pub mod coverage_evolution;
 pub mod multi_robot;
 pub mod root_cause;
 pub mod counterfactual;
+pub mod recommendation;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -23,3 +24,4 @@ pub use coverage_evolution::{CoverageEvolutionAnalyzer, CoverageEvolutionQuery, 
 pub use multi_robot::{MultiRobotCoordinationAnalyzer, CoordinationEvent, CommunicationLink, FleetSnapshot, RobotState, InterRobotCausalLink, CoordinationPattern, MultiRobotCoordinationStats};
 pub use root_cause::{RootCauseAnalyzer, RootCauseAnalysis, RootCauseHypothesis, FailureMode, DiagnosticStats};
 pub use counterfactual::{CounterfactualAnalyzer, CounterfactualAnalysis, CounterfactualScenario, ScenarioImpact, CriticalCausalLink, CounterfactualStats};
+pub use recommendation::{RecommendationEngine, Recommendation, RecommendationSet, RecommendationStats};
