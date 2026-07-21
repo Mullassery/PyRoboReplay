@@ -7,6 +7,7 @@ pub mod streaming;
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
 use core::Timeline;
+use core::anomaly_detector::{AnomalyDetector, Failure as RustFailure};
 use adapters::ros2::Ros2Adapter;
 use adapters::MissionAdapter;
 
@@ -130,6 +131,27 @@ impl Mission {
         serde_json::to_string(&self.inner)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
     }
+
+    /// Detect all failures and anomalies in the mission
+    ///
+    /// Returns a list of failures detected across 8 categories:
+    /// - near_collision: LiDAR obstacle too close
+    /// - localization_loss: Odometry covariance spike
+    /// - navigation_deadlock: Oscillating path with no progress
+    /// - perception_failure: Low detection confidence
+    /// - communication_loss: Message dropout
+    /// - sensor_dropout: Sensor stopped reporting
+    /// - oscillation: Back-and-forth movement pattern
+    /// - costmap_anomaly: Sudden changes in obstacle map
+    pub fn detect_failures(&self) -> PyResult<Vec<Failure>> {
+        let detector = AnomalyDetector::new(self.inner.events.clone());
+        let rust_failures = detector.detect_all();
+
+        Ok(rust_failures
+            .into_iter()
+            .map(|f| Failure::from_rust_failure(f))
+            .collect())
+    }
 }
 
 /// Python wrapper for an Event
@@ -187,10 +209,89 @@ impl Event {
     }
 }
 
+/// Python wrapper for a detected failure/anomaly
+#[pyclass]
+pub struct Failure {
+    id: String,
+    failure_type: String,
+    timestamp: f64,
+    confidence: f32,
+    severity: String,
+    description: String,
+    affected_systems: Vec<String>,
+    evidence: std::collections::HashMap<String, String>,
+}
+
+impl Failure {
+    fn from_rust_failure(rust_failure: RustFailure) -> Self {
+        Failure {
+            id: rust_failure.id,
+            failure_type: rust_failure.failure_type,
+            timestamp: rust_failure.timestamp_seconds,
+            confidence: rust_failure.confidence,
+            severity: rust_failure.severity,
+            description: rust_failure.description,
+            affected_systems: rust_failure.affected_systems,
+            evidence: rust_failure.evidence,
+        }
+    }
+}
+
+#[pymethods]
+impl Failure {
+    /// Get failure ID
+    pub fn get_id(&self) -> String {
+        self.id.clone()
+    }
+
+    /// Get failure type (e.g., "near_collision", "localization_loss")
+    pub fn get_failure_type(&self) -> String {
+        self.failure_type.clone()
+    }
+
+    /// Get timestamp when failure was detected
+    pub fn get_timestamp(&self) -> f64 {
+        self.timestamp
+    }
+
+    /// Get confidence score (0.0-1.0)
+    pub fn get_confidence(&self) -> f32 {
+        self.confidence
+    }
+
+    /// Get severity level (critical, high, medium, low)
+    pub fn get_severity(&self) -> String {
+        self.severity.clone()
+    }
+
+    /// Get human-readable description
+    pub fn get_description(&self) -> String {
+        self.description.clone()
+    }
+
+    /// Get list of affected systems
+    pub fn get_affected_systems(&self) -> Vec<String> {
+        self.affected_systems.clone()
+    }
+
+    /// Get evidence that triggered this failure detection
+    pub fn get_evidence(&self) -> std::collections::HashMap<String, String> {
+        self.evidence.clone()
+    }
+
+    pub fn __repr__(&self) -> String {
+        format!(
+            "Failure(type='{}', timestamp={:.2}, confidence={:.2}, severity='{}')",
+            self.failure_type, self.timestamp, self.confidence, self.severity
+        )
+    }
+}
+
 #[pymodule]
 fn pyroboreplay(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Mission>()?;
     m.add_class::<Event>()?;
+    m.add_class::<Failure>()?;
 
     // Module docstring
     m.setattr(
