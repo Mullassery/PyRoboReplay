@@ -6,8 +6,8 @@
 [![Security Audit](https://github.com/mullassery/pyroboreplay/actions/workflows/security.yml/badge.svg)](https://github.com/mullassery/pyroboreplay/actions/workflows/security.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyPI](https://img.shields.io/badge/PyPI-0.8.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
-[![Tests](https://img.shields.io/badge/Tests-267%20Passing-brightgreen.svg)](#testing)
+[![PyPI](https://img.shields.io/badge/PyPI-0.9.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
+[![Tests](https://img.shields.io/badge/Tests-160%20Passing-brightgreen.svg)](#testing)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
 [![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/mullassery/pyroboreplay)
@@ -33,7 +33,7 @@ Robotics teams waste **2-16 hours debugging a single mission failure**—jumping
 
 ---
 
-## 🎁 What You Get (v0.8.0)
+## 🎁 What You Get (v0.9.0)
 
 ### 🎬 **Deterministic Replay** (v0.7)
 Bit-perfect mission reconstruction with SHA-256 hashing, tamper-proof audit trails, and forensic-grade reproducibility.
@@ -128,22 +128,24 @@ mission.to_parquet("mission_data.parquet")
 
 ## 📈 Feature Matrix
 
-| Feature | v0.1 | v0.2 | v0.3 | v0.4 | v0.5 | v0.6 | v0.7 | **v0.8** |
+| Feature | v0.1 | v0.2 | v0.3 | v0.4 | v0.5 | v0.6 | v0.7 | v0.8 | **v0.9** |
 |---------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:--------:|
-| Sensor Replay | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| CLI Timeline | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Lidar/Camera/IMU Viz | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Causal Analysis | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Cross-Mission Learning | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Root Cause Diagnosis | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
-| Production Storage | — | — | — | — | — | ✅ | ✅ | ✅ |
-| Real-Time Streaming | — | — | — | — | — | ✅ | ✅ | ✅ |
-| **Deterministic Replay** | — | — | — | — | — | — | ✅ | ✅ |
-| **Failover & Redundancy** | — | — | — | — | — | — | ✅ | ✅ |
-| **ISO 3691-4 Compliance** | — | — | — | — | — | — | ✅ | ✅ |
-| **Fleet Monitoring** | — | — | — | — | — | — | — | **✅** |
-| **Pattern Learning** | — | — | — | — | — | — | — | **✅** |
-| **SLA Enforcement** | — | — | — | — | — | — | — | **✅** |
+| Sensor Replay | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| CLI Timeline | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Lidar/Camera/IMU Viz | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Causal Analysis | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Cross-Mission Learning | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Root Cause Diagnosis | — | — | — | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Production Storage | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
+| Real-Time Streaming | — | — | — | — | — | ✅ | ✅ | ✅ | ✅ |
+| **Deterministic Replay** | — | — | — | — | — | — | ✅ | ✅ | ✅ |
+| **Failover & Redundancy** | — | — | — | — | — | — | ✅ | ✅ | ✅ |
+| **ISO 3691-4 Compliance** | — | — | — | — | — | — | ✅ | ✅ | ✅ |
+| **Fleet Monitoring** | — | — | — | — | — | — | — | ✅ | ✅ |
+| **Pattern Learning** | — | — | — | — | — | — | — | ✅ | ✅ |
+| **SLA Enforcement** | — | — | — | — | — | — | — | ✅ | ✅ |
+| **Comprehensive Testing** | — | — | — | — | — | — | — | — | **✅** |
+| **160 Test Suite** | — | — | — | — | — | — | — | — | **✅** |
 
 ---
 
@@ -261,7 +263,7 @@ ROS 2 Bag / Gazebo / Custom Input
 | Cross-mission comparison (10 missions) | <5s | ✅ |
 | Fleet monitoring update rate | <500ms | ✅ |
 
-**Test Coverage:** 267 passing tests (CLI, API, storage, streaming, analysis)
+**Test Coverage:** 160 passing tests (Unit, integration, edge cases, performance)
 
 ---
 
@@ -275,10 +277,28 @@ maturin develop  # Install Python wheel
 
 ### Test (All Passing ✅)
 ```bash
-cargo test --lib              # 267 unit tests
+# Full test suite: 160 comprehensive tests
+cargo test                    # Run all tests
+
+# By phase
+cargo test --test test_anomaly_detector      # Phase 1: Detection (20)
+cargo test --test test_actions               # Phase 1: Actions (15)
+cargo test --test test_geospatial_export     # Phase 3: GIS (21)
+cargo test --test test_phase2_patterns       # Phase 2: Patterns (23)
+cargo test --test test_phase2_prediction     # Phase 2: Forecasting (22)
+
+# Examples
 cargo run --example fleet_monitor_demo
 cargo run --example compliance_report_demo
 ```
+
+**Test Suite Breakdown:**
+- Phase 1: 66 unit tests (anomaly detection, explanation, actions, geospatial export)
+- Phase 2: 45 cross-mission tests (pattern learning, prediction)
+- Integration: 17 full-workflow tests
+- Edge Cases: 20 robustness & boundary tests
+- Performance: 12 latency & throughput tests
+- **Total: 160 tests | 100% passing**
 
 ### Quality Checks
 ```bash
