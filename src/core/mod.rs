@@ -7,6 +7,7 @@ pub mod pyterrain_bridge;
 pub mod coverage_evolution;
 pub mod multi_robot;
 pub mod root_cause;
+pub mod counterfactual;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -21,3 +22,4 @@ pub use pyterrain_bridge::{PyTerrainBridge, TerrainKnowledgeGraph, Obstacle, Tra
 pub use coverage_evolution::{CoverageEvolutionAnalyzer, CoverageEvolutionQuery, CoverageSnapshot, CoverageGap, CoverageHotspot, CoverageEvolutionStats};
 pub use multi_robot::{MultiRobotCoordinationAnalyzer, CoordinationEvent, CommunicationLink, FleetSnapshot, RobotState, InterRobotCausalLink, CoordinationPattern, MultiRobotCoordinationStats};
 pub use root_cause::{RootCauseAnalyzer, RootCauseAnalysis, RootCauseHypothesis, FailureMode, DiagnosticStats};
+pub use counterfactual::{CounterfactualAnalyzer, CounterfactualAnalysis, CounterfactualScenario, ScenarioImpact, CriticalCausalLink, CounterfactualStats};
