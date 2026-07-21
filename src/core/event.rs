@@ -213,7 +213,7 @@ impl MissionEvent {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MissionRecord {
     pub id: Uuid,
     pub name: String,
