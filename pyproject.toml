@@ -5,38 +5,54 @@ build-backend = "maturin"
 [project]
 name = "pyroboreplay"
 version = "0.8.0"
-description = "Time-travel debugger for robot fleets - replay and analyze missions from ROS 2 bag files with sensor visualization"
+description = "Time-travel debugger for autonomous robots. Replay missions, analyze root causes, detect failures, enforce SLAs, monitor fleets in real-time."
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
+    "Intended Audience :: Information Technology",
     "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Rust",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Software Development :: Debuggers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Networking",
 ]
 keywords = [
     "robotics",
     "debugging",
     "mission-replay",
+    "root-cause-analysis",
     "ros2",
     "observability",
+    "fault-diagnosis",
+    "autonomous-systems",
+    "fleet-monitoring",
+    "sla-enforcement",
+    "time-travel-debugging",
 ]
 
 [project.urls]
 Homepage = "https://github.com/mullassery/pyroboreplay"
 Repository = "https://github.com/mullassery/pyroboreplay.git"
-Documentation = "https://github.com/mullassery/pyroboreplay/wiki"
+Documentation = "https://github.com/mullassery/pyroboreplay"
 Issues = "https://github.com/mullassery/pyroboreplay/issues"
+Discussions = "https://github.com/mullassery/pyroboreplay/discussions"
+Changelog = "https://github.com/mullassery/pyroboreplay/releases"
 
 [tool.maturin]
 module-name = "pyroboreplay"

@@ -2,6 +2,13 @@
 name = "pyroboreplay"
 version = "0.8.0"
 edition = "2021"
+authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
+license = "MIT"
+description = "Time-travel debugger for autonomous robots with root cause analysis, fleet monitoring, and SLA enforcement"
+repository = "https://github.com/mullassery/pyroboreplay"
+homepage = "https://github.com/mullassery/pyroboreplay"
+keywords = ["robotics", "debugging", "autonomous-systems", "mission-replay", "observability"]
+categories = ["development-tools", "science"]
 
 # Default: build as regular Rust library for testing
 # PyO3 extension module defined in src/lib.rs with #[pymodule]
