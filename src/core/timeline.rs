@@ -79,25 +79,7 @@ impl Timeline {
         Ok(mission
             .events
             .iter()
-            .filter(|e| match e {
-                MissionEvent::RobotPose {
-                    robot_id: rid,
-                    ..
-                } => rid == robot_id,
-                MissionEvent::SensorObservation {
-                    robot_id: rid,
-                    ..
-                } => rid == robot_id,
-                MissionEvent::NavigationDecision {
-                    robot_id: rid,
-                    ..
-                } => rid == robot_id,
-                MissionEvent::ObstacleDetected {
-                    robot_id: rid,
-                    ..
-                } => rid == robot_id,
-                _ => false,
-            })
+            .filter(|e| e.robot_id().map_or(false, |rid| rid == robot_id))
             .collect())
     }
 
@@ -194,6 +176,7 @@ mod tests {
                 qz: 0.0,
                 qw: 1.0,
             },
+            confidence: Some(0.95),
         });
 
         mission.add_event(MissionEvent::RobotPose {
@@ -208,6 +191,7 @@ mod tests {
                 qz: 0.0,
                 qw: 1.0,
             },
+            confidence: Some(0.90),
         });
 
         mission

@@ -21,18 +21,94 @@ pub struct Location {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LidarData {
+    pub ranges: Vec<f32>,
+    pub intensities: Option<Vec<f32>>,
+    pub frame_id: String,
+    pub min_angle: f32,
+    pub max_angle: f32,
+    pub angle_increment: f32,
+    pub range_min: f32,
+    pub range_max: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CameraFrame {
+    pub sensor_id: String,
+    pub frame_id: String,
+    pub width: u32,
+    pub height: u32,
+    pub encoding: String, // rgb8, mono8, bgr8, etc.
+    pub image_data: Vec<u8>,
+    pub camera_info: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IMUData {
+    pub frame_id: String,
+    pub linear_acceleration: [f64; 3],
+    pub angular_velocity: [f64; 3],
+    pub magnetometer: Option<[f64; 3]>,
+    pub orientation: Option<[f64; 4]>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Odometry {
+    pub frame_id: String,
+    pub child_frame_id: String,
+    pub pose: Pose,
+    pub twist_linear: [f64; 3],
+    pub twist_angular: [f64; 3],
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Costmap {
+    pub frame_id: String,
+    pub resolution: f32,
+    pub width: u32,
+    pub height: u32,
+    pub origin: Pose,
+    pub data: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MissionEvent {
+    // Sensor streams (individually replayable)
+    LidarScan {
+        robot_id: String,
+        timestamp: DateTime<Utc>,
+        data: LidarData,
+    },
+    CameraFrame {
+        robot_id: String,
+        timestamp: DateTime<Utc>,
+        data: CameraFrame,
+    },
+    IMUData {
+        robot_id: String,
+        timestamp: DateTime<Utc>,
+        data: IMUData,
+    },
+    OdometryUpdate {
+        robot_id: String,
+        timestamp: DateTime<Utc>,
+        data: Odometry,
+    },
+    CostmapUpdate {
+        robot_id: String,
+        timestamp: DateTime<Utc>,
+        data: Costmap,
+    },
+
+    // Processed/fused state
     RobotPose {
         robot_id: String,
         timestamp: DateTime<Utc>,
         pose: Pose,
+        confidence: Option<f32>,
     },
-    SensorObservation {
-        robot_id: String,
-        timestamp: DateTime<Utc>,
-        sensor_type: String,
-        data: serde_json::Value,
-    },
+
+    // Navigation & coordination
     NavigationDecision {
         robot_id: String,
         timestamp: DateTime<Utc>,
@@ -44,7 +120,10 @@ pub enum MissionEvent {
         timestamp: DateTime<Utc>,
         location: Location,
         obstacle_type: String,
+        confidence: Option<f32>,
     },
+
+    // Communication & fleet
     CommunicationEvent {
         timestamp: DateTime<Utc>,
         from: String,
@@ -58,6 +137,8 @@ pub enum MissionEvent {
         event_type: String,
         data: Option<serde_json::Value>,
     },
+
+    // Environmental context
     EnvironmentalChange {
         timestamp: DateTime<Utc>,
         location: Location,
@@ -74,27 +155,60 @@ pub enum MissionEvent {
 impl MissionEvent {
     pub fn timestamp(&self) -> DateTime<Utc> {
         match self {
-            MissionEvent::RobotPose { timestamp, .. } => *timestamp,
-            MissionEvent::SensorObservation { timestamp, .. } => *timestamp,
-            MissionEvent::NavigationDecision { timestamp, .. } => *timestamp,
-            MissionEvent::ObstacleDetected { timestamp, .. } => *timestamp,
-            MissionEvent::CommunicationEvent { timestamp, .. } => *timestamp,
-            MissionEvent::CoordinationEvent { timestamp, .. } => *timestamp,
-            MissionEvent::EnvironmentalChange { timestamp, .. } => *timestamp,
-            MissionEvent::MissionLifecycle { timestamp, .. } => *timestamp,
+            MissionEvent::LidarScan { timestamp, .. }
+            | MissionEvent::CameraFrame { timestamp, .. }
+            | MissionEvent::IMUData { timestamp, .. }
+            | MissionEvent::OdometryUpdate { timestamp, .. }
+            | MissionEvent::CostmapUpdate { timestamp, .. }
+            | MissionEvent::RobotPose { timestamp, .. }
+            | MissionEvent::NavigationDecision { timestamp, .. }
+            | MissionEvent::ObstacleDetected { timestamp, .. }
+            | MissionEvent::CommunicationEvent { timestamp, .. }
+            | MissionEvent::CoordinationEvent { timestamp, .. }
+            | MissionEvent::EnvironmentalChange { timestamp, .. }
+            | MissionEvent::MissionLifecycle { timestamp, .. } => *timestamp,
         }
     }
 
     pub fn event_type(&self) -> &str {
         match self {
+            MissionEvent::LidarScan { .. } => "lidar_scan",
+            MissionEvent::CameraFrame { .. } => "camera_frame",
+            MissionEvent::IMUData { .. } => "imu_data",
+            MissionEvent::OdometryUpdate { .. } => "odometry_update",
+            MissionEvent::CostmapUpdate { .. } => "costmap_update",
             MissionEvent::RobotPose { .. } => "robot_pose",
-            MissionEvent::SensorObservation { .. } => "sensor_observation",
             MissionEvent::NavigationDecision { .. } => "navigation_decision",
             MissionEvent::ObstacleDetected { .. } => "obstacle_detected",
             MissionEvent::CommunicationEvent { .. } => "communication_event",
             MissionEvent::CoordinationEvent { .. } => "coordination_event",
             MissionEvent::EnvironmentalChange { .. } => "environmental_change",
             MissionEvent::MissionLifecycle { .. } => "mission_lifecycle",
+        }
+    }
+
+    pub fn robot_id(&self) -> Option<&str> {
+        match self {
+            MissionEvent::LidarScan { robot_id, .. }
+            | MissionEvent::CameraFrame { robot_id, .. }
+            | MissionEvent::IMUData { robot_id, .. }
+            | MissionEvent::OdometryUpdate { robot_id, .. }
+            | MissionEvent::CostmapUpdate { robot_id, .. }
+            | MissionEvent::RobotPose { robot_id, .. }
+            | MissionEvent::NavigationDecision { robot_id, .. }
+            | MissionEvent::ObstacleDetected { robot_id, .. } => Some(robot_id),
+            _ => None,
+        }
+    }
+
+    pub fn sensor_type(&self) -> Option<&str> {
+        match self {
+            MissionEvent::LidarScan { .. } => Some("lidar"),
+            MissionEvent::CameraFrame { .. } => Some("camera"),
+            MissionEvent::IMUData { .. } => Some("imu"),
+            MissionEvent::OdometryUpdate { .. } => Some("odometry"),
+            MissionEvent::CostmapUpdate { .. } => Some("costmap"),
+            _ => None,
         }
     }
 }
@@ -165,9 +279,50 @@ mod tests {
                 qz: 0.0,
                 qw: 1.0,
             },
+            confidence: Some(0.95),
         };
         mission.add_event(event);
         assert_eq!(mission.event_count(), 1);
+    }
+
+    #[test]
+    fn test_lidar_event() {
+        let event = MissionEvent::LidarScan {
+            robot_id: "robot_1".to_string(),
+            timestamp: Utc::now(),
+            data: LidarData {
+                ranges: vec![1.0, 1.5, 2.0],
+                intensities: Some(vec![100.0, 150.0, 200.0]),
+                frame_id: "laser_frame".to_string(),
+                min_angle: -3.14,
+                max_angle: 3.14,
+                angle_increment: 0.01,
+                range_min: 0.0,
+                range_max: 30.0,
+            },
+        };
+        assert_eq!(event.event_type(), "lidar_scan");
+        assert_eq!(event.sensor_type(), Some("lidar"));
+        assert_eq!(event.robot_id(), Some("robot_1"));
+    }
+
+    #[test]
+    fn test_camera_event() {
+        let event = MissionEvent::CameraFrame {
+            robot_id: "robot_1".to_string(),
+            timestamp: Utc::now(),
+            data: CameraFrame {
+                sensor_id: "camera_1".to_string(),
+                frame_id: "camera_frame".to_string(),
+                width: 640,
+                height: 480,
+                encoding: "rgb8".to_string(),
+                image_data: vec![0u8; 640 * 480 * 3],
+                camera_info: None,
+            },
+        };
+        assert_eq!(event.event_type(), "camera_frame");
+        assert_eq!(event.sensor_type(), Some("camera"));
     }
 
     #[test]
@@ -185,6 +340,7 @@ mod tests {
                 qz: 0.0,
                 qw: 1.0,
             },
+            confidence: Some(0.95),
         };
         assert_eq!(event.timestamp(), now);
     }
