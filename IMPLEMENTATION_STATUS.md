@@ -135,9 +135,18 @@ All Phase 1 objectives delivered. Total: **11 integration tests passing**, **350
   - 4 new unit tests (total 11), demo with multi-event scenario
   - ~400 LOC implementation
 
+- [x] **Task #17**: Interactive causal visualization (flowcharts) ✅ COMPLETE
+  - CausalViz: ASCII flowchart rendering engine
+  - render_query(): full flowchart with confidence indicators
+  - render_summary(): statistics panel (chains, lengths, confidence, time gaps)
+  - render_comparison(): side-by-side hypothesis comparison
+  - render_confidence_timeline(): event contribution heatmap
+  - Confidence visualization (█▓▒░· intensity levels)
+  - 4 new unit tests, demo with exploration scenario
+  - ~350 LOC implementation
+
 ### Remaining Objectives
-- [ ] Interactive causal visualization (flowcharts)
-- [ ] Counterfactual reasoning ("if this event didn't happen...")
+- [ ] Temporal correlation analysis (anomaly detection patterns)
 
 ### Scope So Far: 350 LOC (target: 800-1200 total)
 

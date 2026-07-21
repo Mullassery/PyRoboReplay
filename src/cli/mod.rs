@@ -6,6 +6,7 @@ pub mod camera_export;
 pub mod imu_viz;
 pub mod sensor_stats;
 pub mod keyboard;
+pub mod causal_viz;
 
 use args::{Cli, Commands};
 use clap::Parser;
