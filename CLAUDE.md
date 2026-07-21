@@ -135,17 +135,22 @@ mission.compare_with(other_mission)
 
 PyRoboReplay embeds two key dependencies for spatial context and quality intelligence:
 
-**PyTerrainMap** (spatial layer):
+**PyTerrainMap** (spatial + temporal layer):
 - Owns: 3D reconstruction, real-time SLAM, traversability analysis, spatial knowledge graphs
-- PyRoboReplay uses: Spatial context for causal analysis, coverage evolution, obstacle correlation
+- **Temporal normalization** (5D: x,y,z,time,quality): Already implemented in PyTerrainMap
+- PyRoboReplay uses:
+  - Spatial context for causal analysis, coverage evolution, obstacle correlation
+  - Temporal normalization for handling out-of-order events (critical for robot fleets)
+  - Advantage: Don't rebuild temporal handling; leverage PyTerrainMap's proven implementation
+  - Handles clock skew, multi-robot time alignment automatically
 
 **StatGuardian** (quality layer):
 - Owns: Data quality contracts, drift detection, anomaly detection
 - PyRoboReplay uses: High-accuracy anomaly flagging across all sensor streams, root-cause confidence scoring
 - Benefit: <2% false positive anomaly detection vs ~5% for rule-based detection
 
-This maintains architectural boundaries:
-- PyTerrainMap handles spatial reconstruction
+This maintains architectural boundaries and maximizes code reuse:
+- PyTerrainMap handles spatial reconstruction + temporal normalization
 - StatGuardian handles data quality/contracts
 - PyRoboReplay orchestrates replay + causality + diagnosis
 

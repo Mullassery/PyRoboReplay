@@ -33,6 +33,14 @@ pub enum Commands {
         /// Show only events at this robot (default: all)
         #[arg(short, long, value_name = "ROBOT_ID")]
         robot: Option<String>,
+
+        /// Output as JSON (for AI-agent integration)
+        #[arg(long)]
+        json: bool,
+
+        /// Export camera frames to standalone HTML file
+        #[arg(long, value_name = "OUTPUT_FILE")]
+        export_camera: Option<String>,
     },
 
     /// Compare two missions side-by-side
@@ -51,6 +59,10 @@ pub enum Commands {
         /// Bag file to analyze
         #[arg(value_name = "BAG_FILE")]
         bag_file: String,
+
+        /// Output as JSON (for AI-agent integration)
+        #[arg(long)]
+        json: bool,
     },
 
     /// List available topics in a bag file
@@ -58,5 +70,9 @@ pub enum Commands {
         /// Bag file to inspect
         #[arg(value_name = "BAG_FILE")]
         bag_file: String,
+
+        /// Output as JSON (for AI-agent integration)
+        #[arg(long)]
+        json: bool,
     },
 }
