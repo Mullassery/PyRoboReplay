@@ -188,13 +188,44 @@ Timeline Scrubber (Interactive)
 └─────────────────────────────────────────────────────┘
 ```
 
-**Key Features:**
-1. **Synchronized Playback**: All tracks advance together
-2. **Jump to Event**: Click on "obstacle detected" → timeline jumps, shows camera frame + lidar scan
-3. **Filter by Sensor**: Show only camera or only lidar
-4. **Slow-Motion Replay**: Slow-motion around critical events
-5. **Side-by-Side Cameras**: Compare CAM_FRONT vs CAM_REAR simultaneously
-6. **Anomaly Highlighting**: Automatic markers for perception failures, localization spikes
+**API (Python Library):**
+
+```python
+from pyroboreplay import Mission
+
+mission = Mission.from_ros_bag("mission.bag")
+
+# Query all events in a time range, synchronized across sensors
+events = mission.events_in_range(start_time=1234.5, end_time=1234.6)
+
+# Get frame exactly at timestamp (library interpolates if needed)
+camera_frame = mission.get_camera_frame(timestamp=1234.5)
+lidar_scan = mission.get_lidar_scan(timestamp=1234.5)
+pose = mission.get_pose(timestamp=1234.5)  # Interpolated from odom
+planner_state = mission.get_planner_state(timestamp=1234.5)
+
+# Iterate through synchronized sensor pairs
+for (camera, lidar, planner) in mission.synchronized_windows(
+    sensors=['camera', 'lidar', 'planner'],
+    window_size=0.05
+):
+    if camera.has_detections() and lidar.min_range < 2.0:
+        print(f"At {camera.timestamp}: perception + collision risk")
+```
+
+**CLI (Interactive Timeline):**
+
+```bash
+pyroboreplay replay mission.bag  # Multi-track terminal UI
+```
+
+**Key Capabilities:**
+1. **Temporal Alignment**: Query any sensors at same timestamp
+2. **Synchronized Iteration**: Loop through time with all sensors synchronized
+3. **Causal Chains**: Trace back from failure to root events
+4. **Event Correlation**: Find moments where multiple sensors trigger simultaneously
+5. **Sensor Filtering**: Query only specific sensor streams
+6. **Interpolation**: Get pose at exact camera timestamp even if odometry runs faster
 
 ### 2.3 Multi-Sensor Synchronization Strategy
 
@@ -424,75 +455,87 @@ class CrossMissionAnalyzer:
 
 ## Part 4: Geospatial Observability
 
-### 4.1 Mission-to-Map Export Pipeline
+### 4.1 Mission Analysis & Export API
 
 **Current**: "I need to prove the robot covered area X. Let me export screenshots and mark them up manually."  
-**Goal**: One-click export of mission analysis into GIS-ready formats.
+**Goal**: Python library API for mission analysis and GIS-ready export.
 
-**Export Workflow:**
+**Export Pipeline (Python Library):**
 
-```
-Mission Replay Data
-       ↓
-Analysis Engine
-├─ Extract robot path
-├─ Compute coverage heatmap
-├─ Identify failure zones
-├─ Calculate localization uncertainty
-├─ Detect perception blind spots
-└─ Mark safety-critical events
-       ↓
-GIS-Ready Exports
-├─ coverage.tif (GeoTIFF with raster data)
-├─ failure_zones.gpkg (GeoPackage with polygons)
-├─ robot_path.kml (KML for Google Earth)
-├─ localization_uncertainty.shp (Shapefile)
-└─ safety_events.geojson (GeoJSON for web)
-       ↓
-Import into GIS Software
-├─ QGIS
-├─ ArcGIS
-├─ Google Earth Pro
-└─ Custom web mapping
+```python
+from pyroboreplay import Mission
+from pyroboreplay.export import GeospatialExporter
+
+# Load mission
+mission = Mission.from_ros_bag("mission_042.bag")
+
+# Analyze
+analysis = mission.analyze()
+# Returns: coverage zones, failure points, path, uncertainty maps
+
+# Export to GIS formats
+exporter = GeospatialExporter(analysis)
+exporter.to_geotiff("coverage.tif")      # Coverage heatmap
+exporter.to_geojson("events.geojson")    # Event markers
+exporter.to_shapefile("path.shp")        # Robot trajectory
+exporter.to_geopackage("mission.gpkg")   # All layers in one file
+exporter.to_kml("mission.kml")           # Google Earth
 ```
 
-### 4.2 GIS Layer Types
+**Programmatic Export:**
 
-**Coverage Map (Raster):**
+```python
+# Flexible export for scripts/notebooks
+mission = Mission.from_ros_bag("warehouse_run.bag")
+
+# Coverage analysis
+coverage_raster = mission.compute_coverage_map()
+coverage_raster.to_geotiff("output/coverage.tif", resolution=0.1)
+
+# Failure analysis
+failures = mission.detect_failures()
+failure_geojson = mission.failures_to_geojson(failures)
+failure_geojson.to_file("output/failures.geojson")
+
+# Multi-mission fleet analysis
+fleet_missions = [Mission.from_ros_bag(f) for f in mission_files]
+fleet_heatmap = Mission.aggregate_coverage(fleet_missions)
+fleet_heatmap.to_geotiff("output/fleet_coverage.tif")
 ```
-pyroboreplay export mission.bag \
-  --format geotiff \
-  --layer coverage \
-  --output coverage_analysis.tif
 
-# Output: GeoTIFF with:
-#   Band 1: Coverage frequency (0-255 scale)
+### 4.2 GIS Layer Export Types
+
+**Coverage Raster (GeoTIFF):**
+```python
+mission = Mission.from_ros_bag("mission.bag")
+coverage = mission.compute_coverage_map(resolution=0.1)  # 10cm cells
+coverage.to_geotiff("coverage.tif")
+
+# Output GeoTIFF:
+#   Band 1: Coverage frequency (0-255)
 #   Band 2: Localization confidence
 #   Band 3: Sensor health
-# Georeferenced to WGS84
+#   CRS: WGS84 or mission's native
 ```
 
 **Failure Heatmap (Raster):**
-```
-pyroboreplay export mission.bag \
-  --format geotiff \
-  --layer failure_heatmap \
-  --output failures.tif
+```python
+failures = mission.detect_failures()
+heatmap = mission.failure_heatmap(failures, bandwidth=1.0)  # Gaussian KDE
+heatmap.to_geotiff("failures.tif")
 
-# Output: GeoTIFF showing:
-#   Red: Collision risk zones
-#   Yellow: Localization uncertainty zones
-#   Green: Safe navigation zones
+# Output GeoTIFF:
+#   Continuous raster showing failure density
+#   Interpolated across entire mission area
 ```
 
-**Event Markers (Vector):**
-```
-pyroboreplay export mission.bag \
-  --format geojson \
-  --layer events \
-  --output events.geojson
+**Event Markers (GeoJSON):**
+```python
+events = mission.detected_failures()
+geojson = mission.events_to_geojson(events)
+geojson.to_file("events.geojson")
 
-# Output: GeoJSON with:
+# Output GeoJSON:
 {
   "type": "FeatureCollection",
   "features": [
@@ -503,58 +546,87 @@ pyroboreplay export mission.bag \
         "event_type": "collision_avoidance",
         "timestamp": 1234.56,
         "confidence": 0.94,
-        "description": "Obstacle detected, replanned path"
+        "description": "Obstacle detected, replanned path",
+        "sensor_data_url": "mission.bag#1234.56"  # Link back to raw data
       }
     }
   ]
 }
 ```
 
-**Robot Path (Vector):**
-```
-pyroboreplay export mission.bag \
-  --format shapefile \
-  --layer path \
-  --output robot_trajectory.shp
+**Robot Trajectory (Shapefile/GeoPackage):**
+```python
+trajectory = mission.robot_trajectory()
+trajectory.to_shapefile("path.shp")      # Line geometry with attributes
+trajectory.to_geopackage("mission.gpkg") # All layers in single file
 
-# Output: Shapefile with:
-#   Line: Actual robot path
-#   Attributes: timestamps, velocities, localization quality
+# Shapefile attributes: timestamp, velocity, localization_confidence, etc.
 ```
 
-### 4.3 QGIS Integration Workflow
+### 4.3 Programmatic QGIS Workflow
 
-**Scenario: Warehouse Operator Investigates Coverage Gap**
+**Use Case: Analyst Script for Batch Export**
 
+```python
+from pyroboreplay import Mission
+from pathlib import Path
+import geopandas as gpd
+
+# Process 100 missions into QGIS-ready layers
+mission_files = Path("warehouse_bags/").glob("*.bag")
+
+for bag_file in mission_files:
+    mission = Mission.from_ros_bag(bag_file)
+    
+    # Export all layers
+    mission.to_geotiff(f"analysis/{bag_file.stem}_coverage.tif")
+    mission.to_geojson(f"analysis/{bag_file.stem}_events.geojson")
+    mission.to_geopackage(f"analysis/{bag_file.stem}.gpkg")
+    
+    print(f"Exported {bag_file.stem}")
+
+# Then open any .gpkg file in QGIS:
+# File → Open → mission_042.gpkg
+# → All layers ready for analysis
 ```
-Step 1: Export mission
-  $ pyroboreplay export mission_042.bag --format all
 
-Step 2: Open QGIS
-  • Import coverage.tif as base layer
-  • Import failure_zones.gpkg as overlay
-  • Import robot_path.shp as trajectory
-  • Import events.geojson as markers
+**Use Case: Jupyter Notebook Analysis**
 
-Step 3: Analyze
-  • Zoom to coverage gap
-  • See: Robot avoided area due to localization uncertainty
-  • Click event marker at (10.2, 5.8)
-    • Shows: LiDAR scan + camera frame + planner decision at that moment
-  
-Step 4: Report
-  • Export map image
-  • Add notes
-  • Attach to ticket
-  • Reference exact timestamps/coordinates
+```python
+from pyroboreplay import Mission
+import folium
+import rasterio
+from rasterio.plot import show
+
+mission = Mission.from_ros_bag("mission_042.bag")
+
+# Create coverage map
+coverage = mission.compute_coverage_map()
+coverage.to_geotiff("coverage.tif")
+
+# Display in Jupyter
+with rasterio.open("coverage.tif") as src:
+    show(src)
+
+# Create interactive map
+m = folium.Map(location=[mission.start_lat, mission.start_lon], zoom_start=15)
+for event in mission.detected_failures():
+    folium.CircleMarker(
+        location=[event.lat, event.lon],
+        radius=5,
+        popup=event.description,
+        color='red'
+    ).add_to(m)
+m.save("mission_map.html")
 ```
 
 **Integration Points:**
 
-1. **Coordinate System**: All exports use mission's native CRS (GPS/UTM/custom)
-2. **Metadata**: Each layer includes mission metadata (date, robot, duration, version)
-3. **Styling**: Pre-built QGIS layer styles for common analysis types
-4. **Temporal**: Support QGIS temporal controller for animated playback
+1. **Coordinate System**: Library preserves mission's native CRS (GPS/UTM/custom), re-projects if needed
+2. **Metadata**: Each exported file includes mission metadata (robot_id, date, duration)
+3. **Programmatic Control**: Full Python API for custom layer creation, filtering, aggregation
+4. **Scalability**: Process 100+ missions in a loop; aggregate results into fleet-level maps
+5. **Notebook-Ready**: Works seamlessly in Jupyter with folium, geopandas, rasterio, matplotlib
 
 ---
 
