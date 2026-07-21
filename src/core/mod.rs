@@ -6,6 +6,7 @@ pub mod spatial_causality;
 pub mod pyterrain_bridge;
 pub mod coverage_evolution;
 pub mod multi_robot;
+pub mod root_cause;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -19,3 +20,4 @@ pub use spatial_causality::{
 pub use pyterrain_bridge::{PyTerrainBridge, TerrainKnowledgeGraph, Obstacle, TraversabilityZone, CoverageMap, CoverageEvolution};
 pub use coverage_evolution::{CoverageEvolutionAnalyzer, CoverageEvolutionQuery, CoverageSnapshot, CoverageGap, CoverageHotspot, CoverageEvolutionStats};
 pub use multi_robot::{MultiRobotCoordinationAnalyzer, CoordinationEvent, CommunicationLink, FleetSnapshot, RobotState, InterRobotCausalLink, CoordinationPattern, MultiRobotCoordinationStats};
+pub use root_cause::{RootCauseAnalyzer, RootCauseAnalysis, RootCauseHypothesis, FailureMode, DiagnosticStats};
