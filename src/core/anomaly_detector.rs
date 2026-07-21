@@ -93,7 +93,7 @@ impl AnomalyDetector {
     }
 
     /// Detect near-collision events (LiDAR minimum range threshold)
-    fn detect_near_collision(&self) -> Vec<Failure> {
+    pub fn detect_near_collision(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
 
         for event in &self.events {
@@ -139,7 +139,7 @@ impl AnomalyDetector {
     }
 
     /// Detect perception failures (low detection confidence)
-    fn detect_perception_failure(&self) -> Vec<Failure> {
+    pub fn detect_perception_failure(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
         let mut low_confidence_count = 0;
         let mut total_frames = 0;
@@ -189,7 +189,7 @@ impl AnomalyDetector {
     }
 
     /// Detect sensor dropout (sudden stop in data stream)
-    fn detect_sensor_dropout(&self) -> Vec<Failure> {
+    pub fn detect_sensor_dropout(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
         let mut sensor_last_seen: HashMap<String, DateTime<Utc>> = HashMap::new();
 
@@ -242,7 +242,7 @@ impl AnomalyDetector {
     }
 
     /// Detect communication loss (message dropout)
-    fn detect_communication_loss(&self) -> Vec<Failure> {
+    pub fn detect_communication_loss(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
         let mut message_timestamps = Vec::new();
 
@@ -295,7 +295,7 @@ impl AnomalyDetector {
     }
 
     /// Detect navigation deadlock (no progress despite replanning)
-    fn detect_navigation_deadlock(&self) -> Vec<Failure> {
+    pub fn detect_navigation_deadlock(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
         let mut decision_count = 0;
 
@@ -328,7 +328,7 @@ impl AnomalyDetector {
     }
 
     /// Detect localization loss (low pose confidence)
-    fn detect_localization_loss(&self) -> Vec<Failure> {
+    pub fn detect_localization_loss(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
 
         for event in &self.events {
@@ -361,7 +361,7 @@ impl AnomalyDetector {
     }
 
     /// Detect oscillation (robot moving back and forth)
-    fn detect_oscillation(&self) -> Vec<Failure> {
+    pub fn detect_oscillation(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
         let mut positions = Vec::new();
 
@@ -420,7 +420,7 @@ impl AnomalyDetector {
     }
 
     /// Detect costmap anomalies (sudden changes)
-    fn detect_costmap_anomaly(&self) -> Vec<Failure> {
+    pub fn detect_costmap_anomaly(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
         let mut prev_obstacle_count = 0;
 

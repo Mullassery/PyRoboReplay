@@ -46,4 +46,4 @@ pub use cross_mission::{
 pub use anomaly_detector::{Failure, AnomalyDetector};
 pub use explanation::ExplanationGenerator;
 pub use failure_actions::{Action, ActionRecommender};
-pub use geospatial_export::{GeospatialExporter, GeoJsonExport, CoverageRaster};
+pub use geospatial_export::{GeospatialExporter, GeoJsonExport, CoverageRaster, GeoHotspot};
