@@ -4,6 +4,7 @@ pub mod causality;
 pub mod correlation;
 pub mod spatial_causality;
 pub mod pyterrain_bridge;
+pub mod coverage_evolution;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -15,3 +16,4 @@ pub use spatial_causality::{
     SpatialCausalityAnalyzer, SpatialContext, SpatialCausalLink, SpatialCausalQuery, SpatialRegion, SpatialCausalStats,
 };
 pub use pyterrain_bridge::{PyTerrainBridge, TerrainKnowledgeGraph, Obstacle, TraversabilityZone, CoverageMap, CoverageEvolution};
+pub use coverage_evolution::{CoverageEvolutionAnalyzer, CoverageEvolutionQuery, CoverageSnapshot, CoverageGap, CoverageHotspot, CoverageEvolutionStats};
