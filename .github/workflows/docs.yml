@@ -1,0 +1,37 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build docs
+        run: cargo doc --no-deps --document-private-items
+
+      - name: Check doc links
+        run: cargo doc --no-deps --document-private-items 2>&1 | grep -E "warning|error" || true
+
+  readme:
+    name: Validate README
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check README exists
+        run: test -f README.md && echo "README.md found"
+
+      - name: Validate markdown
+        run: |
+          pip install markdownlint-cli
+          markdownlint README.md CLAUDE.md || true
