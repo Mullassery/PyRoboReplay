@@ -15,6 +15,7 @@ pub mod sensor;
 pub mod system;
 pub mod environmental;
 pub mod coordination;
+pub mod telemetry;
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
