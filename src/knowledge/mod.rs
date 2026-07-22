@@ -20,6 +20,8 @@ pub mod change_detection;
 pub mod longitudinal_reasoning;
 pub mod spatial_grounding;
 pub mod multi_mission_learning;
+pub mod terrain_integration;
+pub mod fleet_terrain_learning;
 
 pub use world_model::{WorldState, Entity, Location, Observation};
 pub use knowledge_graph::KnowledgeGraph;
@@ -28,3 +30,5 @@ pub use change_detection::ChangeDetector;
 pub use longitudinal_reasoning::LongitudinalAnalyzer;
 pub use spatial_grounding::{SpatialCoordinates, GroundedEntity, SpatialTemporalTrend, SpatialGroundingEngine};
 pub use multi_mission_learning::{MissionContext, MissionTrace, LearningProgression, MultiMissionLearner};
+pub use terrain_integration::{TerrainZone, TerrainObstacle, EntityTerrainContext, TerrainIntegrationEngine};
+pub use fleet_terrain_learning::{RobotTraversabilityObservation, TerrainConsensus, FleetTerrainModel, RobotProfile};
