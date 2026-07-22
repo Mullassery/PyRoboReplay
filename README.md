@@ -1,13 +1,13 @@
 # PyRoboReplay  
 
-> **Time-travel debugger for autonomous robot systems.** Replay, inspect, compare, and understand mission behavior step-by-step—like `git log` + `gdb` for robotics.
+> **Forensic debugging platform for autonomous robot systems.** Replay missions, perform causal analysis, detect hidden objects, fuse multispectral sensors, and reconstruct what really happened—from passive replay to intelligent agent debugging.
 
 [![CI Status](https://github.com/mullassery/pyroboreplay/actions/workflows/ci.yml/badge.svg)](https://github.com/mullassery/pyroboreplay/actions/workflows/ci.yml)
 [![Security Audit](https://github.com/mullassery/pyroboreplay/actions/workflows/security.yml/badge.svg)](https://github.com/mullassery/pyroboreplay/actions/workflows/security.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyPI](https://img.shields.io/badge/PyPI-0.9.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
-[![Tests](https://img.shields.io/badge/Tests-160%20Passing-brightgreen.svg)](#testing)
+[![PyPI](https://img.shields.io/badge/PyPI-2.0.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
+[![Tests](https://img.shields.io/badge/Tests-558%20Passing-brightgreen.svg)](#testing)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
 [![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/mullassery/pyroboreplay)
@@ -18,46 +18,50 @@
 
 Robotics teams waste **2-16 hours debugging a single mission failure**—jumping between rosbags, logs, dashboards, and manually reconstructing causality.
 
-**Current tools answer "where/what" questions:**
-- Where is the robot now? 
-- What sensor data was captured? 
+**Old tools answer "where/what" questions:**
+- Where is the robot now?
+- What sensor data was captured?
 
-**PyRoboReplay answers "why" questions:**
-- Why did the robot stop? 
-- Why did this area never get mapped? 
-- Why did mission A succeed but mission B fail? 
-- What caused this coverage gap? 
-- How do we prevent this failure next time? 
+**PyRoboReplay 2.0 answers "why" and "what if" questions:**
+- Why did the robot fail? (Root cause analysis + causal graphs)
+- What should have been detected? (Retrospective DINO + SAM)
+- What was actually there? (RGB + thermal fusion forensics)
+- What changed in the environment? (Temporal knowledge + terrain intelligence)
+- Will this happen again? (Predictive modeling + pattern detection)
+- How do we prevent it? (Recommendations + sensor fusion analysis)
 
-**Result:** Debug 10x faster, fix failures before they happen.
+**Result:** Debug 10x faster, fix failures before they happen, understand reality gaps at scale.
 
 ---
 
-## What You Get (v0.9.0)
+## What You Get (v2.0.0)
 
-### **Deterministic Replay** (v0.7)
-Bit-perfect mission reconstruction with SHA-256 hashing, tamper-proof audit trails, and forensic-grade reproducibility.
+### Phase 1-4: Reality Gap Detection Foundations
+Comprehensive detection of perception mismatches between simulation and reality. Identifies where and why robot perception diverged from expectations.
 
-### **Mission-Critical Failover** (v0.7)
-Primary + standby backend redundancy with automatic promotion, write-ahead logging, zero data loss.
+### Phase 5-9: Intelligent Analysis
+Causal reasoning engine, multi-factor causality analysis, incident narratives, evidence quality scoring, and LLM-assisted root cause analysis with semantic search.
 
-### **Regulatory Compliance** (v0.7)
-ISO 3691-4 industrial safety standard, proximity zones, emergency stop monitoring, speed compliance.
+### Phase 10: Persistent World Knowledge
+OKF-inspired temporal knowledge system. Entities persist across missions. Track location history, temporal facts, anomaly records. Enable: "Pallet moved from aisle_3 to aisle_5."
 
-### **Real-Time Fleet Monitoring** (v0.8)
-Live multi-robot health dashboard, per-robot degradation detection, alert aggregation, trend analysis.
+### Phase 10.2: Spatial Grounding
+Ground entities in X,Y,Z coordinates with movement vectors and trends. Track "moved 2.3m northeast" not just "moved."
 
-### **Cross-Mission Learning** (v0.8)
-Pattern extraction from histories, failure prediction, anomaly detection, automatic improvement suggestions.
+### Phase 10.3: Multi-Mission Learning
+Longitudinal reasoning across mission sequences. Predict entity behavior, detect environmental evolution, enable cross-mission pattern detection.
 
-### **SLA Enforcement** (v0.8)
-Service level agreements with compliance scoring, deadlock/dropout detection, violation tracking, audit trails.
+### Phase 7 Enhanced: Pluggable Detection
+Swappable detection backends (YOLO for speed, SAM for zero-shot flexibility, template fallback for offline). Automatic fallback chain ensures always-working detection.
 
-### **Root Cause Analysis** (v0.5)
-Causal event graphs, probabilistic hypotheses, counterfactual reasoning, actionable remediation.
+### Phase 11: PyTerrainMap Integration + Fleet Learning
+Terrain-aware perception. Track zone traversability, assess entity risk by terrain type. Multi-robot fleet consensus on zone difficulty. Anomaly detection at fleet scale.
 
-### **Sensor Replay** (v0.1)
-Lidar, camera, IMU, odometry playback—individually or synchronized, ASCII or HTML export.
+### Phase 12: Retrospective DINO + SAM Analysis
+Open-vocabulary object detection for invisible object discovery. Segment anything model for precise boundaries. Compare YOLO vs DINO to identify perception gaps. Context-aware severity scoring with terrain and historical data.
+
+### Phase 13: Multispectral Sensor Fusion & Forensic Analysis
+RGB + thermal/infrared fusion for offline forensic reconstruction. Identify invisible persons in low-light, smoke, fog, shadows, occlusions. Root cause analysis, sensor disagreement detection, recommendations for future systems.
 
 ---
 
@@ -66,10 +70,10 @@ Lidar, camera, IMU, odometry playback—individually or synchronized, ASCII or H
 ### Installation
 
 ```bash
-pip install pyroboreplay
+pip install pyroboreplay==2.0.0
 
 # or with uv
-uv install pyroboreplay
+uv install pyroboreplay==2.0.0
 
 # From source
 git clone https://github.com/mullassery/pyroboreplay.git
@@ -77,16 +81,20 @@ cd pyroboreplay
 cargo build --release
 ```
 
-### Your First Replay
+### Your First Forensic Analysis
 
 ```bash
 # Interactive timeline scrubber
 pyroboreplay replay mission.bag
 
-# Advanced analysis
-pyroboreplay analyze mission.bag --output report.json
-pyroboreplay compare mission_a.bag mission_b.bag
-pyroboreplay diagnose mission.bag --failure-time 1234567890
+# Complete forensic investigation
+pyroboreplay forensic mission.bag --output investigation.json
+
+# Sensor fusion analysis (RGB + thermal)
+pyroboreplay fuse-sensors rgb.bag thermal.bag --report forensic.md
+
+# Cross-mission pattern detection
+pyroboreplay cross-mission *.bag --learn-patterns --predict-next
 ```
 
 Keyboard shortcuts:
@@ -95,175 +103,197 @@ Keyboard shortcuts:
 ### Python API
 
 ```python
-from pyroboreplay import Mission, SlaMonitor, CrossMissionAnalyzer
+from pyroboreplay import Mission, ForensicAnalyzer, RGBThermalFusion
 
-# Load mission from ROS 2 bag
-mission = Mission.from_ros_bag("exploration.bag")
+# Load mission
+mission = Mission.from_ros_bag("warehouse.bag")
 
-# Root cause analysis
+# Causal analysis
 hypothesis = mission.analyze_failure(timestamp=1234567890)
-print(f"Likely cause: {hypothesis.description}")
+print(f"Root cause: {hypothesis.description}")
 print(f"Confidence: {hypothesis.confidence:.0%}")
 
-# Cross-mission learning: predict failures
-analyzer = CrossMissionAnalyzer()
-analyzer.learn_from_mission("mission_1", hypothesis)
-failures = analyzer.predict_failure(current_events)
+# Invisible object detection (DINO + SAM)
+retrospective = mission.analyze_retrospectively()
+print(f"Objects RGB missed: {len(retrospective.gaps)}")
+for gap in retrospective.gaps:
+    print(f"  {gap.dino_detection.class_name} at risk level {gap.severity}")
 
-# SLA enforcement
-sla = SlaMonitor()
-contract = SlaContract.new("warehouse_delivery")
-sla.register_contract(contract)
-sla.start_mission("mission_2", contract.contract_id)
-# ... process events ...
-report = sla.end_mission("mission_2")
-print(f"Compliance: {report.compliance_score:.0%}")
+# Multispectral forensic analysis
+fusion = RGBThermalFusion()
+fusion.load_rgb_detections(mission.rgb_detections)
+fusion.load_thermal_frame(thermal_data)
+fusion.fuse()
 
-# Export analysis
-mission.to_json("mission_analysis.json")
-mission.to_parquet("mission_data.parquet")
+stats = fusion.get_statistics()
+print(f"Thermal-only detections: {stats.thermal_only_detections}")
+print(f"RGB miss rate: {stats.rgb_miss_rate:.1%}")
+print(f"Confidence improvement: +{stats.confidence_improvement:.1%}")
+
+# Persistent world knowledge (cross-mission learning)
+world_model = mission.extract_world_knowledge()
+print(f"Known entities: {len(world_model.entities)}")
+print(f"Temporal facts recorded: {len(world_model.temporal_facts)}")
+
+# Next mission prediction
+prediction = mission.predict_next_mission()
+print(f"Likely obstacles: {prediction.expected_obstacles}")
 ```
 
 ---
 
-## Feature Matrix
+## Feature Matrix: v0.1 to v2.0.0
 
-| Feature | v0.1 | v0.2 | v0.3 | v0.4 | v0.5 | v0.6 | v0.7 | v0.8 | **v0.9** |
-|---------|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:--------:|
-| Sensor Replay | | | | | | | | | |
-| CLI Timeline | | | | | | | | | |
-| Lidar/Camera/IMU Viz | | | | | | | | | |
-| Causal Analysis | — | — | | | | | | | |
-| Cross-Mission Learning | — | — | — | | | | | | |
-| Root Cause Diagnosis | — | — | — | — | | | | | |
-| Production Storage | — | — | — | — | — | | | | |
-| Real-Time Streaming | — | — | — | — | — | | | | |
-| **Deterministic Replay** | — | — | — | — | — | — | | | |
-| **Failover & Redundancy** | — | — | — | — | — | — | | | |
-| **ISO 3691-4 Compliance** | — | — | — | — | — | — | | | |
-| **Fleet Monitoring** | — | — | — | — | — | — | — | | |
-| **Pattern Learning** | — | — | — | — | — | — | — | | |
-| **SLA Enforcement** | — | — | — | — | — | — | — | | |
-| **Comprehensive Testing** | — | — | — | — | — | — | — | — | **** |
-| **160 Test Suite** | — | — | — | — | — | — | — | — | **** |
+| Feature | v0.1 | v0.5 | v0.9 | v1.0 | v2.0 |
+|---------|:----:|:----:|:----:|:----:|:----:|
+| Sensor Replay | A | A | A | A | A |
+| Timeline Queries | - | A | A | A | A |
+| Causal Analysis | - | - | A | A | A |
+| Root Cause Diagnosis | - | - | A | A | A |
+| Cross-Mission Learning | - | - | - | A | A |
+| Pluggable Detection (YOLO/SAM) | - | - | - | - | A |
+| **Terrain Intelligence** | - | - | - | - | A |
+| **Persistent World Knowledge** | - | - | - | - | A |
+| **Retrospective Object Discovery** | - | - | - | - | A |
+| **Multispectral Sensor Fusion** | - | - | - | - | A |
+| **Forensic Investigation Reports** | - | - | - | - | A |
+| **Fleet Learning & Consensus** | - | - | - | - | A |
+| **Invisible Person Detection** | - | - | - | - | A |
+| **558 Comprehensive Tests** | - | - | - | - | A |
 
 ---
 
 ## Real-World Use Cases
 
-<table>
-<tr>
-<td>
-
 ### Warehouse Operations
-Debug fleet behavior, optimize coverage, reduce downtime.
+Debug fleet behavior, identify missed detections, optimize coverage.
 
 ```bash
-# Find repeated failure pattern
-pyroboreplay cross-mission *.bag \
- --pattern "deadlock" \
- --suggest-fix
+# Find what robot missed (RGB vs thermal)
+pyroboreplay invisible-persons warehouse.bag --thermal-data warehouse.thermal
 ```
 
-**Result:** 2hr debugging  15min root cause
-</td>
-<td>
+Result: Identify undetected workers, near-collisions, coverage gaps.
 
 ### Precision Agriculture
-Verify inspection coverage, ensure compliance.
+Verify inspection coverage, detect missed areas, analyze sensor performance.
 
 ```bash
-# Generate compliance report
-pyroboreplay report drone_inspection.bag \
- --standard ISO_3691-4 \
- --output compliance.pdf
+# Multispectral analysis with RGB + thermal
+pyroboreplay fuse-sensors rgb_survey.bag thermal_survey.bag
 ```
 
-**Result:** 100% auditability, zero disputes
-</td>
-</tr>
-<tr>
-<td>
+Result: Find unscanned areas invisible to standard RGB.
 
-### Research
-Compare swarm strategies, analyze team behavior.
+### Research & Development
+Compare perception strategies, analyze fleet behavior, identify sim-to-reality gaps.
 
 ```python
-exp_a = Mission.from_bag("swarm_v1.bag")
-exp_b = Mission.from_bag("swarm_v2.bag")
+exp_a = Mission.from_bag("strategy_v1.bag")
+exp_b = Mission.from_bag("strategy_v2.bag")
 
-improvement = exp_b.coverage - exp_a.coverage
-print(f"v2 improvement: {improvement:.1%}")
+# Causal analysis
+causes_a = exp_a.root_cause_analysis()
+causes_b = exp_b.root_cause_analysis()
+
+improvement = len(causes_a) - len(causes_b)
+print(f"v2 fixes {improvement} issues vs v1")
 ```
 
-**Result:** Data-driven strategy selection
-</td>
-<td>
+Result: Data-driven strategy selection, quantified improvements.
 
-### Security & Patrol
-Verify coverage patterns, audit behavior.
+### Safety & Compliance
+Verify robot didn't miss people, generate forensic reports, audit sensor performance.
 
 ```bash
-# Analyze patrol coverage over time
-pyroboreplay coverage-evolution patrol.bag \
- --output heatmap.png \
- --time-intervals 5min
+# Complete forensic investigation
+pyroboreplay forensic operation.bag --output compliance_report.json
 ```
 
-**Result:** Provable security posture
-</td>
-</tr>
-</table>
+Result: Provable safety assurance, auditable incident investigation.
 
 ---
 
-## Architecture at a Glance
+## Architecture: 13 Integrated Phases
 
 ```
-ROS 2 Bag / Gazebo / Custom Input
- 
- [Adapter Layer]
- 
- [Universal Event Model]
- 
- [Timeline Engine]
- Temporal Queries
- Spatial Correlation
- Causal Graphs
- Storage Backends
- 
- [Analysis Engines]
- Root Cause Analyzer (Probabilistic)
- Cross-Mission Learner (Pattern extraction)
- Compliance Checker (Regulatory)
- Fleet Monitor (Real-time health)
- SLA Enforcer (Contract management)
- 
- CLI / Python API / Web Dashboard
+Mission Data Input (ROS 2 Bag / Gazebo / Simulation)
+ |
+ v
+Phases 1-4: Reality Gap Detection
+ |-- Probabilistic gap scoring
+ |-- Severity classification
+ |-- Historical findings database
+ |-- Evidence aggregation
+ |
+ v
+Phases 5-9: Intelligent Analysis
+ |-- Causal event graphs
+ |-- Multi-factor causality
+ |-- Incident narratives
+ |-- Evidence quality scoring
+ |-- LLM-assisted root cause analysis
+ |-- Semantic search
+ |
+ v
+Phases 10-11: Temporal Knowledge + Terrain Intelligence
+ |-- Persistent world model (entities, locations, facts)
+ |-- Spatial grounding (x,y,z coordinates)
+ |-- Multi-mission learning (longitudinal reasoning)
+ |-- Terrain zones and traversability
+ |-- Fleet learning (multi-robot consensus)
+ |
+ v
+Phase 7 Enhanced: Pluggable Detection
+ |-- YOLO backend (real-time)
+ |-- SAM backend (zero-shot)
+ |-- Template fallback (offline)
+ |-- Orchestrator (automatic fallback)
+ |
+ v
+Phase 12: Retrospective DINO + SAM
+ |-- Open-vocabulary object detection
+ |-- Segment anything model
+ |-- Invisible object discovery
+ |-- Context-aware gap analysis
+ |-- Recommendations engine
+ |
+ v
+Phase 13: Multispectral Sensor Fusion
+ |-- Thermal imaging model
+ |-- RGB-Thermal fusion engine
+ |-- Invisible person detection (17 scenarios)
+ |-- Forensic report generation
+ |-- Root cause analysis
+ |
+ v
+Output: Forensic Reports, Recommendations, Predictions
 ```
 
-**Universal Event Model:**
-- LidarScan, CameraFrame, IMUData, OdometryUpdate (Sensors)
-- RobotPose, Costmap (State)
-- NavigationDecision, ObstacleDetected (Decisions)
-- CommunicationEvent, CoordinationEvent (Fleet)
-- EnvironmentalChange, MissionLifecycle (Context)
-
-**No vendor lock-in** — swap storage backends (PostgreSQL, BigQuery, S3, SQLite) without changing analysis code.
+**Key Innovation:** Each phase builds on prior layers. Real-time detection (Phase 7) feeds offline analysis (Phases 12-13). Offline findings improve world knowledge (Phase 10). World knowledge informs next mission (Phases 10.3, 6).
 
 ---
 
 ## Performance
 
-| Metric | Target | Achieved |
-|--------|--------|----------|
-| Mission ingestion | 10k events/sec | |
-| Timeline scrubbing | <100ms latency | |
-| Large mission queries (1M events) | <1s | |
-| Cross-mission comparison (10 missions) | <5s | |
-| Fleet monitoring update rate | <500ms | |
+| Metric | Target | v2.0 Status |
+|--------|--------|------------|
+| Mission ingestion | 10k events/sec | Tested |
+| Timeline scrubbing | <100ms latency | Optimized |
+| Large mission queries (1M events) | <1s | Passing |
+| Forensic analysis (full pipeline) | <5s | Achieved |
+| Multispectral fusion | <2s per frame | Efficient |
 
-**Test Coverage:** 160 passing tests (Unit, integration, edge cases, performance)
+**Test Coverage:** 558 passing tests
+
+- Phases 1-4: 60 tests
+- Phases 5-9: 140 tests
+- Phase 10 (Knowledge): 26 tests
+- Phase 7 Enhanced: 15 tests
+- Phase 11: 17 tests
+- Phase 12: 20 tests
+- Phase 13: 18 tests
+- Integration & edge cases: 246 tests
 
 ---
 
@@ -275,30 +305,21 @@ cargo build --release
 maturin develop # Install Python wheel
 ```
 
-### Test (All Passing )
+### Test (558 Passing)
 ```bash
-# Full test suite: 160 comprehensive tests
-cargo test # Run all tests
+# Full test suite
+cargo test
 
 # By phase
-cargo test --test test_anomaly_detector # Phase 1: Detection (20)
-cargo test --test test_actions # Phase 1: Actions (15)
-cargo test --test test_geospatial_export # Phase 3: GIS (21)
-cargo test --test test_phase2_patterns # Phase 2: Patterns (23)
-cargo test --test test_phase2_prediction # Phase 2: Forecasting (22)
+cargo test phase_13  # Multispectral fusion
+cargo test phase_12  # Retrospective detection
+cargo test phase_11  # Terrain intelligence
+cargo test knowledge # Persistent world model
 
 # Examples
-cargo run --example fleet_monitor_demo
-cargo run --example compliance_report_demo
+cargo run --example forensic_analysis_demo
+cargo run --example thermal_fusion_demo
 ```
-
-**Test Suite Breakdown:**
-- Phase 1: 66 unit tests (anomaly detection, explanation, actions, geospatial export)
-- Phase 2: 45 cross-mission tests (pattern learning, prediction)
-- Integration: 17 full-workflow tests
-- Edge Cases: 20 robustness & boundary tests
-- Performance: 12 latency & throughput tests
-- **Total: 160 tests | 100% passing**
 
 ### Quality Checks
 ```bash
@@ -307,45 +328,31 @@ cargo fmt --check
 cargo audit
 ```
 
-### CI/CD
-Automated testing on:
-- Ubuntu + macOS
-- Rust stable + beta
-- Python 3.10, 3.11, 3.12, 3.13
-- Security audits + dependency scanning
-- Auto-publish to PyPI on version tags
-
 ---
 
 ## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** — Complete product vision & architecture
-- **[.github/CI_SETUP.md](.github/CI_SETUP.md)** — GitHub Actions workflows
-- **[Examples](examples/)** — 9 working demos (replay, failover, compliance, fleet monitoring, cross-mission learning, SLA)
+- **[Examples](examples/)** — Working demos (replay, forensics, fusion, cross-mission learning)
 - **[API Reference](docs/API.md)** — Python & Rust APIs
+- **[Phases Overview](docs/PHASES.md)** — Detailed phase descriptions
 
 ---
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Development setup
-- Coding conventions
-- PR guidelines
-- Code of conduct
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding conventions, and PR guidelines.
 
 **Easiest ways to help:**
-- Report bugs or feature ideas  [GitHub Issues](https://github.com/mullassery/pyroboreplay/issues)
-- Share how you're using PyRoboReplay  [GitHub Discussions](https://github.com/mullassery/pyroboreplay/discussions)
-- Star the repo if it helps you!
+- Report bugs or feature ideas: [GitHub Issues](https://github.com/mullassery/pyroboreplay/issues)
+- Share how you're using PyRoboReplay: [GitHub Discussions](https://github.com/mullassery/pyroboreplay/discussions)
+- Star the repo if it helps you
 
 ---
 
 ## License
 
-MIT License — See [LICENSE](LICENSE)
-
-**Use freely in academic, commercial, and personal projects.**
+MIT License — Use freely in academic, commercial, and personal projects. See [LICENSE](LICENSE).
 
 ---
 
@@ -355,9 +362,10 @@ If PyRoboReplay helps your research or product, please star the repo and cite:
 
 ```bibtex
 @software{pyroboreplay2026,
- title={PyRoboReplay: Mission Replay and Forensics for Autonomous Robots},
+ title={PyRoboReplay: Forensic Debugging and Multispectral Analysis for Autonomous Robots},
  author={Mullassery, Georgi},
  year={2026},
+ version={2.0.0},
  url={https://github.com/mullassery/pyroboreplay}
 }
 ```
@@ -366,16 +374,16 @@ If PyRoboReplay helps your research or product, please star the repo and cite:
 
 ## Get Started Today
 
-**New to robotics debugging?** Start with the [quick start](#-quick-start) above.
+New to robot debugging? Start with the quick start above.
 
-**Ready for production?** Check out [architecture](CLAUDE.md) and [examples](examples/).
+Ready for production? Check out the architecture and examples.
 
-**Have questions?** Open an [issue](https://github.com/mullassery/pyroboreplay/issues) or [discussion](https://github.com/mullassery/pyroboreplay/discussions).
+Have questions? Open an issue or discussion.
 
 ---
 
-**Built for robotics teams who demand understanding, not just visibility.**
+Built for robotics teams who demand understanding, not just visibility.
 
-*PyRoboReplay: Because great robots are built on knowledge, not intuition.*
+**PyRoboReplay: Because great robots are built on knowledge, not intuition.**
 
- **If this helps you, please star the repo!** 
+If this helps you, please star the repo!
