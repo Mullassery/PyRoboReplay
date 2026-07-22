@@ -33,6 +33,9 @@ pub mod multi_factor_causality;
 pub mod incident_narrative;
 pub mod evidence_quality_scoring;
 pub mod gap_narrative_pipeline;
+pub mod fleet_learning;
+pub mod predictive_gaps;
+pub mod adaptive_recalibration;
 mod phase3_validation;
 mod phase4_integration;
 
