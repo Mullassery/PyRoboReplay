@@ -3,6 +3,7 @@ pub mod core;
 pub mod cli;
 pub mod storage;
 pub mod streaming;
+pub mod analyzers;
 
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
