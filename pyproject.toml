@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "0.9.0"
-description = "Production-grade observability platform for autonomous robots. Mission replay, root-cause analysis, failure prediction, fleet monitoring, SLA enforcement, and geospatial export. 160 comprehensive tests, Phase 1-2 complete."
+version = "1.0.0"
+description = "Production-grade Reality Gap Detection platform for autonomous robots. Detects sim-to-real phenomena, learns from feedback, adapts per-robot-type, predicts failures. 407 comprehensive tests, Phase 1-4 complete."
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
