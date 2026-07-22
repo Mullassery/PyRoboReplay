@@ -7,6 +7,7 @@ pub mod imu_viz;
 pub mod sensor_stats;
 pub mod keyboard;
 pub mod causal_viz;
+pub mod gap_analysis;
 
 use args::{Cli, Commands};
 use clap::Parser;
@@ -79,13 +80,70 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             println!("Multi-mission comparison coming in v0.4");
         }
 
-        Commands::Analyze { bag_file, json: output_json } => {
+        Commands::Analyze {
+            bag_file,
+            detect_gaps,
+            format: output_format,
+            output: output_file,
+            detail,
+            json: output_json
+        } => {
             tracing::info!("Analyzing: {}", bag_file);
             let adapter = Ros2Adapter::new();
             let mission = adapter.read(&bag_file)?;
 
-            if output_json {
-                // Output as JSON for AI-agent integration
+            // Handle gap detection if requested
+            if detect_gaps {
+                use crate::analyzers::{
+                    MissionAnalysisData, RealityGapDetector, ControlMessage, JointState,
+                    OdometryMessage, CameraFrame, LidarScan, IMUMeasurement, EncoderReading,
+                    MotorCurrent, ThermalReading, BatteryReading, DetectionResult, PerceptionError,
+                    MessageTimestamp
+                };
+                use gap_analysis::GapFormatter;
+
+                tracing::info!("Detecting reality gaps...");
+
+                // Convert mission to analysis data (simplified - normally would populate all fields)
+                let analysis_data = MissionAnalysisData {
+                    mission_id: mission.id.to_string(),
+                    duration_sec: mission.duration().map(|d| d.num_seconds() as f32).unwrap_or(0.0),
+                    robot_type: "unknown".to_string(),
+                    control_messages: Vec::new(),
+                    joint_states: Vec::new(),
+                    odometry_messages: Vec::new(),
+                    camera_frames: Vec::new(),
+                    lidar_scans: Vec::new(),
+                    imu_measurements: Vec::new(),
+                    encoder_data: Vec::new(),
+                    motor_currents: Vec::new(),
+                    thermal_readings: Vec::new(),
+                    battery_data: Vec::new(),
+                    detection_results: Vec::new(),
+                    perception_errors: Vec::new(),
+                    message_timestamps: Vec::new(),
+                };
+
+                let detector = RealityGapDetector::new();
+                let findings = detector.analyze_mission(&analysis_data);
+
+                // Format output
+                let formatter = GapFormatter::new(detail);
+                let output_text = match output_format.as_str() {
+                    "json" => formatter.format_json(&findings).to_string(),
+                    "html" => formatter.format_html(&findings, &mission.id.to_string()),
+                    _ => formatter.format_text(&findings),
+                };
+
+                // Save or print
+                if let Some(path) = output_file {
+                    std::fs::write(&path, &output_text)?;
+                    println!("✅ Gap analysis saved to: {}", path);
+                } else {
+                    println!("{}", output_text);
+                }
+            } else if output_json || output_format == "json" {
+                // Legacy: output mission analysis as JSON
                 let analysis = MissionAnalysisJson::from_mission(&mission);
                 let response = JsonResponse::success(analysis);
                 println!("{}", serde_json::to_string_pretty(&response)?);

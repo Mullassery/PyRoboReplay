@@ -60,7 +60,23 @@ pub enum Commands {
         #[arg(value_name = "BAG_FILE")]
         bag_file: String,
 
-        /// Output as JSON (for AI-agent integration)
+        /// Detect reality gaps (sim-to-real issues)
+        #[arg(long)]
+        detect_gaps: bool,
+
+        /// Output format: json, text, or html
+        #[arg(long, default_value = "text")]
+        format: String,
+
+        /// Save results to file
+        #[arg(long, value_name = "OUTPUT_FILE")]
+        output: Option<String>,
+
+        /// Show detailed findings (not just summary)
+        #[arg(long)]
+        detail: bool,
+
+        /// Output as JSON (for AI-agent integration) [DEPRECATED: use --format json]
         #[arg(long)]
         json: bool,
     },
