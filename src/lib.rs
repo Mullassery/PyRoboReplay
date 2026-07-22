@@ -8,6 +8,7 @@ pub mod perception;
 pub mod intelligence;
 pub mod reasoning;
 pub mod knowledge;
+pub mod fusion;
 
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
