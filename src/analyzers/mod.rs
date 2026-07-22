@@ -28,6 +28,11 @@ pub mod robot_calibration;
 pub mod severity_contracts;
 pub mod drift_detection;
 pub mod quality_confidence;
+pub mod gap_to_causal;
+pub mod multi_factor_causality;
+pub mod incident_narrative;
+pub mod evidence_quality_scoring;
+pub mod gap_narrative_pipeline;
 mod phase3_validation;
 mod phase4_integration;
 
