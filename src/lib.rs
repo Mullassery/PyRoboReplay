@@ -6,6 +6,7 @@ pub mod streaming;
 pub mod analyzers;
 pub mod perception;
 pub mod intelligence;
+pub mod reasoning;
 
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
