@@ -21,6 +21,15 @@ pub mod validation;
 pub mod scoring;
 pub mod severity;
 pub mod historical;
+pub mod aggregation;
+pub mod feedback_loop;
+pub mod recalibration;
+pub mod robot_calibration;
+pub mod severity_contracts;
+pub mod drift_detection;
+pub mod quality_confidence;
+mod phase3_validation;
+mod phase4_integration;
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};

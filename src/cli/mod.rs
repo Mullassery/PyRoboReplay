@@ -8,6 +8,8 @@ pub mod sensor_stats;
 pub mod keyboard;
 pub mod causal_viz;
 pub mod gap_analysis;
+pub mod consolidated_output;
+mod tests_consolidation_integration;
 
 use args::{Cli, Commands};
 use clap::Parser;
