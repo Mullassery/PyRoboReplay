@@ -16,6 +16,8 @@ pub mod system;
 pub mod environmental;
 pub mod coordination;
 pub mod telemetry;
+pub mod test_data;
+pub mod validation;
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
