@@ -20,6 +20,7 @@ pub mod test_data;
 pub mod validation;
 pub mod scoring;
 pub mod severity;
+pub mod historical;
 
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
