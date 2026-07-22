@@ -387,6 +387,11 @@ impl WorldModelManager {
             .get(env_id)
             .and_then(|w| w.locations.get(location_id))
     }
+
+    /// Get environment state (read-only)
+    pub fn get_environment(&self, env_id: &str) -> Option<&WorldState> {
+        self.states.get(env_id)
+    }
 }
 
 impl Default for WorldModelManager {

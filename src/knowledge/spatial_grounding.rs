@@ -260,7 +260,7 @@ impl SpatialGroundingEngine {
         coordinates: SpatialCoordinates,
         confidence: f32,
     ) {
-        let mut grounded = self
+        let grounded = self
             .entities
             .entry(entity_id.to_string())
             .or_insert_with(|| GroundedEntity {

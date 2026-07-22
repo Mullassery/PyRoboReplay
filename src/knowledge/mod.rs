@@ -19,6 +19,7 @@ pub mod temporal_analysis;
 pub mod change_detection;
 pub mod longitudinal_reasoning;
 pub mod spatial_grounding;
+pub mod multi_mission_learning;
 
 pub use world_model::{WorldState, Entity, Location, Observation};
 pub use knowledge_graph::KnowledgeGraph;
@@ -26,3 +27,4 @@ pub use temporal_analysis::TemporalAnalyzer;
 pub use change_detection::ChangeDetector;
 pub use longitudinal_reasoning::LongitudinalAnalyzer;
 pub use spatial_grounding::{SpatialCoordinates, GroundedEntity, SpatialTemporalTrend, SpatialGroundingEngine};
+pub use multi_mission_learning::{MissionContext, MissionTrace, LearningProgression, MultiMissionLearner};
