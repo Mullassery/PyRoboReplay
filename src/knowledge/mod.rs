@@ -18,9 +18,11 @@ pub mod knowledge_graph;
 pub mod temporal_analysis;
 pub mod change_detection;
 pub mod longitudinal_reasoning;
+pub mod spatial_grounding;
 
 pub use world_model::{WorldState, Entity, Location, Observation};
 pub use knowledge_graph::KnowledgeGraph;
 pub use temporal_analysis::TemporalAnalyzer;
 pub use change_detection::ChangeDetector;
 pub use longitudinal_reasoning::LongitudinalAnalyzer;
+pub use spatial_grounding::{SpatialCoordinates, GroundedEntity, SpatialTemporalTrend, SpatialGroundingEngine};
