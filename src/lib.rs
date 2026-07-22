@@ -5,6 +5,7 @@ pub mod storage;
 pub mod streaming;
 pub mod analyzers;
 pub mod perception;
+pub mod intelligence;
 
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
