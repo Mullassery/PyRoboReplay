@@ -382,14 +382,14 @@ mod tests {
     fn test_oom_kill_detection() {
         let adapter = LinuxLogAdapter::new();
         let message = "Out of memory: Kill process 2341 (nav_stack)";
-        assert_eq!(adapter.detect_kernel_event(message), Some(&"oom_kill"));
+        assert_eq!(adapter.detect_kernel_event(message), Some("oom_kill"));
     }
 
     #[test]
     fn test_usb_disconnect_detection() {
         let adapter = LinuxLogAdapter::new();
         let message = "usb 1-1: USB disconnect, device number 2";
-        assert_eq!(adapter.detect_kernel_event(message), Some(&"usb_disconnect"));
+        assert_eq!(adapter.detect_kernel_event(message), Some("usb_disconnect"));
     }
 
     #[test]

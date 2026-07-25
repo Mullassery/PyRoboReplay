@@ -21,6 +21,7 @@ pub mod incident_bundle;
 pub mod evidence_discovery;
 pub mod timeline_correlation;
 pub mod failure_detection;
+pub mod confidence_scoring;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -63,4 +64,7 @@ pub use failure_detection::{
     FailureDetectionEngine, DetectedFailure, FailureDomain, FailureSeverity,
     NavigationFailureDetector, LocalizationFailureDetector, PerceptionFailureDetector,
     MiddlewareFailureDetector, SystemFailureDetector,
+};
+pub use confidence_scoring::{
+    ConfidenceScoringEngine, ConfidenceChain, ConfidenceTier, EvidenceItem,
 };
