@@ -19,6 +19,7 @@ pub mod failure_actions;
 pub mod geospatial_export;
 pub mod incident_bundle;
 pub mod evidence_discovery;
+pub mod timeline_correlation;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -54,3 +55,6 @@ pub use incident_bundle::{
     TimeRange, BundleError,
 };
 pub use evidence_discovery::EvidenceDiscovery;
+pub use timeline_correlation::{
+    TimelineCorrelationEngine, NormalizedEvent, ClockSyncState,
+};
