@@ -22,6 +22,7 @@ pub mod evidence_discovery;
 pub mod timeline_correlation;
 pub mod failure_detection;
 pub mod confidence_scoring;
+pub mod recommendations_engine;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -67,4 +68,7 @@ pub use failure_detection::{
 };
 pub use confidence_scoring::{
     ConfidenceScoringEngine, ConfidenceChain, ConfidenceTier, EvidenceItem,
+};
+pub use recommendations_engine::{
+    MLRIASRecommendationsEngine, MLRIASRecommendation, Priority,
 };
