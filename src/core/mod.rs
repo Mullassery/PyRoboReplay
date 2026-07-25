@@ -17,6 +17,8 @@ pub mod anomaly_detector;
 pub mod explanation;
 pub mod failure_actions;
 pub mod geospatial_export;
+pub mod incident_bundle;
+pub mod evidence_discovery;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -47,3 +49,8 @@ pub use anomaly_detector::{Failure, AnomalyDetector};
 pub use explanation::ExplanationGenerator;
 pub use failure_actions::{Action, ActionRecommender};
 pub use geospatial_export::{GeospatialExporter, GeoJsonExport, CoverageRaster, GeoHotspot};
+pub use incident_bundle::{
+    IncidentBundle, BundleManifest, LayerAvailability, LayerFileInventory,
+    TimeRange, BundleError,
+};
+pub use evidence_discovery::EvidenceDiscovery;

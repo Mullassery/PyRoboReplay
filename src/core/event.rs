@@ -150,6 +150,80 @@ pub enum MissionEvent {
         event_type: String, // start, pause, resume, end
         mission_id: String,
     },
+
+    // Layer 2: Linux/Kernel Events
+    KernelEvent {
+        timestamp: DateTime<Utc>,
+        event_type: String, // oom_kill, kernel_panic, usb_disconnect, etc.
+        severity: String,   // critical, high, medium, low
+        description: String,
+        source_file: Option<String>, // dmesg, journalctl, etc.
+        process_id: Option<u32>,
+        process_name: Option<String>,
+    },
+    LinuxLogEvent {
+        timestamp: DateTime<Utc>,
+        log_source: String, // journalctl, syslog, kern.log
+        log_level: String,  // INFO, WARNING, ERROR, CRITICAL
+        unit: Option<String>, // systemd unit name
+        message: String,
+        metadata: Option<serde_json::Value>,
+    },
+    HardwareEvent {
+        timestamp: DateTime<Utc>,
+        event_type: String, // usb_connect, usb_disconnect, thermal_throttle
+        hardware_id: String, // USB device ID, sensor name
+        severity: String,    // critical, high, medium, low
+        description: String,
+    },
+
+    // Layer 3: Resource Metrics
+    ResourceMetric {
+        timestamp: DateTime<Utc>,
+        robot_id: Option<String>,
+        metric_type: String, // cpu_percent, memory_mb, disk_percent, temp_celsius
+        value: f32,
+        unit: String,
+        threshold: Option<f32>,
+        metadata: Option<serde_json::Value>,
+    },
+    DDSMetric {
+        timestamp: DateTime<Utc>,
+        event_type: String, // discovery_timeout, qos_mismatch, latency_spike, buffer_overflow
+        participant_id: Option<String>,
+        severity: String,
+        details: Option<serde_json::Value>,
+    },
+    NetworkEvent {
+        timestamp: DateTime<Utc>,
+        event_type: String, // link_up, link_down, packet_loss, latency_spike
+        interface: String,
+        severity: String,
+        rx_packets: Option<u64>,
+        tx_packets: Option<u64>,
+        rx_bytes: Option<u64>,
+        tx_bytes: Option<u64>,
+        details: Option<serde_json::Value>,
+    },
+
+    // Layer 4: Configuration Events
+    ConfigurationEvent {
+        timestamp: DateTime<Utc>,
+        config_type: String, // nav2_param, slam_param, launch_file, hardware_config
+        parameter_name: Option<String>,
+        old_value: Option<String>,
+        new_value: Option<String>,
+        config_file: String,
+        description: Option<String>,
+    },
+    ParameterValidationEvent {
+        timestamp: DateTime<Utc>,
+        parameter_name: String,
+        current_value: String,
+        expected_range: Option<String>,
+        severity: String, // warning, error
+        message: String,
+    },
 }
 
 impl MissionEvent {
@@ -166,12 +240,21 @@ impl MissionEvent {
             | MissionEvent::CommunicationEvent { timestamp, .. }
             | MissionEvent::CoordinationEvent { timestamp, .. }
             | MissionEvent::EnvironmentalChange { timestamp, .. }
-            | MissionEvent::MissionLifecycle { timestamp, .. } => *timestamp,
+            | MissionEvent::MissionLifecycle { timestamp, .. }
+            | MissionEvent::KernelEvent { timestamp, .. }
+            | MissionEvent::LinuxLogEvent { timestamp, .. }
+            | MissionEvent::HardwareEvent { timestamp, .. }
+            | MissionEvent::ResourceMetric { timestamp, .. }
+            | MissionEvent::DDSMetric { timestamp, .. }
+            | MissionEvent::NetworkEvent { timestamp, .. }
+            | MissionEvent::ConfigurationEvent { timestamp, .. }
+            | MissionEvent::ParameterValidationEvent { timestamp, .. } => *timestamp,
         }
     }
 
     pub fn event_type(&self) -> &str {
         match self {
+            // Layer 1: ROS Events
             MissionEvent::LidarScan { .. } => "lidar_scan",
             MissionEvent::CameraFrame { .. } => "camera_frame",
             MissionEvent::IMUData { .. } => "imu_data",
@@ -184,6 +267,17 @@ impl MissionEvent {
             MissionEvent::CoordinationEvent { .. } => "coordination_event",
             MissionEvent::EnvironmentalChange { .. } => "environmental_change",
             MissionEvent::MissionLifecycle { .. } => "mission_lifecycle",
+            // Layer 2: Linux/Kernel Events
+            MissionEvent::KernelEvent { .. } => "kernel_event",
+            MissionEvent::LinuxLogEvent { .. } => "linux_log_event",
+            MissionEvent::HardwareEvent { .. } => "hardware_event",
+            // Layer 3: Resource Metrics
+            MissionEvent::ResourceMetric { .. } => "resource_metric",
+            MissionEvent::DDSMetric { .. } => "dds_metric",
+            MissionEvent::NetworkEvent { .. } => "network_event",
+            // Layer 4: Configuration Events
+            MissionEvent::ConfigurationEvent { .. } => "configuration_event",
+            MissionEvent::ParameterValidationEvent { .. } => "parameter_validation_event",
         }
     }
 
@@ -197,6 +291,7 @@ impl MissionEvent {
             | MissionEvent::RobotPose { robot_id, .. }
             | MissionEvent::NavigationDecision { robot_id, .. }
             | MissionEvent::ObstacleDetected { robot_id, .. } => Some(robot_id),
+            MissionEvent::ResourceMetric { robot_id, .. } => robot_id.as_deref(),
             _ => None,
         }
     }

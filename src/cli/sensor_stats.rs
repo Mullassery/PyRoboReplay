@@ -333,7 +333,15 @@ impl EventTimestamp for MissionEvent {
             | MissionEvent::CommunicationEvent { timestamp, .. }
             | MissionEvent::CoordinationEvent { timestamp, .. }
             | MissionEvent::EnvironmentalChange { timestamp, .. }
-            | MissionEvent::MissionLifecycle { timestamp, .. } => Some(timestamp.to_rfc3339()),
+            | MissionEvent::MissionLifecycle { timestamp, .. }
+            | MissionEvent::KernelEvent { timestamp, .. }
+            | MissionEvent::LinuxLogEvent { timestamp, .. }
+            | MissionEvent::HardwareEvent { timestamp, .. }
+            | MissionEvent::ResourceMetric { timestamp, .. }
+            | MissionEvent::DDSMetric { timestamp, .. }
+            | MissionEvent::NetworkEvent { timestamp, .. }
+            | MissionEvent::ConfigurationEvent { timestamp, .. }
+            | MissionEvent::ParameterValidationEvent { timestamp, .. } => Some(timestamp.to_rfc3339()),
         }
     }
 }
