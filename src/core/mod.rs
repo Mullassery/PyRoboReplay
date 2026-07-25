@@ -23,6 +23,7 @@ pub mod timeline_correlation;
 pub mod failure_detection;
 pub mod confidence_scoring;
 pub mod recommendations_engine;
+pub mod incident_analysis;
 
 pub use event::{MissionEvent, MissionRecord, Pose, Location};
 pub use timeline::Timeline;
@@ -71,4 +72,8 @@ pub use confidence_scoring::{
 };
 pub use recommendations_engine::{
     MLRIASRecommendationsEngine, MLRIASRecommendation, Priority,
+};
+pub use incident_analysis::{
+    IncidentAnalysisOrchestrator, IncidentAnalysisReport, AnalysisResult,
+    FailureReport, RecommendationReport, AnalysisSummary,
 };
