@@ -6,7 +6,7 @@ Thanks for your interest in contributing! We welcome contributions of all kinds.
 
 ### Report Bugs 🐛
 
-Found a bug? [Open an issue](https://github.com/mullassery/pyroboreplay/issues) with:
+Found a bug? [Open an issue](https://git.example.com/user/pyroboreplay/issues) with:
 - Clear title: "Bug: [component] description"
 - Steps to reproduce
 - Expected vs actual behavior
@@ -15,7 +15,7 @@ Found a bug? [Open an issue](https://github.com/mullassery/pyroboreplay/issues) 
 
 ### Suggest Features 💡
 
-Have an idea? Start a [discussion](https://github.com/mullassery/pyroboreplay/discussions) or [issue](https://github.com/mullassery/pyroboreplay/issues) with:
+Have an idea? Start a [discussion](https://git.example.com/user/pyroboreplay/discussions) or [issue](https://git.example.com/user/pyroboreplay/issues) with:
 - Use case: why would this be useful?
 - Proposed solution (if you have one)
 - Alternative approaches you've considered
@@ -27,7 +27,7 @@ Have an idea? Start a [discussion](https://github.com/mullassery/pyroboreplay/di
 
 ```bash
 # Clone repo
-git clone https://github.com/mullassery/pyroboreplay.git
+git clone https://git.example.com/user/pyroboreplay.git
 cd pyroboreplay
 
 # Install Rust (if needed)
@@ -180,9 +180,9 @@ None / Describe any perf implications
 - **Compliance:** Additional regulatory standards (e.g., ISO 13849-1)
 
 ### Good First Issues
-- Look for [good-first-issue](https://github.com/mullassery/pyroboreplay/labels/good-first-issue) label
+- Look for [good-first-issue](https://git.example.com/user/pyroboreplay/labels/good-first-issue) label
 - Start with documentation or small bug fixes
-- Ask questions in [discussions](https://github.com/mullassery/pyroboreplay/discussions) if stuck
+- Ask questions in [discussions](https://git.example.com/user/pyroboreplay/discussions) if stuck
 
 ---
 
@@ -233,7 +233,7 @@ Workflows run automatically on push/PR:
 - **security.yml**: Vulnerability scanning, coverage
 - **release.yml**: Auto-publish on version tags
 
-Check status in [Actions](https://github.com/mullassery/pyroboreplay/actions).
+Check status in [Actions](https://git.example.com/user/pyroboreplay/actions).
 
 ---
 
@@ -274,7 +274,7 @@ Check status in [Actions](https://github.com/mullassery/pyroboreplay/actions).
 
 ## Getting Help
 
-- **Questions?** Ask in [GitHub Discussions](https://github.com/mullassery/pyroboreplay/discussions)
+- **Questions?** Ask in [GitHub Discussions](https://git.example.com/user/pyroboreplay/discussions)
 - **Stuck?** Open an issue and label it `help-wanted`
 - **Chat?** Connect via GitHub issues/discussions (we respond within 24h)
 

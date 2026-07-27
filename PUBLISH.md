@@ -135,7 +135,7 @@ Maintainer: Georgi Mammen Mullassery <mullassery@gmail.com>
 
 ### Verification Links
 - PyPI: https://pypi.org/project/pyroboreplay/0.9.0/
-- GitHub Releases: https://github.com/mullassery/pyroboreplay/releases/tag/v0.9.0
+- GitHub Releases: https://git.example.com/user/pyroboreplay/releases/tag/v0.9.0
 - Crates.io: https://crates.io/crates/pyroboreplay/0.9.0
 
 ### Monitor Analytics

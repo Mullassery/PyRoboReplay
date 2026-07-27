@@ -1,6 +1,6 @@
 # PyRoboReplay Release Notes
 
-## [v0.8.0](https://github.com/mullassery/pyroboreplay/releases/tag/v0.8.0) - Extended Observability (2026-07-22)
+## [v0.8.0](https://git.example.com/user/pyroboreplay/releases/tag/v0.8.0) - Extended Observability (2026-07-22)
 
 **Production-Ready Extended Observability Layer**
 
@@ -103,7 +103,7 @@ All existing APIs remain unchanged. New features are purely additive.
 
 ---
 
-## [v0.7.0](https://github.com/mullassery/pyroboreplay/releases/tag/v0.7.0) - Advanced Forensics (2026-07-20)
+## [v0.7.0](https://git.example.com/user/pyroboreplay/releases/tag/v0.7.0) - Advanced Forensics (2026-07-20)
 
 **Production-Ready Forensic Grade Replay & Failover**
 
@@ -143,7 +143,7 @@ All existing APIs remain unchanged. New features are purely additive.
 
 ---
 
-## [v0.6.0](https://github.com/mullassery/pyroboreplay/releases/tag/v0.6.0) - Production Scale (2026-07-15)
+## [v0.6.0](https://git.example.com/user/pyroboreplay/releases/tag/v0.6.0) - Production Scale (2026-07-15)
 
 Production-ready storage backends, streaming, and diagnostics.
 
@@ -158,7 +158,7 @@ Production-ready storage backends, streaming, and diagnostics.
 
 ## Earlier Versions
 
-See [commit history](https://github.com/mullassery/pyroboreplay/commits/main) for details on v0.1-v0.5.
+See [commit history](https://git.example.com/user/pyroboreplay/commits/main) for details on v0.1-v0.5.
 
 ---
 
@@ -193,7 +193,7 @@ Found a bug? Want a feature? See [CONTRIBUTING.md](CONTRIBUTING.md) for how to h
 
 ## Support
 
-- **Documentation:** https://github.com/mullassery/pyroboreplay
-- **Issues:** https://github.com/mullassery/pyroboreplay/issues
-- **Discussions:** https://github.com/mullassery/pyroboreplay/discussions
+- **Documentation:** https://git.example.com/user/pyroboreplay
+- **Issues:** https://git.example.com/user/pyroboreplay/issues
+- **Discussions:** https://git.example.com/user/pyroboreplay/discussions
 - **Email:** mullassery@gmail.com

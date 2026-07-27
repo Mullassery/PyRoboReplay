@@ -2,15 +2,15 @@
 
 > **Forensic debugging platform for autonomous robot systems.** Replay missions, perform causal analysis, detect hidden objects, fuse multispectral sensors, and reconstruct what really happened—from passive replay to intelligent agent debugging.
 
-[![CI Status](https://github.com/mullassery/pyroboreplay/actions/workflows/ci.yml/badge.svg)](https://github.com/mullassery/pyroboreplay/actions/workflows/ci.yml)
-[![Security Audit](https://github.com/mullassery/pyroboreplay/actions/workflows/security.yml/badge.svg)](https://github.com/mullassery/pyroboreplay/actions/workflows/security.yml)
+[![CI Status](https://git.example.com/user/pyroboreplay/actions/workflows/ci.yml/badge.svg)](https://git.example.com/user/pyroboreplay/actions/workflows/ci.yml)
+[![Security Audit](https://git.example.com/user/pyroboreplay/actions/workflows/security.yml/badge.svg)](https://git.example.com/user/pyroboreplay/actions/workflows/security.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/badge/PyPI-2.1.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
 [![Tests](https://img.shields.io/badge/Tests-647%20Passing-brightgreen.svg)](#testing)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
-[![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/mullassery/pyroboreplay)
+[![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://git.example.com/user/pyroboreplay)
 
 ---
 
@@ -82,7 +82,7 @@ pip install pyroboreplay==2.1.0
 uv install pyroboreplay==2.1.0
 
 # From source
-git clone https://github.com/mullassery/pyroboreplay.git
+git clone https://git.example.com/user/pyroboreplay.git
 cd pyroboreplay
 cargo build --release
 ```
@@ -355,15 +355,15 @@ cargo audit
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding conventions, and PR guidelines.
 
 **Easiest ways to help:**
-- Report bugs or feature ideas: [GitHub Issues](https://github.com/mullassery/pyroboreplay/issues)
-- Share how you're using PyRoboReplay: [GitHub Discussions](https://github.com/mullassery/pyroboreplay/discussions)
+- Report bugs or feature ideas: [GitHub Issues](https://git.example.com/user/pyroboreplay/issues)
+- Share how you're using PyRoboReplay: [GitHub Discussions](https://git.example.com/user/pyroboreplay/discussions)
 - Star the repo if it helps you
 
 ---
 
 ## License
 
-MIT License — Use freely in academic, commercial, and personal projects. See [LICENSE](LICENSE).
+Open Source Software — Use freely in academic, commercial, and personal projects. See [LICENSE](LICENSE).
 
 ---
 
@@ -377,7 +377,7 @@ If PyRoboReplay helps your research or product, please star the repo and cite:
  author={Mullassery, Georgi},
  year={2026},
  version={2.0.0},
- url={https://github.com/mullassery/pyroboreplay}
+ url={https://git.example.com/user/pyroboreplay}
 }
 ```
 
