@@ -9,6 +9,7 @@ pub mod intelligence;
 pub mod reasoning;
 pub mod knowledge;
 pub mod fusion;
+pub mod phase14;
 
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
