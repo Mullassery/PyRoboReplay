@@ -1,34 +1,43 @@
-# Rust
-/target/
-**/*.rs.bk
-*.pdb
-Cargo.lock
+# Sensitive files and credentials
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.crt
+credentials.json
+secrets.json
+.credentials
+config.local.*
+.config.local
+oauth_tokens.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
 
 # Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
 *.egg-info/
 dist/
 build/
+.pytest_cache/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
+# Virtual environments
+venv/
+env/
+.venv
 
-# Project-specific
-*.bag
-*.db3
-.env
-.env.local
-missions/
+# Rust
+target/
+Cargo.lock
+
+# Temp files
+*.tmp
+*.log
+temp/
 tmp/
