@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "2.0.1"
-description = "Production-grade Reality Gap Detection platform for autonomous robots. Phase 1-5 complete: gap detection, causal reasoning, incident narratives, quality-aware confidence. 427 comprehensive tests. Transforms sim-to-real debugging from passive replay to autonomous gap discovery."
+version = "2.1.0"
+description = "AI Navigation Reliability Engineer for autonomous robots. Phase 14-15: Universal temporal fusion, multi-modal analysis, root cause inference. 63 new tests. Nav2 limitation detection, semantic gap analysis, intelligent recommendations."
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"

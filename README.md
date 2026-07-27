@@ -6,8 +6,8 @@
 [![Security Audit](https://github.com/mullassery/pyroboreplay/actions/workflows/security.yml/badge.svg)](https://github.com/mullassery/pyroboreplay/actions/workflows/security.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyPI](https://img.shields.io/badge/PyPI-2.0.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
-[![Tests](https://img.shields.io/badge/Tests-558%20Passing-brightgreen.svg)](#testing)
+[![PyPI](https://img.shields.io/badge/PyPI-2.1.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
+[![Tests](https://img.shields.io/badge/Tests-647%20Passing-brightgreen.svg)](#testing)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
 [![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/mullassery/pyroboreplay)
@@ -34,7 +34,7 @@ Robotics teams waste **2-16 hours debugging a single mission failure**—jumping
 
 ---
 
-## What You Get (v2.0.0)
+## What You Get (v2.1.0)
 
 ### Phase 1-4: Reality Gap Detection Foundations
 Comprehensive detection of perception mismatches between simulation and reality. Identifies where and why robot perception diverged from expectations.
@@ -63,6 +63,12 @@ Open-vocabulary object detection for invisible object discovery. Segment anythin
 ### Phase 13: Multispectral Sensor Fusion & Forensic Analysis
 RGB + thermal/infrared fusion for offline forensic reconstruction. Identify invisible persons in low-light, smoke, fog, shadows, occlusions. Root cause analysis, sensor disagreement detection, recommendations for future systems.
 
+### **Phase 14: Universal Temporal Fusion Foundation** (NEW)
+Multi-modal data ingestion for heterogeneous sources: ROS 2 bags, video, Linux system logs, Nav2 exports, point clouds, operator annotations, sensor calibration. Unified timeline with automatic clock synchronization. Handles time model detection (ROS nanoseconds, wall-clock, frame numbers, sequences) and temporal alignment across all modalities.
+
+### **Phase 15: Root Cause Inference Engine** (NEW)
+AI-powered navigation failure analysis across 7 dimensions: localization (AMCL divergence, odometry drift), planner (oscillation, deadlock), costmap (inflation, conflicts), dynamic obstacles, semantic gaps, environmental context, controller stability. Distinguishes Nav2 architectural limitations from tuning/environment issues. Generates structured findings with tiered recommendations (tuning/capability/architecture) and confidence scoring (0.0-1.0) based on evidence strength.
+
 ---
 
 ## Quick Start
@@ -70,10 +76,10 @@ RGB + thermal/infrared fusion for offline forensic reconstruction. Identify invi
 ### Installation
 
 ```bash
-pip install pyroboreplay==2.0.0
+pip install pyroboreplay==2.1.0
 
 # or with uv
-uv install pyroboreplay==2.0.0
+uv install pyroboreplay==2.1.0
 
 # From source
 git clone https://github.com/mullassery/pyroboreplay.git
@@ -142,24 +148,29 @@ print(f"Likely obstacles: {prediction.expected_obstacles}")
 
 ---
 
-## Feature Matrix: v0.1 to v2.0.0
+## Feature Matrix: v0.1 to v2.1.0
 
-| Feature | v0.1 | v0.5 | v0.9 | v1.0 | v2.0 |
-|---------|:----:|:----:|:----:|:----:|:----:|
-| Sensor Replay | A | A | A | A | A |
-| Timeline Queries | - | A | A | A | A |
-| Causal Analysis | - | - | A | A | A |
-| Root Cause Diagnosis | - | - | A | A | A |
-| Cross-Mission Learning | - | - | - | A | A |
-| Pluggable Detection (YOLO/SAM) | - | - | - | - | A |
-| **Terrain Intelligence** | - | - | - | - | A |
-| **Persistent World Knowledge** | - | - | - | - | A |
-| **Retrospective Object Discovery** | - | - | - | - | A |
-| **Multispectral Sensor Fusion** | - | - | - | - | A |
-| **Forensic Investigation Reports** | - | - | - | - | A |
-| **Fleet Learning & Consensus** | - | - | - | - | A |
-| **Invisible Person Detection** | - | - | - | - | A |
-| **558 Comprehensive Tests** | - | - | - | - | A |
+| Feature | v0.1 | v0.5 | v0.9 | v1.0 | v2.0 | v2.1 |
+|---------|:----:|:----:|:----:|:----:|:----:|:----:|
+| Sensor Replay | A | A | A | A | A | A |
+| Timeline Queries | - | A | A | A | A | A |
+| Causal Analysis | - | - | A | A | A | A |
+| Root Cause Diagnosis | - | - | A | A | A | A |
+| Cross-Mission Learning | - | - | - | A | A | A |
+| Pluggable Detection (YOLO/SAM) | - | - | - | - | A | A |
+| **Terrain Intelligence** | - | - | - | - | A | A |
+| **Persistent World Knowledge** | - | - | - | - | A | A |
+| **Retrospective Object Discovery** | - | - | - | - | A | A |
+| **Multispectral Sensor Fusion** | - | - | - | - | A | A |
+| **Forensic Investigation Reports** | - | - | - | - | A | A |
+| **Fleet Learning & Consensus** | - | - | - | - | A | A |
+| **Invisible Person Detection** | - | - | - | - | A | A |
+| **Universal Temporal Fusion** | - | - | - | - | - | **A** |
+| **Multi-Modal Data Ingestion** | - | - | - | - | - | **A** |
+| **Root Cause Inference Engine** | - | - | - | - | - | **A** |
+| **Nav2 Limitation Detection** | - | - | - | - | - | **A** |
+| **Semantic Gap Analysis** | - | - | - | - | - | **A** |
+| **647 Comprehensive Tests** | - | - | - | - | - | **A** |
 
 ---
 
