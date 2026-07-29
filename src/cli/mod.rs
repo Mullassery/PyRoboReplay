@@ -9,6 +9,7 @@ pub mod keyboard;
 pub mod causal_viz;
 pub mod gap_analysis;
 pub mod consolidated_output;
+pub mod stats_dashboard;
 mod tests_consolidation_integration;
 
 use args::{Cli, Commands};
@@ -17,6 +18,7 @@ use crate::adapters::{MissionAdapter, ros2::Ros2Adapter};
 use replay_ui::ReplayState;
 use json_output::{JsonResponse, MissionAnalysisJson};
 use camera_export::export_camera_to_html;
+use stats_dashboard::launch_stats_dashboard_window;
 use std::error::Error;
 use tracing_subscriber;
 
@@ -37,6 +39,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             robot: _,
             json: output_json,
             export_camera,
+            stats_dashboard: launch_dashboard,
         } => {
             tracing::info!("Replaying: {}", bag_file);
 
@@ -45,6 +48,22 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             let mission = adapter.read(&bag_file)?;
 
             tracing::info!("Loaded mission with {} events", mission.event_count());
+
+            // Launch stats dashboard in separate window if requested
+            if launch_dashboard {
+                match launch_stats_dashboard_window(&mission, "PyRoboReplay Stats Dashboard") {
+                    Ok(mut child) => {
+                        println!("✅ Stats dashboard launched in a separate terminal");
+                        println!("📊 To close: press Ctrl+C in the dashboard window");
+                        // Don't wait for the child; let it run independently
+                        let _ = child.id();
+                    }
+                    Err(e) => {
+                        eprintln!("⚠️  Failed to launch stats dashboard: {}", e);
+                        eprintln!("Continuing with main replay...");
+                    }
+                }
+            }
 
             // Handle camera export if requested
             if let Some(export_path) = export_camera {

@@ -41,6 +41,10 @@ pub enum Commands {
         /// Export camera frames to standalone HTML file
         #[arg(long, value_name = "OUTPUT_FILE")]
         export_camera: Option<String>,
+
+        /// Launch stats dashboard in a separate terminal window
+        #[arg(long)]
+        stats_dashboard: bool,
     },
 
     /// Compare two missions side-by-side
