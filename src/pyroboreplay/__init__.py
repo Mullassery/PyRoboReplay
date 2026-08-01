@@ -10,5 +10,5 @@ except ImportError:
     # Fallback for development/import errors
     pass
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 __all__ = ['Replay', 'Fusion']
