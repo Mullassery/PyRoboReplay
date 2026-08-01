@@ -85,6 +85,9 @@ uv install pyroboreplay==2.1.0
 git clone https://git.example.com/user/pyroboreplay.git
 cd pyroboreplay
 cargo build --release
+
+# Verify installation
+pyroboreplay --version
 ```
 
 ### Your First Forensic Analysis
