@@ -1,4 +1,8 @@
-# PyRoboReplay  
+# PyRoboReplay
+
+Robotics perception and replay engine. RGB+Thermal sensor fusion, invisible person detection, trajectory analysis, multi-modal training datasets. Analyze what happened, why it happened, and how to prevent it.
+
+Includes thermal imaging analysis, motion replay, and causal inference for autonomous systems.
 
 > **Forensic debugging platform for autonomous robot systems.** Replay missions, perform causal analysis, detect hidden objects, fuse multispectral sensors, and reconstruct what really happened—from passive replay to intelligent agent debugging.
 
