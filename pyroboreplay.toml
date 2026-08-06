@@ -1,0 +1,22 @@
+[mcp]
+enabled = true
+port = 8777
+discovery_method = "stdio"
+
+[mcp.tools]
+load_replay = true
+analyze_trajectory = true
+detect_anomalies = true
+build_causality_graph = true
+reconstruct_decisions = true
+analyze_sensor_reliability = true
+compare_replays = true
+extract_failure_root_cause = true
+simulate_counterfactual = true
+extract_skill_demonstrations = true
+visualize_replay = true
+export_replay_metadata = true
+batch_analyze_replays = true
+
+[mcp.security]
+require_auth = false

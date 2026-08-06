@@ -4,10 +4,10 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "2.3.0"
+version = "2.3.1"
 description = "AI Navigation Reliability Engineer for autonomous robots. Phase 14-15: Universal temporal fusion, multi-modal analysis, root cause inference. 63 new tests. Nav2 limitation detection, semantic gap analysis, intelligent recommendations. v2.2: CLI stats dashboard for separate terminal monitoring."
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
-license = {text = "MIT"}
+license = {text = "Proprietary"}
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -16,7 +16,7 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Information Technology",
-    "License :: OSI Approved :: Open Source Software",
+    "License :: Other/Proprietary License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Programming Language :: Rust",
