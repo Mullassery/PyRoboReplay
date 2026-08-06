@@ -11,6 +11,7 @@ pub mod knowledge;
 pub mod fusion;
 pub mod phase14;
 pub mod phase15;
+pub mod phase16;
 
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};
