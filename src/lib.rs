@@ -15,6 +15,7 @@ pub mod phase16;
 pub mod phase17;
 pub mod phase18;
 pub mod phase19;
+pub mod phase20;
 
 use pyo3::prelude::*;
 use core::event::{MissionEvent, MissionRecord};

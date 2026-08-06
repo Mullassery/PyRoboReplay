@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "2.7.0"
-description = "AI Navigation Reliability Engineer for autonomous robots. Phase 19: Temporal pattern discovery across time windows (27 tests). Trend detection, anomaly scoring, window analysis."
+version = "2.8.0"
+description = "AI Navigation Reliability Engineer for autonomous robots. Phase 20: Causal decision trees & counterfactual analysis (25 tests). Rule extraction, scenario simulation, tree-based interpretability."
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = {text = "Proprietary"}
 readme = "README.md"
