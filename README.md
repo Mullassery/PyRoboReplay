@@ -6,15 +6,15 @@ Includes thermal imaging analysis, motion replay, and causal inference for auton
 
 > **Forensic debugging platform for autonomous robot systems.** Replay missions, perform causal analysis, detect hidden objects, fuse multispectral sensors, and reconstruct what really happened—from passive replay to intelligent agent debugging.
 
-[![CI Status](https://git.example.com/user/pyroboreplay/actions/workflows/ci.yml/badge.svg)](https://git.example.com/user/pyroboreplay/actions/workflows/ci.yml)
-[![Security Audit](https://git.example.com/user/pyroboreplay/actions/workflows/security.yml/badge.svg)](https://git.example.com/user/pyroboreplay/actions/workflows/security.yml)
+[![CI Status](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml)
+[![Security Audit](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/badge/PyPI-2.1.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
-[![Tests](https://img.shields.io/badge/Tests-647%20Passing-brightgreen.svg)](#testing)
+[![Tests](https://img.shields.io/github/actions/workflow/status/Mullassery/PyRoboReplay/ci.yml?label=tests)](https://github.com/Mullassery/PyRoboReplay/actions)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
-[![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://git.example.com/user/pyroboreplay)
+[![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/Mullassery/PyRoboReplay)
 
 ---
 
@@ -86,7 +86,7 @@ pip install pyroboreplay==2.1.0
 uv install pyroboreplay==2.1.0
 
 # From source
-git clone https://git.example.com/user/pyroboreplay.git
+git clone https://github.com/Mullassery/PyRoboReplay.git
 cd pyroboreplay
 cargo build --release
 
@@ -362,8 +362,8 @@ cargo audit
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding conventions, and PR guidelines.
 
 **Easiest ways to help:**
-- Report bugs or feature ideas: [GitHub Issues](https://git.example.com/user/pyroboreplay/issues)
-- Share how you're using PyRoboReplay: [GitHub Discussions](https://git.example.com/user/pyroboreplay/discussions)
+- Report bugs or feature ideas: [GitHub Issues](https://github.com/Mullassery/PyRoboReplay/issues)
+- Share how you're using PyRoboReplay: [GitHub Discussions](https://github.com/Mullassery/PyRoboReplay/discussions)
 - Star the repo if it helps you
 
 ---
@@ -384,7 +384,7 @@ If PyRoboReplay helps your research or product, please star the repo and cite:
  author={Mullassery, Georgi},
  year={2026},
  version={2.0.0},
- url={https://git.example.com/user/pyroboreplay}
+ url={https://github.com/Mullassery/PyRoboReplay}
 }
 ```
 
