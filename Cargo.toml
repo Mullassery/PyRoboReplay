@@ -43,5 +43,8 @@ aws-sdk-s3 = "1.141.0"
 aws-config = { version = "1.10.1", features = ["behavior-version-latest"] }
 ureq = { version = "3.4.0", features = ["json"] }
 serde_norway = "0.9.42"
+gcp-bigquery-client = "0.28.0"
+async-trait = "0.1.92"
+mcap = "0.25.0"
 
 [dev-dependencies]

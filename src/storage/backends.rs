@@ -302,86 +302,556 @@ impl StorageBackend for PostgresBackend {
 // ============================================================================
 // BigQuery backend
 //
-// Left intentionally stubbed. Unlike PostgreSQL (available locally via
-// Docker) and S3 (available locally via MinIO), there is no realistic local
-// BigQuery emulator in this environment, and real BigQuery requires GCP
-// project credentials this environment does not have. Implementing this for
-// real would mean shipping untested code against a live cloud API, which is
-// worse than an honest stub. The error message below says so explicitly
-// instead of implying feature parity with the other two backends.
+// Real implementation using `gcp-bigquery-client`, driven through the same
+// dedicated-Tokio-runtime + `block_on` pattern as `PostgresBackend`/
+// `S3Backend` (the `StorageBackend` trait is sync).
+//
+// Connection string format: `bigquery://project/dataset[?endpoint=URL]`
+//   - With no `endpoint`, real BigQuery is used and credentials are resolved
+//     via the standard Application Default Credentials chain
+//     (`GOOGLE_APPLICATION_CREDENTIALS`, gcloud user credentials, workload
+//     identity, ...) — the same "let the standard SDK resolution do it"
+//     approach `PostgresBackend`/`S3Backend` take for their own credentials.
+//   - With `endpoint` set (e.g. `http://localhost:9050`), REST calls are
+//     pointed at that endpoint instead and a dummy bearer token is used, for
+//     `ghcr.io/goccy/bigquery-emulator` (or any BigQuery-REST-compatible
+//     emulator), which doesn't validate credentials.
+//
+// Schema mirrors `PostgresBackend`: `missions`/`events`/`reports` tables in
+// a dataset created idempotently on `connect()` via the datasets.insert REST
+// API (tolerating "already exists"), with tables created via `CREATE TABLE
+// IF NOT EXISTS` DDL query jobs. Upserts are implemented as `DELETE` then
+// `INSERT` (two sequential DML query jobs) rather than `MERGE`: BigQuery has
+// no `INSERT ... ON CONFLICT`, and `MERGE ... USING (SELECT ...)` — the
+// natural translation of an upsert — is rejected by
+// `ghcr.io/goccy/bigquery-emulator` with "MERGE: source must be a
+// single-table reference", confirmed against a real running instance of the
+// emulator; delete-then-insert was verified to work there and is standard
+// practice for BigQuery upserts precisely because of this class of MERGE
+// limitation. All writes/reads use parameterized (`@name`) standard SQL
+// query jobs rather than the streaming-insert API, so writes are
+// immediately query-visible (streaming-inserted rows sit in a buffer that
+// isn't reliably visible to DML/queries for some time — unacceptable for
+// read-your-writes semantics like `mission_exists` right after
+// `store_mission`).
 // ============================================================================
 
+use gcp_bigquery_client::{
+    auth::Authenticator,
+    client_builder::ClientBuilder,
+    error::BQError,
+    model::{
+        query_parameter::QueryParameter, query_parameter_type::QueryParameterType,
+        query_parameter_value::QueryParameterValue, query_request::QueryRequest,
+        query_response::ResultSet,
+    },
+    Client as BigQueryClient,
+};
+
+#[derive(Debug, Clone)]
+struct BigQueryTarget {
+    project_id: String,
+    dataset_id: String,
+    endpoint: Option<String>,
+}
+
+fn parse_bigquery_connection_string(s: &str) -> StorageResult<BigQueryTarget> {
+    let rest = s.strip_prefix("bigquery://").ok_or_else(|| {
+        StorageError::ConnectionFailed(format!(
+            "invalid BigQuery connection string (expected bigquery://project/dataset[?endpoint=URL]): {}",
+            s
+        ))
+    })?;
+
+    let (path_part, query_part) = match rest.split_once('?') {
+        Some((p, q)) => (p, Some(q)),
+        None => (rest, None),
+    };
+
+    let mut parts = path_part.splitn(2, '/');
+    let project_id = parts.next().unwrap_or("").to_string();
+    let dataset_id = parts.next().unwrap_or("").to_string();
+    if project_id.is_empty() || dataset_id.is_empty() {
+        return Err(StorageError::ConnectionFailed(format!(
+            "invalid BigQuery connection string, expected bigquery://project/dataset: {}",
+            s
+        )));
+    }
+
+    let mut endpoint = None;
+    if let Some(query) = query_part {
+        for kv in query.split('&') {
+            if let Some(("endpoint", v)) = kv.split_once('=') {
+                endpoint = Some(v.to_string());
+            }
+        }
+    }
+
+    Ok(BigQueryTarget { project_id, dataset_id, endpoint })
+}
+
+/// Authenticator used only in emulator mode. `bigquery-emulator` (like most
+/// local emulators) doesn't validate bearer tokens, so any non-empty string
+/// satisfies the client's `Authorization` header requirement.
+#[derive(Clone)]
+struct EmulatorAuthenticator;
+
+#[async_trait::async_trait]
+impl Authenticator for EmulatorAuthenticator {
+    async fn access_token(&self) -> Result<String, BQError> {
+        Ok("emulator".to_string())
+    }
+}
+
+fn named_string_param(name: &str, value: String) -> QueryParameter {
+    QueryParameter {
+        name: Some(name.to_string()),
+        parameter_type: Some(QueryParameterType {
+            r#type: "STRING".to_string(),
+            array_type: None,
+            struct_types: None,
+        }),
+        parameter_value: Some(QueryParameterValue {
+            value: Some(value),
+            array_values: None,
+            struct_values: None,
+        }),
+    }
+}
+
+fn bq_query_request(sql: String, params: Vec<QueryParameter>) -> QueryRequest {
+    QueryRequest {
+        query: sql,
+        use_legacy_sql: false,
+        parameter_mode: if params.is_empty() { None } else { Some("NAMED".to_string()) },
+        query_parameters: if params.is_empty() { None } else { Some(params) },
+        ..Default::default()
+    }
+}
+
 pub struct BigQueryBackend {
-    #[allow(dead_code)]
     connection_string: String,
+    runtime: Mutex<Option<Runtime>>,
+    client: Mutex<Option<BigQueryClient>>,
+    target: Mutex<Option<BigQueryTarget>>,
 }
 
 impl BigQueryBackend {
     pub fn new(connection_string: &str) -> Self {
         BigQueryBackend {
             connection_string: connection_string.to_string(),
+            runtime: Mutex::new(None),
+            client: Mutex::new(None),
+            target: Mutex::new(None),
         }
+    }
+
+    fn not_connected() -> StorageError {
+        StorageError::ConnectionFailed("BigQuery backend not connected; call connect() first".to_string())
+    }
+
+    /// Run an async closure against the live client + resolved connection
+    /// target on this backend's dedicated runtime.
+    fn with_client<F, T>(&self, f: F) -> StorageResult<T>
+    where
+        F: for<'c> FnOnce(
+            &'c BigQueryClient,
+            &'c BigQueryTarget,
+        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<T, BQError>> + Send + 'c>>,
+    {
+        let runtime_guard = self.runtime.lock().unwrap();
+        let runtime = runtime_guard.as_ref().ok_or_else(Self::not_connected)?;
+        let client_guard = self.client.lock().unwrap();
+        let client = client_guard.as_ref().ok_or_else(Self::not_connected)?;
+        let target_guard = self.target.lock().unwrap();
+        let target = target_guard.as_ref().ok_or_else(Self::not_connected)?;
+        runtime
+            .block_on(f(client, target))
+            .map_err(|e| StorageError::BackendError(e.to_string()))
     }
 }
 
-const BIGQUERY_NOT_IMPLEMENTED: &str =
-    "BigQuery backend is not implemented. Unlike the PostgreSQL and S3 backends, there is no \
-     practical local BigQuery emulator, and real BigQuery access requires Google Cloud Platform \
-     project credentials (a service account key or workload identity) that are not available in \
-     every deployment environment. This backend was deliberately left unimplemented rather than \
-     shipping untested code against a live cloud API with real billing implications. To \
-     implement it: add `google-cloud-bigquery` (or call the BigQuery REST API directly), \
-     authenticate via `GOOGLE_APPLICATION_CREDENTIALS`, and mirror the schema used by \
-     PostgresBackend (missions/events/reports tables, e.g. via a partitioned table keyed on \
-     mission_id).";
-
 impl StorageBackend for BigQueryBackend {
     fn connect(&mut self) -> StorageResult<()> {
-        Err(StorageError::ConnectionFailed(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+        let target = parse_bigquery_connection_string(&self.connection_string)?;
+
+        let runtime = Runtime::new().map_err(|e| {
+            StorageError::ConnectionFailed(format!("failed to start async runtime: {}", e))
+        })?;
+
+        let target_for_connect = target.clone();
+        let client = runtime.block_on(async move {
+            let client = match &target_for_connect.endpoint {
+                Some(endpoint) => {
+                    let auth: std::sync::Arc<dyn Authenticator> = std::sync::Arc::new(EmulatorAuthenticator);
+                    let mut builder = ClientBuilder::new();
+                    builder.with_v2_base_url(format!("{}/bigquery/v2", endpoint.trim_end_matches('/')));
+                    builder.build_from_authenticator(auth).await?
+                }
+                None => ClientBuilder::new().build_from_application_default_credentials().await?,
+            };
+
+            let proj = &target_for_connect.project_id;
+            let ds = &target_for_connect.dataset_id;
+
+            // `CREATE SCHEMA IF NOT EXISTS` DDL was tried here first but, when
+            // verified against a real running `bigquery-emulator`, silently
+            // no-ops (job completes successfully but the dataset never shows
+            // up in `datasets.list`). The datasets.insert REST API (`dataset
+            // ().create()`) does create it for real, so that's used instead.
+            // Similarly, `CREATE TABLE IF NOT EXISTS` DDL against the same
+            // emulator was verified to *reject* a second call against an
+            // already-existing table ("duplicate: table X: table is already
+            // created") rather than silently succeeding as the "IF NOT
+            // EXISTS" clause promises. Both of these are tolerated
+            // explicitly below (rather than trusting the "IF NOT
+            // EXISTS"/create-idempotency contract) so `connect()` stays
+            // idempotent across repeated calls against a dataset that
+            // already has this schema.
+            fn already_exists(e: &BQError) -> bool {
+                let msg = e.to_string().to_lowercase();
+                msg.contains("already exists") || msg.contains("already created")
+            }
+
+            match client.dataset().create(gcp_bigquery_client::model::dataset::Dataset::new(proj, ds)).await {
+                Ok(_) => {}
+                Err(e) if already_exists(&e) => {}
+                Err(e) => return Err(e),
+            }
+
+            for ddl in [
+                format!(
+                    "CREATE TABLE IF NOT EXISTS `{}.{}.missions` (mission_id STRING, data STRING, created_at TIMESTAMP)",
+                    proj, ds
+                ),
+                format!(
+                    "CREATE TABLE IF NOT EXISTS `{}.{}.events` (mission_id STRING, event_id STRING, data STRING, created_at TIMESTAMP)",
+                    proj, ds
+                ),
+                format!(
+                    "CREATE TABLE IF NOT EXISTS `{}.{}.reports` (mission_id STRING, report STRING, created_at TIMESTAMP)",
+                    proj, ds
+                ),
+            ] {
+                match client.job().query(proj, bq_query_request(ddl, vec![])).await {
+                    Ok(_) => {}
+                    Err(e) if already_exists(&e) => {}
+                    Err(e) => return Err(e),
+                }
+            }
+
+            Ok::<_, BQError>(client)
+        });
+
+        let client = client.map_err(|e| {
+            StorageError::ConnectionFailed(format!("failed to connect to BigQuery: {}", e))
+        })?;
+
+        *self.client.lock().unwrap() = Some(client);
+        *self.target.lock().unwrap() = Some(target);
+        *self.runtime.lock().unwrap() = Some(runtime);
+        Ok(())
     }
 
-    fn store_mission(&self, _mission_id: &str, _data: &str) -> StorageResult<()> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn store_mission(&self, mission_id: &str, data: &str) -> StorageResult<()> {
+        let mission_id = mission_id.to_string();
+        let data = data.to_string();
+        self.with_client(move |client, target| {
+            let proj = target.project_id.clone();
+            let ds = target.dataset_id.clone();
+            Box::pin(async move {
+                let delete_sql = format!("DELETE FROM `{proj}.{ds}.missions` WHERE mission_id = @mission_id");
+                client
+                    .job()
+                    .query(&proj, bq_query_request(delete_sql, vec![named_string_param("mission_id", mission_id.clone())]))
+                    .await?;
+
+                let insert_sql = format!(
+                    "INSERT INTO `{proj}.{ds}.missions` (mission_id, data, created_at) VALUES (@mission_id, @data, CURRENT_TIMESTAMP())"
+                );
+                client
+                    .job()
+                    .query(
+                        &proj,
+                        bq_query_request(
+                            insert_sql,
+                            vec![named_string_param("mission_id", mission_id), named_string_param("data", data)],
+                        ),
+                    )
+                    .await
+                    .map(|_| ())
+            })
+        })
     }
 
-    fn retrieve_mission(&self, _mission_id: &str) -> StorageResult<String> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn retrieve_mission(&self, mission_id: &str) -> StorageResult<String> {
+        let mission_id = mission_id.to_string();
+        let mission_id_for_err = mission_id.clone();
+        let value = self.with_client(move |client, target| {
+            let sql = format!(
+                "SELECT data FROM `{}.{}.missions` WHERE mission_id = @mission_id",
+                target.project_id, target.dataset_id
+            );
+            let proj = target.project_id.clone();
+            Box::pin(async move {
+                let req = bq_query_request(sql, vec![named_string_param("mission_id", mission_id)]);
+                let resp = client.job().query(&proj, req).await?;
+                let mut rs = ResultSet::new_from_query_response(resp);
+                if rs.next_row() {
+                    rs.get_string_by_name("data")
+                } else {
+                    Ok(None)
+                }
+            })
+        })?;
+        value.ok_or_else(|| StorageError::NotFound(format!("mission '{}' not found", mission_id_for_err)))
     }
 
-    fn store_event(&self, _mission_id: &str, _event_id: &str, _data: &str) -> StorageResult<()> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn store_event(&self, mission_id: &str, event_id: &str, data: &str) -> StorageResult<()> {
+        let mission_id = mission_id.to_string();
+        let event_id = event_id.to_string();
+        let data = data.to_string();
+        self.with_client(move |client, target| {
+            let proj = target.project_id.clone();
+            let ds = target.dataset_id.clone();
+            Box::pin(async move {
+                let delete_sql =
+                    format!("DELETE FROM `{proj}.{ds}.events` WHERE mission_id = @mission_id AND event_id = @event_id");
+                client
+                    .job()
+                    .query(
+                        &proj,
+                        bq_query_request(
+                            delete_sql,
+                            vec![
+                                named_string_param("mission_id", mission_id.clone()),
+                                named_string_param("event_id", event_id.clone()),
+                            ],
+                        ),
+                    )
+                    .await?;
+
+                let insert_sql = format!(
+                    "INSERT INTO `{proj}.{ds}.events` (mission_id, event_id, data, created_at) \
+                     VALUES (@mission_id, @event_id, @data, CURRENT_TIMESTAMP())"
+                );
+                client
+                    .job()
+                    .query(
+                        &proj,
+                        bq_query_request(
+                            insert_sql,
+                            vec![
+                                named_string_param("mission_id", mission_id),
+                                named_string_param("event_id", event_id),
+                                named_string_param("data", data),
+                            ],
+                        ),
+                    )
+                    .await
+                    .map(|_| ())
+            })
+        })
     }
 
-    fn retrieve_event(&self, _mission_id: &str, _event_id: &str) -> StorageResult<String> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn retrieve_event(&self, mission_id: &str, event_id: &str) -> StorageResult<String> {
+        let mission_id = mission_id.to_string();
+        let event_id = event_id.to_string();
+        let (mission_id_for_err, event_id_for_err) = (mission_id.clone(), event_id.clone());
+        let value = self.with_client(move |client, target| {
+            let sql = format!(
+                "SELECT data FROM `{}.{}.events` WHERE mission_id = @mission_id AND event_id = @event_id",
+                target.project_id, target.dataset_id
+            );
+            let proj = target.project_id.clone();
+            Box::pin(async move {
+                let req = bq_query_request(
+                    sql,
+                    vec![named_string_param("mission_id", mission_id), named_string_param("event_id", event_id)],
+                );
+                let resp = client.job().query(&proj, req).await?;
+                let mut rs = ResultSet::new_from_query_response(resp);
+                if rs.next_row() {
+                    rs.get_string_by_name("data")
+                } else {
+                    Ok(None)
+                }
+            })
+        })?;
+        value.ok_or_else(|| {
+            StorageError::NotFound(format!(
+                "event '{}' not found for mission '{}'",
+                event_id_for_err, mission_id_for_err
+            ))
+        })
     }
 
-    fn store_report(&self, _mission_id: &str, _report: &str) -> StorageResult<()> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn store_report(&self, mission_id: &str, report: &str) -> StorageResult<()> {
+        let mission_id = mission_id.to_string();
+        let report = report.to_string();
+        self.with_client(move |client, target| {
+            let proj = target.project_id.clone();
+            let ds = target.dataset_id.clone();
+            Box::pin(async move {
+                let delete_sql = format!("DELETE FROM `{proj}.{ds}.reports` WHERE mission_id = @mission_id");
+                client
+                    .job()
+                    .query(&proj, bq_query_request(delete_sql, vec![named_string_param("mission_id", mission_id.clone())]))
+                    .await?;
+
+                let insert_sql = format!(
+                    "INSERT INTO `{proj}.{ds}.reports` (mission_id, report, created_at) VALUES (@mission_id, @report, CURRENT_TIMESTAMP())"
+                );
+                client
+                    .job()
+                    .query(
+                        &proj,
+                        bq_query_request(
+                            insert_sql,
+                            vec![named_string_param("mission_id", mission_id), named_string_param("report", report)],
+                        ),
+                    )
+                    .await
+                    .map(|_| ())
+            })
+        })
     }
 
-    fn retrieve_report(&self, _mission_id: &str) -> StorageResult<String> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn retrieve_report(&self, mission_id: &str) -> StorageResult<String> {
+        let mission_id = mission_id.to_string();
+        let mission_id_for_err = mission_id.clone();
+        let value = self.with_client(move |client, target| {
+            let sql = format!(
+                "SELECT report FROM `{}.{}.reports` WHERE mission_id = @mission_id",
+                target.project_id, target.dataset_id
+            );
+            let proj = target.project_id.clone();
+            Box::pin(async move {
+                let req = bq_query_request(sql, vec![named_string_param("mission_id", mission_id)]);
+                let resp = client.job().query(&proj, req).await?;
+                let mut rs = ResultSet::new_from_query_response(resp);
+                if rs.next_row() {
+                    rs.get_string_by_name("report")
+                } else {
+                    Ok(None)
+                }
+            })
+        })?;
+        value.ok_or_else(|| StorageError::NotFound(format!("report for mission '{}' not found", mission_id_for_err)))
     }
 
-    fn list_missions(&self, _limit: Option<usize>) -> StorageResult<Vec<String>> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn list_missions(&self, limit: Option<usize>) -> StorageResult<Vec<String>> {
+        self.with_client(move |client, target| {
+            let sql = match limit {
+                Some(n) => format!(
+                    "SELECT mission_id FROM `{}.{}.missions` ORDER BY created_at DESC LIMIT {}",
+                    target.project_id, target.dataset_id, n
+                ),
+                None => format!(
+                    "SELECT mission_id FROM `{}.{}.missions` ORDER BY created_at DESC",
+                    target.project_id, target.dataset_id
+                ),
+            };
+            let proj = target.project_id.clone();
+            Box::pin(async move {
+                let resp = client.job().query(&proj, bq_query_request(sql, vec![])).await?;
+                let mut rs = ResultSet::new_from_query_response(resp);
+                let mut ids = Vec::new();
+                while rs.next_row() {
+                    if let Some(id) = rs.get_string_by_name("mission_id")? {
+                        ids.push(id);
+                    }
+                }
+                Ok(ids)
+            })
+        })
     }
 
-    fn delete_mission(&self, _mission_id: &str) -> StorageResult<()> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn delete_mission(&self, mission_id: &str) -> StorageResult<()> {
+        let mission_id = mission_id.to_string();
+        let mission_id_for_err = mission_id.clone();
+        // `bigquery-emulator` was verified to not populate
+        // `numDmlAffectedRows` on DELETE responses (it's present in real
+        // BigQuery's API but the field is simply absent here), so
+        // existence — and therefore whether to report `NotFound` — is
+        // determined with an explicit SELECT rather than trusting the
+        // affected-row count the way `PostgresBackend` does.
+        let existed = self.with_client(move |client, target| {
+            let proj = target.project_id.clone();
+            let ds = target.dataset_id.clone();
+            Box::pin(async move {
+                let sql = format!("SELECT mission_id FROM `{proj}.{ds}.missions` WHERE mission_id = @mission_id LIMIT 1");
+                let req = bq_query_request(sql, vec![named_string_param("mission_id", mission_id.clone())]);
+                let resp = client.job().query(&proj, req).await?;
+                let mut rs = ResultSet::new_from_query_response(resp);
+                let existed = rs.next_row();
+
+                for table in ["events", "reports", "missions"] {
+                    let sql = format!("DELETE FROM `{proj}.{ds}.{table}` WHERE mission_id = @mission_id");
+                    let req = bq_query_request(sql, vec![named_string_param("mission_id", mission_id.clone())]);
+                    client.job().query(&proj, req).await?;
+                }
+
+                Ok::<_, BQError>(existed)
+            })
+        })?;
+        if !existed {
+            return Err(StorageError::NotFound(format!("mission '{}' not found", mission_id_for_err)));
+        }
+        Ok(())
     }
 
-    fn mission_exists(&self, _mission_id: &str) -> StorageResult<bool> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+    fn mission_exists(&self, mission_id: &str) -> StorageResult<bool> {
+        let mission_id = mission_id.to_string();
+        self.with_client(move |client, target| {
+            let sql = format!(
+                "SELECT mission_id FROM `{}.{}.missions` WHERE mission_id = @mission_id LIMIT 1",
+                target.project_id, target.dataset_id
+            );
+            let proj = target.project_id.clone();
+            Box::pin(async move {
+                let req = bq_query_request(sql, vec![named_string_param("mission_id", mission_id)]);
+                let resp = client.job().query(&proj, req).await?;
+                let mut rs = ResultSet::new_from_query_response(resp);
+                Ok(rs.next_row())
+            })
+        })
     }
 
     fn get_stats(&self) -> StorageResult<StorageStats> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+        let (missions, events, reports) = self.with_client(move |client, target| {
+            let proj = target.project_id.clone();
+            let ds = target.dataset_id.clone();
+            Box::pin(async move {
+                let mut counts = Vec::with_capacity(3);
+                for table in ["missions", "events", "reports"] {
+                    let sql = format!("SELECT COUNT(*) AS c FROM `{proj}.{ds}.{table}`");
+                    let resp = client.job().query(&proj, bq_query_request(sql, vec![])).await?;
+                    let mut rs = ResultSet::new_from_query_response(resp);
+                    let c = if rs.next_row() { rs.get_i64_by_name("c")?.unwrap_or(0) } else { 0 };
+                    counts.push(c);
+                }
+                Ok::<_, BQError>((counts[0], counts[1], counts[2]))
+            })
+        })?;
+        Ok(StorageStats {
+            total_missions: missions as u64,
+            total_events: events as u64,
+            total_reports: reports as u64,
+            storage_size_bytes: None,
+            connected: true,
+        })
     }
 
     fn close(&self) -> StorageResult<()> {
-        Err(StorageError::BackendError(BIGQUERY_NOT_IMPLEMENTED.to_string()))
+        let client = self.client.lock().unwrap().take();
+        if client.is_none() {
+            return Err(Self::not_connected());
+        }
+        drop(client);
+        self.target.lock().unwrap().take();
+        self.runtime.lock().unwrap().take();
+        Ok(())
     }
 }
 
@@ -983,15 +1453,42 @@ mod tests {
     }
 
     #[test]
-    fn test_bigquery_stub_returns_error() {
-        let mut backend = BigQueryBackend::new("bigquery://project/dataset");
-        match backend.connect() {
+    fn test_bigquery_stub_reports_not_connected_before_connect() {
+        let backend = BigQueryBackend::new("bigquery://project/dataset");
+        match backend.store_mission("m1", "{}") {
             Err(StorageError::ConnectionFailed(msg)) => {
-                assert!(msg.contains("not implemented"));
-                assert!(msg.contains("credentials"));
+                assert!(msg.contains("not connected"));
             }
-            _ => panic!("Expected ConnectionFailed"),
+            other => panic!("Expected ConnectionFailed, got {:?}", other),
         }
+    }
+
+    #[test]
+    fn test_parse_bigquery_connection_string_basic() {
+        let target = parse_bigquery_connection_string("bigquery://my-project/my_dataset").unwrap();
+        assert_eq!(target.project_id, "my-project");
+        assert_eq!(target.dataset_id, "my_dataset");
+        assert_eq!(target.endpoint, None);
+    }
+
+    #[test]
+    fn test_parse_bigquery_connection_string_with_emulator_endpoint() {
+        let target =
+            parse_bigquery_connection_string("bigquery://test-project/test_dataset?endpoint=http://localhost:9050")
+                .unwrap();
+        assert_eq!(target.project_id, "test-project");
+        assert_eq!(target.dataset_id, "test_dataset");
+        assert_eq!(target.endpoint.as_deref(), Some("http://localhost:9050"));
+    }
+
+    #[test]
+    fn test_parse_bigquery_connection_string_missing_dataset_fails() {
+        assert!(parse_bigquery_connection_string("bigquery://only-project").is_err());
+    }
+
+    #[test]
+    fn test_parse_bigquery_connection_string_wrong_scheme_fails() {
+        assert!(parse_bigquery_connection_string("postgresql://project/dataset").is_err());
     }
 
     #[test]

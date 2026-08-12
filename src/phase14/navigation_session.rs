@@ -20,9 +20,31 @@ pub enum SessionError {
 
     #[error("Modality not available: {0}")]
     ModalityNotAvailable(String),
+
+    #[error("Unsupported: {0}")]
+    Unsupported(String),
 }
 
 pub type SessionResult<T> = Result<T, SessionError>;
+
+/// Extension point for 3D scene reconstruction from point-cloud/sensor data.
+///
+/// Deliberately *not* implemented in this crate: PyRoboReplay's own
+/// architectural boundary (docs/CLAUDE.md, "Principle 2: Mapping-Independent")
+/// assigns 3D reconstruction, real-time SLAM, and traversability analysis to
+/// PyTerrainMap, a sibling SHER-stack system, so PyRoboReplay stays a
+/// replay/analysis layer that *consumes* maps rather than building them. This
+/// trait is the seam a future PyTerrainMap integration (once it becomes an
+/// actual declared `Cargo.toml`/`pyproject.toml` dependency — it is not one
+/// today) would implement and hand to
+/// [`NavigationSession::reconstruct_3d_with`].
+pub trait SceneReconstructor: Send + Sync {
+    /// Reconstruct a 3D scene representation from the session's available
+    /// sensor/point-cloud timeline data. The returned bytes are an opaque,
+    /// reconstructor-owned serialization (e.g. a mesh format defined by
+    /// PyTerrainMap) — this crate does not interpret them.
+    fn reconstruct(&self, session: &NavigationSession) -> SessionResult<Vec<u8>>;
+}
 
 /// Unified representation of a robot navigation mission
 #[derive(Clone)]
@@ -224,14 +246,50 @@ impl NavigationSession {
         self.data_completeness * 100.0
     }
 
-    /// Reconstruct 3D scene from multi-sensor data (placeholder)
+    /// Reconstruct 3D scene from multi-sensor data.
+    ///
+    /// PyRoboReplay does not, and deliberately will not, implement 3D
+    /// reconstruction (SLAM-grade point-cloud fusion, meshing, etc.) itself.
+    /// Per this repo's own architectural boundary (docs/CLAUDE.md,
+    /// "Principle 2: Mapping-Independent" — "Does not generate maps. Consumes
+    /// maps from PyTerrainMap, SLAM systems, GIS platforms.") that
+    /// responsibility belongs to PyTerrainMap, a sibling system in the SHER
+    /// stack. As of this pass PyTerrainMap is not a declared dependency of
+    /// this crate (checked `Cargo.toml`/`pyproject.toml` — no path/git
+    /// dependency present), so there is nothing real to call yet; building a
+    /// local reconstruction implementation here would duplicate work another
+    /// subsystem owns and would need to be thrown away once the real
+    /// integration lands.
+    ///
+    /// This method is therefore the stable call site plus extension point:
+    /// it delegates to an injected [`SceneReconstructor`] (the seam a future
+    /// PyTerrainMap adapter would implement) and reports explicitly via
+    /// `SessionError::Unsupported` when none is configured, rather than
+    /// silently returning an empty/fake scene.
     pub fn reconstruct_3d(&self) -> SessionResult<Vec<u8>> {
+        self.reconstruct_3d_with(None)
+    }
+
+    /// Same as [`Self::reconstruct_3d`], but with an explicit reconstructor
+    /// injected (e.g. by a future PyTerrainMap integration). Pass `None` to
+    /// get the same "not configured" behavior as `reconstruct_3d()`.
+    pub fn reconstruct_3d_with(
+        &self,
+        reconstructor: Option<&dyn SceneReconstructor>,
+    ) -> SessionResult<Vec<u8>> {
         if !self.has_modality(Modality::Sensors) {
             return Err(SessionError::ModalityNotAvailable("Sensors".to_string()));
         }
 
-        // TODO: Implement 3D reconstruction from point clouds
-        Ok(Vec::new())
+        match reconstructor {
+            Some(r) => r.reconstruct(self),
+            None => Err(SessionError::Unsupported(
+                "3D reconstruction requires an external SceneReconstructor (e.g. a PyTerrainMap \
+                 integration); none is configured. PyRoboReplay is mapping-independent by design \
+                 (docs/CLAUDE.md Principle 2) and does not implement reconstruction locally."
+                    .to_string(),
+            )),
+        }
     }
 
     /// Get summary statistics
