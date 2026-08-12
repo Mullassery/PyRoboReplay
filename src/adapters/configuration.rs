@@ -34,7 +34,7 @@ impl ConfigurationAdapter {
         let timestamp = Utc::now();
 
         // Parse YAML
-        let config: serde_yaml::Value = serde_yaml::from_str(content)
+        let config: serde_norway::Value = serde_norway::from_str(content)
             .map_err(|e| AdapterError::ParseError(format!("Invalid YAML: {}", e)))?;
 
         // Extract parameters
@@ -46,9 +46,9 @@ impl ConfigurationAdapter {
                     .unwrap_or_else(|| format!("{:?}", key));
 
                 let value_str = match value {
-                    serde_yaml::Value::String(s) => s.clone(),
-                    serde_yaml::Value::Number(n) => n.to_string(),
-                    serde_yaml::Value::Bool(b) => b.to_string(),
+                    serde_norway::Value::String(s) => s.clone(),
+                    serde_norway::Value::Number(n) => n.to_string(),
+                    serde_norway::Value::Bool(b) => b.to_string(),
                     _ => format!("{:?}", value),
                 };
 
@@ -87,7 +87,7 @@ impl ConfigurationAdapter {
     /// Validate a parameter against expected ranges and known issues
     fn validate_parameter(&self, param_name: &str, value_str: &str, config_type: &str) -> Option<ConfigValidationError> {
         let param_lower = param_name.to_lowercase();
-        let value_lower = value_str.to_lowercase();
+        let _value_lower = value_str.to_lowercase();
 
         // Navigation2 validations
         if config_type == "nav2" {
