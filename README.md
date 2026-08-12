@@ -12,7 +12,7 @@ Includes thermal imaging analysis, motion replay, and causal inference for auton
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/badge/PyPI-2.1.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
 [![Tests](https://img.shields.io/github/actions/workflow/status/Mullassery/PyRoboReplay/ci.yml?label=tests)](https://github.com/Mullassery/PyRoboReplay/actions)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Proprietary-lightgrey.svg)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
 [![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/Mullassery/PyRoboReplay)
 
@@ -370,7 +370,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 
 ## License
 
-Open Source Software — Use freely in academic, commercial, and personal projects. See [LICENSE](LICENSE).
+Proprietary License — Free to use with explicit attribution to the original author. Not OSI-approved open source; see the full terms in [LICENSE](LICENSE).
 
 ---
 
