@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "2.9.1"
-description = "AI Navigation Reliability Engineer for autonomous robots. Phase 14-15: Universal temporal fusion, multi-modal analysis, root cause inference. 63 new tests. Nav2 limitation detection, semantic gap analysis, intelligent recommendations. v2.2: CLI stats dashboard for separate terminal monitoring."
+version = "2.9.2"
+description = "Forensic debugging platform for autonomous robots: causal analysis, multispectral sensor fusion, invisible object detection, and persistent world knowledge"
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = {text = "Proprietary License — Free to use with explicit attribution"}
 readme = "README.md"
@@ -55,7 +55,18 @@ Discussions = "https://github.com/mullassery/pyroboreplay/discussions"
 Changelog = "https://github.com/mullassery/pyroboreplay/releases"
 
 [tool.maturin]
-module-name = "pyroboreplay"
+# Mixed python/rust layout: `src/pyroboreplay/__init__.py` is the real,
+# importable top-level package (`from pyroboreplay import Mission`); it
+# re-exports everything from the compiled `pyroboreplay._core` submodule
+# built from `src/lib.rs`'s `#[pymodule] fn _core`. `python-source = "src"`
+# tells maturin where to find that package (it doesn't default-detect
+# `src/pyroboreplay/`, only a top-level `pyroboreplay/`) — without it,
+# maturin silently dropped `__init__.py` from the wheel entirely and
+# `import pyroboreplay` returned a namespace package with none of the
+# classes accessible (verified while diagnosing this).
+python-source = "src"
+module-name = "pyroboreplay._core"
+bindings = "pyo3"
 features = ["pyo3/extension-module"]
 
 [tool.maturin.sdist]
