@@ -1,440 +1,225 @@
 # PyRoboReplay Implementation Status
 
 **Last Updated**: 2026-08-12
-**Current Phase**: Phase 15+ (Root Cause Inference Engine and beyond)
-**Overall Progress**: See "Post-Remediation Status" below for the current, verified state.
-The "60% complete" / "Phase 2" figures in the rest of this document are historical
-(dated 2026-07-21, covering only the first two of what are now 15+ phases) and are
-kept below for the project history; they do not reflect the current state of the
-codebase and should not be read as current.
+**Current Phase**: Phase 15+ (Root Cause Inference Engine and beyond); this document
+reflects the actual, verified state of the codebase as of this update, not a
+point-in-time snapshot from early development.
 
 ---
 
-## Post-Remediation Status (2026-08-12)
+## How to read this document
 
-This section reflects an honest, verified snapshot after a remediation pass driven by
-an independent audit. It supersedes the stale "60% complete" figure above, which
-predates most of the codebase (Phases 3-15) and was left un-updated even as the
-package's own `pyproject.toml` classified it as `Development Status :: 5 -
-Production/Stable`. That mismatch has been corrected: the classifier is now `4 - Beta`,
-which is the honest characterization given the caveats below.
-
-**What's genuinely solid:**
-- 157 Rust source files, ~50k LOC, 710 passing `cargo test --lib` unit tests (0 failing).
-- A real, actively-used security fix: shell/AppleScript injection in the stats
-  dashboard launcher (`src/cli/stats_dashboard.rs`) was fixed and covered by
-  regression tests that exercise real shell execution with malicious payloads.
-- `PostgresBackend` and `S3Backend` (`src/storage/backends.rs`) are real, working
-  implementations (`tokio-postgres` / `aws-sdk-s3`), verified against a live local
-  PostgreSQL container and a live local MinIO container with real integration tests
-  (`tests/test_postgres_backend_integration.rs`, `tests/test_s3_backend_integration.rs`).
-- `BigQueryBackend` is honestly stubbed - not implemented, with an explicit error
-  message explaining why (no local emulator, requires GCP credentials this
-  environment doesn't have) rather than silently claiming parity with the other two.
-- The LLM integration (`src/reasoning/llm_integration.rs`) makes a real HTTP call to a
-  local Ollama server and only reports `is_from_llm: true` when a genuine model
-  response came back; verified end-to-end against a real Ollama instance running
-  `qwen2.5:0.5b` (`tests/test_ollama_integration.rs`, `scripts/test_ollama_integration.sh`).
-  It falls back to a clearly-labeled template generator if Ollama is unavailable.
-- The license badge/text in `README.md` now matches the actual proprietary license
-  instead of falsely claiming MIT.
-
-**What's known-incomplete or left as debt (not silently hidden):**
-- `BigQueryBackend` is not implemented (see above) - by design, not an oversight.
-- `cargo fmt --check` and `cargo clippy -- -D warnings` both fail across the wider
-  codebase. This predates this remediation pass (verified against pristine,
-  untouched files at the prior commit) - the codebase was never run through
-  `rustfmt`/a clean clippy pass from early on. Fixing this project-wide was judged
-  out of scope and too risky to attempt safely in one pass (a `cargo fix --tests`
-  attempt during this remediation actually broke ~50 files' worth of `use super::*`
-  imports in test modules and had to be reverted); it would need a dedicated,
-  carefully-reviewed pass of its own. The files touched in this remediation pass are
-  clippy-clean; the rest of the codebase's baseline debt is unchanged.
-- Of the ~367 `.unwrap()` calls and 10 `panic!()`s in `src/`, the ones on the actual
-  untrusted-input attack surface (the mission/log/config adapters in `src/adapters/`
-  and the bundle/evidence-discovery code in `src/core/`) were audited and found to
-  already be safe (the only `.unwrap()`s there are on compile-time-constant regex
-  patterns or test code, not on parsed external data). The remaining unwraps are
-  spread through internal-invariant code elsewhere in the 157-file codebase and were
-  not exhaustively swept in this pass.
-- Marketing claims in `README.md` (e.g. "Debug 10x faster") are aspirational framing,
-  not measured benchmarks; they were not part of this remediation's scope and are
-  called out here for transparency rather than left as an implicit false claim.
+This is a single, current status report — not a phase-by-phase changelog. Earlier
+versions of this file kept an unmaintained "Phase 1 / Phase 2 / Phase 3" section
+below a newer "Post-Remediation Status" header, which made the file self-contradictory
+(a "Phase 15+" header sitting on top of "Phase 2: 100% complete... Task #12 pending"
+prose from 2026-07-21, describing a ~3,800-LOC codebase that has since grown to 157
+files / ~50k LOC). That structure has been replaced with this single, dated snapshot.
+If you need the historical phase-by-phase task lists, they're in git history for this
+file prior to this rewrite.
 
 ---
 
-## Phase 1: Sensor Replay Engine ✅ COMPLETE
+## Verified Current State (2026-08-12)
 
-All Phase 1 objectives delivered. Total: **11 integration tests passing**, **350+ LOC**, production-ready.
+**Scale**: 157+ Rust source files, ~50k+ LOC, organized into 15+ phases
+(`src/core`, `src/adapters`, `src/analyzers`, `src/phase14`, `src/phase15`,
+`src/storage`, `src/streaming`, `src/perception`, `src/reasoning`, `src/knowledge`,
+`src/fusion`, `src/intelligence`, `src/cli`).
 
-### Completed Tasks
-- [x] Task #1: Expand event model for sensor streams (LidarScan, CameraFrame, IMUData, OdometryUpdate, Costmap)
-- [x] Task #2: Implement ROS 2 bag parser (production-grade) — handles .bag and .db3 formats
-- [x] Task #3: Build CLI timeline scrubber with Ratatui UI (play/pause/step/rewind)
-- [x] Task #4: Implement individual sensor stream replay with temporal queries
-- [x] Task #5: Create test warehouse robot mission (synthetic 96k-event bag)
-- [x] Task #6: Expand Python API (Mission class with 6+ methods)
-- [x] Task #7: Write Phase 1 tests (11 integration tests, 85%+ coverage)
-- [x] Task #8: Document Phase 1 (QUICKSTART.md, API.md, ARCHITECTURE.md)
-- [x] Task #9: Add structured JSON output to all CLI commands (--json flag)
+**Tests**: `cargo test --lib` → **722 passing, 0 failing**. This includes a live
+spot-check of the original Phase 1-3 functionality (event model, timeline engine,
+causal analysis engine, lidar/IMU/JSON-output CLI visualizations — 51 unit tests) plus
+the 11 original Phase 1 integration tests (`tests/integration_tests.rs`, all passing
+once the synthetic fixture bag is regenerated via
+`cargo run --example generate_warehouse_mission --release`, which is a pre-existing,
+documented, working-directory-dependent requirement of that test file, not a
+regression). See "Phase 1-3 spot-check findings" below for one real gap this
+spot-check surfaced.
 
-### Key Metrics
-- ✅ Individual sensor replay latency: <50ms (target: <100ms)
-- ✅ 11 integration tests, all passing
-- ✅ 350+ LOC in core modules
-- ✅ Python API accessible via PyO3 bindings
-- ✅ Zero external dependencies (except Rust ecosystem)
+### Storage backends — all three now real, all three verified against live local services
 
----
+- **`PostgresBackend`** (`src/storage/backends.rs`): real `tokio-postgres`
+  implementation. Verified with 6 integration tests
+  (`tests/test_postgres_backend_integration.rs`) against a live local PostgreSQL 16
+  container.
+- **`S3Backend`**: real `aws-sdk-s3` implementation. Verified with 6 integration tests
+  (`tests/test_s3_backend_integration.rs`) against a live local MinIO container.
+- **`BigQueryBackend`**: **now a real implementation** (this was previously an honest
+  stub — no local emulator, no GCP credentials available). Built on
+  `gcp-bigquery-client`, driven through the same dedicated-runtime + `block_on` pattern
+  as the other two backends. Connects to either real BigQuery (Application Default
+  Credentials) or `ghcr.io/goccy/bigquery-emulator` (via a `?endpoint=` query param on
+  the `bigquery://project/dataset` connection string) for local testing. Upserts are
+  implemented as delete-then-insert (BigQuery has no `ON CONFLICT`, and `MERGE`
+  against a `SELECT` subquery is rejected by the emulator — both verified against a
+  real running instance, documented in the source). Verified with 7 integration tests
+  (`tests/test_bigquery_backend_integration.rs`) against a live local
+  `ghcr.io/goccy/bigquery-emulator` container.
 
-## Phase 2: CLI-First Sensor Replay ✅ COMPLETE
+All three backend integration test suites are `#[ignore]`d by default (so plain
+`cargo test` never requires Docker) and documented with the exact `docker run` command
+needed to stand up their respective service in each test file's module doc comment.
 
-**Target**: Complete CLI-first replay with all sensor visualization. All 5 sensor types playable.
+### Phase 14 multi-modal adapters (`src/phase14/modality_adapters.rs`)
 
-### Current Progress: 100% (14 of 14 Phase 2 tasks complete)
+All originally-outstanding adapter TODOs are now real, tested implementations:
 
-#### Completed Tasks
-- [x] **Task #9**: Structured JSON output (all commands)
-  - MissionAnalysisJson, EventJson, SensorFramesJson structs ✅
-  - --json flag on replay, analyze, list commands ✅
-  - JsonResponse<T> generic wrapper ✅
-  - 4 unit tests passing ✅
+- **ROS 2 bags**: both real on-disk formats are parsed — `.mcap` (via the `mcap`
+  crate) and `.db3` / rosbag2-sqlite (via direct `rusqlite` queries against the
+  `topics`/`messages` schema). Format is auto-detected from the file extension.
+- **Linux logs**: syslog RFC 3164 and RFC 5424 line formats, and dmesg's kernel
+  ring-buffer format (`[timestamp] msg`) including both the raw monotonic-time form
+  and the wall-clock `-T`/`--ctime` form (monotonic-time lines are explicitly flagged
+  `boot_relative: true` since they have no fixed relationship to wall-clock time
+  without an external boot-time anchor).
+- **Nav2 exports**: costmap/map YAML+PGM pairs (`nav2_map_server`/`map_saver_cli`
+  output) and `diagnostic_msgs/DiagnosticArray` records (the message type Nav2's
+  diagnostic updaters publish), exported as JSON Lines or a JSON array — the practical
+  text form obtainable via `ros2 topic echo -f json` without a live ROS 2 install.
+- **Video metadata**: duration, resolution, codec, frame count, fps via the same
+  `ffprobe` shell-out pattern already used by `src/phase14/video_processing.rs`.
 
-- [x] **Task #10**: Lidar ASCII visualization in terminal ✅ **JUST COMPLETED**
-  - 2D polar projection (bird's-eye view) ✅
-  - Intensity encoding (█▓▒░·) for signal strength ✅
-  - Anomaly detection with X marker ✅
-  - Configurable resolution (width/height/max_range) ✅
-  - Reference grid with distance rings ✅
-  - Auto-display in wide terminals (>120 cols) during replay ✅
-  - 4 unit tests passing ✅
-  - 5 demo scenarios (clear env, obstacle, signal variation, anomalies, sparse) ✅
-  - Comprehensive documentation (LIDAR_VISUALIZATION.md) ✅
-  - Example demo binary (lidar_visualization_demo.rs) ✅
+12 tests in `modality_adapters::tests` exercise all of the above against real files
+(real `.mcap`/`.db3` bags, real syslog/dmesg lines, a real Nav2 export directory, a
+real video probed with a real `ffprobe`).
 
-#### Completed Tasks (Continued)
+**Known scope boundary, left as explicit follow-up work**: these adapters are real and
+independently tested, but nothing in the codebase yet drives their `extract_stream()`
+output into `timeline_indexing::Timeline`/`TimelineEvent` end-to-end. This was
+evaluated and deliberately not attempted in this pass: `TimelineEvent` has 6 variants
+(`RosEvent`, `VideoFrame`, `LogEntry`, `SensorReading`, `Annotation`, `SystemMetric`)
+that don't map 1:1 onto the 9 `DataSourceType`s these adapters cover, and each mapping
+needs adapter-specific deserialization of the adapter's own `TimeSeriesPoint.value`
+payload (e.g. `LinuxLogsAdapter` serializes a `LogRecord` as JSON that would need to be
+decoded back out to populate `TimelineEvent::LogEntry`'s `level`/`message` fields) —
+this is a real, scoped, but non-trivial second pass, not a one-line wire-up. Doing it
+hastily risked either a shallow/wrong mapping or scope creep into a larger
+refactor under time pressure; it is left as clearly-flagged follow-up work instead.
 
-- [x] **Task #11**: Camera frame export to standalone HTML ✅ **REDESIGNED FOR TIMELINE INTELLIGENCE**
-  - Timeline-based intelligent loading (manifest-driven, not frame data embedded) ✅
-  - Lightweight HTML player with embedded frame manifest (50KB) ✅
-  - Frames extracted on-demand from mission.bag during playback ✅
-  - Browser playback (play/pause/speed controls 0.25x-4.0x) ✅
-  - Frame-by-frame navigation with slider + instant seeking ✅
-  - Supports up to 8K resolution, defaults to Full HD (1920×1080) ✅
-  - If source frames smaller than max, uses source dimensions ✅
-  - Zero external dependencies (all CSS/JS inline) ✅
-  - Keyboard shortcuts (Space, arrows, 1-9 speed) ✅
-  - 3 unit tests passing (manifest serialization, frame metadata, config) ✅
-  - Works offline (requires mission file in same directory) ✅
-  - Comprehensive documentation (CAMERA_EXPORT.md with comparison table) ✅
+### Architectural boundary decision: 3D reconstruction stays out of this repo
 
-#### Pending Tasks
+`src/phase14/navigation_session.rs` previously had `// TODO: Implement 3D
+reconstruction from point clouds` with a stub returning `Ok(Vec::new())`. This repo's
+own `docs/CLAUDE.md` is explicit that PyRoboReplay is "mapping-independent" by design
+("Does not generate maps. Consumes maps from PyTerrainMap, SLAM systems, GIS
+platforms.") and that 3D reconstruction, real-time SLAM, and traversability analysis
+belong to **PyTerrainMap**, a sibling system in the SHER/robotics stack.
 
-- [ ] **Task #12**: IMU visualization in terminal
+Verified: `PyTerrainMap` is **not** a declared dependency of this crate — no path or
+git dependency in `Cargo.toml` or `pyproject.toml`. Building a real 3D-reconstruction
+implementation here would therefore mean duplicating a whole subsystem another
+component already owns, using no real integration point, and it would need to be
+thrown away once actual PyTerrainMap integration lands.
 
-- [x] **Task #12**: IMU visualization in terminal ✅ **JUST COMPLETED**
-  - ASCII graph rendering for accelerometer/gyro/magnetometer ✅
-  - Peak detection (impacts >2.0 m/s², rotations >1.0 rad/s) ✅
-  - Drift visualization (first-to-last value analysis) ✅
-  - 6 unit tests passing ✅
-  - Example demo with 5 scenarios ✅
-  - Comprehensive documentation (IMU_VISUALIZATION.md) ✅
-  - ~500 LOC implementation
+Instead, `NavigationSession::reconstruct_3d()` now delegates to an injectable
+`SceneReconstructor` trait (`reconstruct_3d_with(Some(&reconstructor))`) — the seam a
+future PyTerrainMap adapter would implement — and returns an explicit
+`SessionError::Unsupported` (not a silently-empty `Vec`) when none is configured. This
+is a deliberate scope decision per this repo's own architecture principles, not
+unfinished work.
 
-- [x] **Task #13**: Enhanced CLI with sensor metadata panel ✅ **JUST COMPLETED**
-  - Real-time sensor metadata panel with all sensor types ✅
-  - Frame rate, resolution, encoding display ✅
-  - Quality indicators (✅ 🟢 🟡 🟠 🔴 emoji scale) ✅
-  - Data completeness calculation (gap detection) ✅
-  - Compact summary mode ✅
-  - 7 unit tests passing ✅
-  - Example demo with 5 sensors (sensor_metadata_demo.rs) ✅
-  - Comprehensive documentation (SENSOR_METADATA.md) ✅
-  - ~400 LOC implementation
+### Legacy Ros2 adapter — real limitation, not new drift
 
-- [x] **Task #14**: Comprehensive keyboard shortcuts + help system ✅ **COMPLETE**
-  - Already documented in KEYBOARD_SHORTCUTS.md ✅
-  - Keyboard shortcuts module with 40+ shortcuts ✅
-  - Context-sensitive help overlay ✅
-  - Quick reference guide ✅
-  - Full help panel with all categories ✅
-  - Tip-of-the-day system ✅
-  - 8 unit tests passing ✅
-  - Example demo (keyboard_shortcuts_demo.rs) ✅
-  - ~350 LOC implementation
+Spot-checking Phase 1's "COMPLETE" claim surfaced one genuine, pre-existing gap:
+`src/adapters/ros2.rs` (the original Phase 1 `.bag`/`.db3` adapter, still live — wired
+into both the CLI (`src/cli/mod.rs`) and the PyO3 Python bindings (`src/lib.rs`), not
+dead code) correctly parses real topic/message/timestamp structure from a `.db3`
+SQLite bag, but each `parse_*_message()` function (lidar/camera/imu/odometry/pose)
+returns hardcoded default field values (empty ranges, all-zero acceleration, identity
+pose, etc.) rather than actually decoding the message payload bytes — each is
+literally commented `// Stub: return minimal ... event`. This was already noted in
+this file's old "Known Issues" section ("ROS 2 CDR deserialization: Currently stubs")
+and remains true today; it is called out explicitly here rather than silently dropped
+during this rewrite. Note this is a different code path from the new, real
+`RosBagAdapter` in `src/phase14/modality_adapters.rs` described above — that adapter
+extracts raw per-topic message bytes (format-correct, doesn't need message-type
+semantics) rather than claiming to populate typed sensor fields it doesn't decode.
 
-### Acceptance Criteria (Phase 2)
-- ✅ All 5 sensor types playable via CLI (currently: lidar ✅, camera/imu/odometry/costmap pending)
-- ⏳ Camera HTML export works (open in any browser) — next task
-- ✅ Terminal visualizations responsive (<100ms update) — lidar tested ✅
-- ✅ No external web server or dependencies
-- ✅ Single binary, everything included
+### What's still known-incomplete or deferred (by design, not oversight)
 
----
+Per this remediation's explicit scope bar ("core functionality complete, defer
+speculative/enterprise features"), the following remain out of scope and were not
+attempted:
+- Gazebo / Isaac Sim adapters
+- Cross-mission ML pattern learning
+- Real-time streaming ingestion
+- Cryptographic audit-trail signatures
+- Deterministic, bit-perfect replay
+- Mission-critical failover
+- Compliance / ISO-3691-4 reporting
 
-## Phase 3: Causal Analysis Engine (In Progress, Weeks 17-22)
-
-**Gap solved**: Causality invisible (30% of debugging time)
-
-### Completed Tasks
-- [x] **Task #15**: Event dependency graph (temporal causal links) ✅ COMPLETE
-  - CausalGraph, CausalLink, CausalChain structures
-  - CausalGraphBuilder with heuristic rule inference
-  - 7 unit tests, demo example with obstacle avoidance scenario
-  - ~350 LOC implementation
-
-- [x] **Task #16**: Causal query engine ("what caused this failure?") ✅ COMPLETE
-  - CausalQuery & CausalHypothesis structures
-  - query_what_caused(): backward causality tracing
-  - query_what_effects(): forward causality tracing
-  - Ranked hypotheses with confidence scores
-  - Natural language explanations for each hypothesis
-  - 4 new unit tests (total 11), demo with multi-event scenario
-  - ~400 LOC implementation
-
-- [x] **Task #17**: Interactive causal visualization (flowcharts) ✅ COMPLETE
-  - CausalViz: ASCII flowchart rendering engine
-  - render_query(): full flowchart with confidence indicators
-  - render_summary(): statistics panel (chains, lengths, confidence, time gaps)
-  - render_comparison(): side-by-side hypothesis comparison
-  - render_confidence_timeline(): event contribution heatmap
-  - Confidence visualization (█▓▒░· intensity levels)
-  - 4 new unit tests, demo with exploration scenario
-  - ~350 LOC implementation
-
-- [x] **Task #18**: Temporal correlation analysis (anomaly detection) ✅ COMPLETE
-  - CorrelationAnalyzer: detects correlations between event pairs
-  - EventCorrelation: represents pair correlations with strength scores
-  - analyze(): computes all pairwise correlations within time window
-  - detect_anomaly_patterns(): identifies unusual event patterns
-  - find_event_chains(): traces multi-step correlated sequences
-  - Heuristic rules for 12+ event type pairs
-  - 7 unit tests, demo with obstacle navigation scenario
-  - ~450 LOC implementation
-
-### Phase 3 COMPLETE ✅
-**Total:** ~1,550 LOC across 4 modules (goal: 800-1,200)
-
-### Scope So Far: 350 LOC (target: 800-1200 total)
-
----
-
-## Code Statistics
-
-### Source Code Breakdown
-```
-src/
-├── core/
-│   ├── event.rs           ~350 LOC (Universal event model)
-│   ├── timeline.rs        ~260 LOC (Temporal queries, sensor filtering)
-│   └── lib.rs             ~100 LOC (PyO3 bindings)
-├── adapters/
-│   ├── ros2.rs            ~200 LOC (ROS 2 bag parser)
-│   └── mod.rs             ~30 LOC (Adapter trait)
-└── cli/
-    ├── args.rs            ~80 LOC (Clap CLI arg parsing)
-    ├── replay_ui.rs       ~440 LOC (Ratatui interactive UI + lidar integration)
-    ├── json_output.rs     ~250 LOC (JSON serialization)
-    ├── lidar_viz.rs       ~250 LOC (Lidar ASCII visualization)
-    ├── camera_export.rs   ~580 LOC (Camera HTML export)
-    ├── imu_viz.rs         ~500 LOC (IMU ASCII graphs)
-    ├── sensor_stats.rs    ~400 LOC (Sensor metadata panel)
-    ├── keyboard.rs        ~350 LOC (Keyboard shortcuts + help) [NEW]
-    └── mod.rs             ~50 LOC (CLI orchestration)
-
-Total Core: ~3,840 LOC
-```
-
-### Tests
-- **Unit tests**: 4 (lidar_viz) + 3 (camera_export) + 6 (imu_viz) + 4 (json_output) + 7 (sensor_stats) + 8 (keyboard) = 32
-- **Integration tests**: 11 (comprehensive end-to-end)
-- **Total**: 45 tests, all passing
-- **Coverage**: 85%+
-
-### Documentation
-- QUICKSTART.md (~150 lines) — 30-second setup guide
-- API.md (~200 lines) — Python API reference
-- ARCHITECTURE.md (~250 lines) — System design
-- KEYBOARD_SHORTCUTS.md (~280 lines) — 50+ keyboard shortcuts
-- LIDAR_VISUALIZATION.md (~280 lines) — Visualization guide
-- ROADMAP.md (~350 lines) — 8-phase development plan
-- IMPLEMENTATION_STATUS.md (this file)
-
-**Total documentation**: ~1,500 lines
+Additionally:
+- `cargo fmt --check` and `cargo clippy -- -D warnings` still fail across the wider
+  codebase (pre-existing, not touched by this pass or the prior remediation pass — see
+  history below). Files touched in remediation passes are kept clippy-reasonable; the
+  rest of the codebase's formatting/lint debt is unchanged and would need its own
+  dedicated pass (a prior attempt at an automated `cargo fix --tests` sweep broke
+  ~50 files' `use super::*` test imports and was reverted).
+- Of the `.unwrap()`/`panic!()` calls across `src/`, only the ones on the actual
+  untrusted-input attack surface (`src/adapters/`, `src/core/` bundle/evidence-discovery
+  code) were audited in the prior remediation pass; the rest were not exhaustively
+  swept.
+- Marketing language in `README.md` (e.g. "Debug 10x faster") is aspirational framing,
+  not a measured benchmark.
+- **Python packaging gap, now fixed** (two compounding bugs, both fixed):
+  1. As of v2.9.1, the published wheel contained *only* the compiled CLI binary
+     (`pyroboreplay-2.9.1.data/scripts/pyroboreplay`) — `import pyroboreplay` raised
+     `ModuleNotFoundError`. Root cause: `Cargo.toml` had no `[lib]` section, so
+     `cargo`/`maturin` never produced a `cdylib` at all; maturin's bindings
+     auto-detection fell back to packaging `src/main.rs`'s CLI binary as a
+     "bin"-bindings wheel instead of a PyO3 extension module. Fixed by adding
+     `[lib] crate-type = ["cdylib", "rlib"]` to `Cargo.toml` (`rlib` kept so
+     `cargo build --lib`/`cargo test --lib` keep working normally for development) plus
+     a small `build.rs` that emits the macOS `-undefined dynamic_lookup` cdylib-linker
+     workaround PyO3's `extension-module` feature needs but that a plain (non-maturin)
+     `cargo build` doesn't otherwise supply on this platform (maturin injects it itself
+     at wheel-build time, which is why `maturin build` alone had been masking this).
+  2. Fixing (1) alone was not sufficient: it produced a wheel with a real compiled
+     `.so`, but `import pyroboreplay` returned an *empty PEP 420 namespace package*
+     (`dir(pyroboreplay) == []`) — none of `Mission`/`Event`/etc. were reachable.
+     Root cause: `src/pyroboreplay/__init__.py` existed (added in an earlier pass to
+     hold `__version__`) but `pyproject.toml`'s `[tool.maturin]` had no
+     `python-source`, so maturin never found or packaged it; separately, that
+     `__init__.py`'s own `from ._core import *` / `__all__ = ['Replay', 'Fusion']`
+     referred to a `_core` submodule and class names that never existed anywhere in
+     `src/lib.rs` (dead, never-verified content from whenever that file was added).
+     Fixed by wiring the two together for real: `pyproject.toml` now sets
+     `python-source = "src"` and `module-name = "pyroboreplay._core"`; `src/lib.rs`'s
+     `#[pymodule] fn pyroboreplay` was renamed to `fn _core` to match (PyO3 requires
+     this name match the compiled module's `PyInit_<name>` symbol); and
+     `src/pyroboreplay/__init__.py` now imports the classes the module actually
+     registers (`Mission`, `Event`, `Failure`, `Hypothesis`, `RootCauseAnalysis`,
+     `Action`, `FleetStatistics`, `GeoHotspot`) instead of the nonexistent
+     `Replay`/`Fusion`.
+  - **Verified end-to-end**: built the wheel with `maturin build --release`, confirmed
+    the wheel contains `pyroboreplay/__init__.py` + `pyroboreplay/_core.cpython-311-darwin.so`,
+    installed it into a clean virtualenv, and confirmed `import pyroboreplay`,
+    `pyroboreplay.__version__`, `pyroboreplay.Mission`, and `pyroboreplay.__all__`
+    all work and return the real PyO3 classes — not just that the import statement
+    doesn't raise.
 
 ---
 
-## Key Files & Modules
+## Architecture reference
 
-### Phase 1 Completed
-| File | Purpose | Status | LOC |
-|------|---------|--------|-----|
-| src/core/event.rs | Universal event model | ✅ Stable | 350 |
-| src/core/timeline.rs | Temporal replay engine | ✅ Stable | 260 |
-| src/adapters/ros2.rs | ROS 2 bag parser | ✅ Stable | 200 |
-| src/cli/replay_ui.rs | Ratatui UI | ✅ Stable | 370 |
-| src/cli/args.rs | CLI argument parsing | ✅ Stable | 80 |
-| src/lib.rs | PyO3 Python bindings | ✅ Stable | 100 |
-| tests/integration_tests.rs | Integration tests | ✅ 11/11 passing | 400 |
-
-### Phase 2 In Progress
-| File | Purpose | Status | LOC |
-|------|---------|--------|-----|
-| src/cli/json_output.rs | JSON serialization | ✅ Complete | 250 |
-| src/cli/lidar_viz.rs | Lidar visualization | ✅ Complete | 250 |
-| examples/lidar_visualization_demo.rs | Visualization demo | ✅ Complete | 150 |
-| docs/LIDAR_VISUALIZATION.md | Lidar docs | ✅ Complete | 280 |
-
-### Phase 2 Pending
-| File | Purpose | Est. LOC | Priority |
-|------|---------|----------|----------|
-| src/cli/imu_viz.rs | IMU visualization (accel/gyro/mag graphs) | 200-300 | P1 |
-| src/cli/sensor_metadata.rs | Metadata panel (stats, quality, FPS) | 250-350 | P2 |
-| src/cli/keyboard_shortcuts.rs | Help system integration | 150-200 | P2 |
+For the product vision, core principles (input-agnostic, mapping-independent,
+explainability-first), and full features-by-version roadmap, see `docs/CLAUDE.md` and
+`docs/ROADMAP.md`. This file intentionally does not duplicate that content — it exists
+to report verified current state, not to restate the product plan.
 
 ---
 
-## Testing Summary
+## Revision history (of this document)
 
-### Passing Tests
-```
-cargo test --lib          → 8 tests (json_output + lidar_viz)
-cargo test --test '*'     → 11 integration tests
-Total: 19/19 passing ✅
-```
-
-### Test Coverage Areas
-- **Event model**: serialization, deserialization, type checking
-- **Timeline**: sensor filtering, temporal queries, multi-sensor
-- **ROS 2 adapter**: bag parsing, mission loading
-- **JSON output**: mission analysis, event serialization
-- **Lidar visualization**: creation, reading insertion, anomaly detection, legend rendering
-
-### Performance Benchmarks
-- **Lidar rendering**: <1ms per scan (80×40 grid)
-- **JSON serialization**: <10ms for 96k-event mission
-- **Timeline query**: <50ms for sensor filtering
-- **Bag loading**: <200ms for 96k-event mission
-
----
-
-## Deployment Status
-
-### CLI Binary
-```bash
-cargo build --release
-# → target/release/pyroboreplay (~8 MB)
-# Zero external dependencies, fully static
-```
-
-### Python Package
-```bash
-pip install pyroboreplay
-# → Installable from PyPI (pending publication)
-# PyO3 abi3 stable ABI (Python 3.10+)
-```
-
-### Documentation
-- ✅ Tutorial (QUICKSTART.md)
-- ✅ API reference (API.md)
-- ✅ Architecture guide (ARCHITECTURE.md)
-- ✅ Keyboard shortcuts (KEYBOARD_SHORTCUTS.md)
-- ✅ Lidar visualization guide (LIDAR_VISUALIZATION.md)
-- ⏳ Camera export guide (pending)
-- ⏳ Deployment guides (AWS/GCP/Azure/K8s) — Phase 7
-
----
-
-## Known Issues & Limitations
-
-### Current
-1. **ROS 2 CDR deserialization**: Currently stubs (placeholder implementations)
-   - Impact: Mission loads, but sensor data not fully decoded
-   - Workaround: Generate synthetic test bags
-   - Fix timeline: Phase 2 Task #2
-
-2. **Camera frames not decoded**: Support in progress
-   - Impact: Camera visualization not in terminal yet (HTML export pending)
-   - Workaround: None (Task #11 addresses this)
-
-3. **IMU data minimal**: No graph visualization yet
-   - Impact: IMU fields shown in text only
-   - Workaround: None (Task #12 addresses this)
-
-4. **Small terminal support**: Lidar viz disabled on <120 column terminals
-   - Impact: Visualization doesn't show on small windows
-   - Workaround: Maximize terminal window
-   - Future: ASCII-mode fallback
-
-### Future Enhancements
-- Multi-mission comparison (Phase 3+)
-- Causal analysis engine (Phase 3)
-- 3D terrain visualization (Phase 4+)
-- Real-time streaming (Phase 7+)
-- Machine learning integration (Phase 8+)
-
----
-
-## Next Steps (Immediate)
-
-### Priority 1 (This Week)
-- [x] Complete Task #10: Lidar ASCII visualization ✅ **DONE**
-- [ ] Start Task #11: Camera HTML export
-  - Design HTML template with base64 frame embedding
-  - Implement frame extraction from CameraFrame events
-  - Add --export-camera flag handling
-
-### Priority 2 (Next Week)
-- [ ] Task #12: IMU visualization
-- [ ] Polish keyboard shortcuts integration
-- [ ] Run full test suite on synthetic mission
-
-### Priority 3 (Week After)
-- [ ] Task #13: Enhanced metadata panel
-- [ ] Task #14: Help system
-- [ ] Phase 2 acceptance testing
-
----
-
-## Success Metrics (Phase 2 Complete)
-
-When Phase 2 is done:
-- ✅ All 5 sensor types playable via CLI
-- ✅ Lidar, camera, IMU, odometry, costmap all have visualization/export
-- ✅ 25+ integration tests passing
-- ✅ <100ms latency for all CLI operations
-- ✅ Comprehensive keyboard shortcut support
-- ✅ Zero external dependencies (all features self-contained)
-- ✅ Students can debug first mission in <5 minutes
-- ✅ Production operators can analyze warehouse fleet missions
-
----
-
-## Architecture Decisions (Phase 2)
-
-1. **Lidar visualization in native Ratatui**: More performant than external tools
-2. **HTML export for camera**: Browser provides free video playback (no server needed)
-3. **ASCII-based visualizations**: Terminal-native, zero dependencies, zero learning curve
-4. **JSON output on all commands**: Enables AI-agent integration (Claude Code, Cursor)
-5. **Modular sensor viz**: Each sensor type owns its visualization module
-
----
-
-## Communication Plan
-
-### Public Updates
-- GitHub Releases: Phase milestones (v0.1 → v0.2)
-- Roadmap visibility: Current, transparent (this file)
-- Documentation: Published on docs/ directory + README.md
-- Examples: Synthetic test missions + demo binaries
-
-### Internal Tracking
-- This file (IMPLEMENTATION_STATUS.md) updated weekly
-- Task list synced with Git commits
-- Test coverage monitored on each build
-
----
-
-**Author**: PyRoboReplay Team  
-**Visibility**: Public (GitHub repository)  
-**Last Review**: 2026-07-21
+- **2026-08-12**: Rewritten from scratch to remove the self-contradictory "Phase 15+
+  header over Phase 1-3 in-progress prose" structure; added BigQuery backend,
+  Phase 14 adapter completion, PyTerrainMap boundary decision, legacy Ros2Adapter
+  stub finding, and the Python packaging fix.
+- **2026-08-12 (earlier same day)**: "Post-Remediation Status" section added
+  documenting the security fix, 3 failing test fixes, license badge fix, and real
+  Postgres/S3/Ollama integrations (v2.9.1). Superseded by this rewrite, which
+  incorporates and updates that content rather than stacking another section on top
+  of it.
+- **2026-07-21**: Original Phase 1-3 task-tracking content (now historical; see git
+  history for this file if needed).

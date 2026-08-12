@@ -10,7 +10,7 @@ Includes thermal imaging analysis, motion replay, and causal inference for auton
 [![Security Audit](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyPI](https://img.shields.io/badge/PyPI-2.1.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
+[![PyPI](https://img.shields.io/badge/PyPI-2.9.2-blue.svg)](https://pypi.org/project/pyroboreplay/)
 [![Tests](https://img.shields.io/github/actions/workflow/status/Mullassery/PyRoboReplay/ci.yml?label=tests)](https://github.com/Mullassery/PyRoboReplay/actions)
 [![License](https://img.shields.io/badge/License-Proprietary-lightgrey.svg)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
@@ -38,7 +38,7 @@ Robotics teams waste **2-16 hours debugging a single mission failure**—jumping
 
 ---
 
-## What You Get (v2.1.0)
+## What You Get (v2.9.2)
 
 ### Phase 1-4: Reality Gap Detection Foundations
 Comprehensive detection of perception mismatches between simulation and reality. Identifies where and why robot perception diverged from expectations.
@@ -80,10 +80,10 @@ AI-powered navigation failure analysis across 7 dimensions: localization (AMCL d
 ### Installation
 
 ```bash
-pip install pyroboreplay==2.1.0
+pip install pyroboreplay==2.9.2
 
 # or with uv
-uv install pyroboreplay==2.1.0
+uv install pyroboreplay==2.9.2
 
 # From source
 git clone https://github.com/Mullassery/PyRoboReplay.git
@@ -155,7 +155,7 @@ print(f"Likely obstacles: {prediction.expected_obstacles}")
 
 ---
 
-## Feature Matrix: v0.1 to v2.1.0
+## Feature Matrix: v0.1 to v2.9.2
 
 | Feature | v0.1 | v0.5 | v0.9 | v1.0 | v2.0 | v2.1 |
 |---------|:----:|:----:|:----:|:----:|:----:|:----:|
@@ -302,7 +302,7 @@ Output: Forensic Reports, Recommendations, Predictions
 | Forensic analysis (full pipeline) | <5s | Achieved |
 | Multispectral fusion | <2s per frame | Efficient |
 
-**Test Coverage:** 558 passing tests
+**Test Coverage:** 722 passing `cargo test --lib` unit tests (0 failing), plus dedicated Docker-backed integration test suites for the Postgres/S3/BigQuery storage backends and Ollama LLM integration.
 
 - Phases 1-4: 60 tests
 - Phases 5-9: 140 tests
@@ -323,7 +323,7 @@ cargo build --release
 maturin develop # Install Python wheel
 ```
 
-### Test (558 Passing)
+### Test (722 Passing)
 ```bash
 # Full test suite
 cargo test
@@ -383,7 +383,7 @@ If PyRoboReplay helps your research or product, please star the repo and cite:
  title={PyRoboReplay: Forensic Debugging and Multispectral Analysis for Autonomous Robots},
  author={Mullassery, Georgi},
  year={2026},
- version={2.0.0},
+ version={2.9.2},
  url={https://github.com/Mullassery/PyRoboReplay}
 }
 ```
