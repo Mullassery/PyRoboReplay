@@ -1,8 +1,65 @@
 # PyRoboReplay Implementation Status
 
-**Last Updated**: 2026-07-21  
-**Current Phase**: Phase 2 (CLI-First Sensor Replay)  
-**Overall Progress**: 60% complete (Phase 1 ✅, Phase 2 ~60%)
+**Last Updated**: 2026-08-12
+**Current Phase**: Phase 15+ (Root Cause Inference Engine and beyond)
+**Overall Progress**: See "Post-Remediation Status" below for the current, verified state.
+The "60% complete" / "Phase 2" figures in the rest of this document are historical
+(dated 2026-07-21, covering only the first two of what are now 15+ phases) and are
+kept below for the project history; they do not reflect the current state of the
+codebase and should not be read as current.
+
+---
+
+## Post-Remediation Status (2026-08-12)
+
+This section reflects an honest, verified snapshot after a remediation pass driven by
+an independent audit. It supersedes the stale "60% complete" figure above, which
+predates most of the codebase (Phases 3-15) and was left un-updated even as the
+package's own `pyproject.toml` classified it as `Development Status :: 5 -
+Production/Stable`. That mismatch has been corrected: the classifier is now `4 - Beta`,
+which is the honest characterization given the caveats below.
+
+**What's genuinely solid:**
+- 157 Rust source files, ~50k LOC, 710 passing `cargo test --lib` unit tests (0 failing).
+- A real, actively-used security fix: shell/AppleScript injection in the stats
+  dashboard launcher (`src/cli/stats_dashboard.rs`) was fixed and covered by
+  regression tests that exercise real shell execution with malicious payloads.
+- `PostgresBackend` and `S3Backend` (`src/storage/backends.rs`) are real, working
+  implementations (`tokio-postgres` / `aws-sdk-s3`), verified against a live local
+  PostgreSQL container and a live local MinIO container with real integration tests
+  (`tests/test_postgres_backend_integration.rs`, `tests/test_s3_backend_integration.rs`).
+- `BigQueryBackend` is honestly stubbed - not implemented, with an explicit error
+  message explaining why (no local emulator, requires GCP credentials this
+  environment doesn't have) rather than silently claiming parity with the other two.
+- The LLM integration (`src/reasoning/llm_integration.rs`) makes a real HTTP call to a
+  local Ollama server and only reports `is_from_llm: true` when a genuine model
+  response came back; verified end-to-end against a real Ollama instance running
+  `qwen2.5:0.5b` (`tests/test_ollama_integration.rs`, `scripts/test_ollama_integration.sh`).
+  It falls back to a clearly-labeled template generator if Ollama is unavailable.
+- The license badge/text in `README.md` now matches the actual proprietary license
+  instead of falsely claiming MIT.
+
+**What's known-incomplete or left as debt (not silently hidden):**
+- `BigQueryBackend` is not implemented (see above) - by design, not an oversight.
+- `cargo fmt --check` and `cargo clippy -- -D warnings` both fail across the wider
+  codebase. This predates this remediation pass (verified against pristine,
+  untouched files at the prior commit) - the codebase was never run through
+  `rustfmt`/a clean clippy pass from early on. Fixing this project-wide was judged
+  out of scope and too risky to attempt safely in one pass (a `cargo fix --tests`
+  attempt during this remediation actually broke ~50 files' worth of `use super::*`
+  imports in test modules and had to be reverted); it would need a dedicated,
+  carefully-reviewed pass of its own. The files touched in this remediation pass are
+  clippy-clean; the rest of the codebase's baseline debt is unchanged.
+- Of the ~367 `.unwrap()` calls and 10 `panic!()`s in `src/`, the ones on the actual
+  untrusted-input attack surface (the mission/log/config adapters in `src/adapters/`
+  and the bundle/evidence-discovery code in `src/core/`) were audited and found to
+  already be safe (the only `.unwrap()`s there are on compile-time-constant regex
+  patterns or test code, not on parsed external data). The remaining unwraps are
+  spread through internal-invariant code elsewhere in the 157-file codebase and were
+  not exhaustively swept in this pass.
+- Marketing claims in `README.md` (e.g. "Debug 10x faster") are aspirational framing,
+  not measured benchmarks; they were not part of this remediation's scope and are
+  called out here for transparency rather than left as an implicit false claim.
 
 ---
 
