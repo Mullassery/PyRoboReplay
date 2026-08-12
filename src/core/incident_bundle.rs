@@ -269,8 +269,13 @@ mod tests {
 
     #[test]
     fn test_bundle_creation() {
-        let bundle = IncidentBundle::from_zip(Path::new("test.zip"));
-        assert!(bundle.is_ok());
+        // Resolve the fixture relative to the crate manifest dir (not the
+        // process CWD, which varies depending on how/where `cargo test` is
+        // invoked from) so this test is reliable regardless of working
+        // directory.
+        let fixture = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/test.zip"));
+        let bundle = IncidentBundle::from_zip(fixture);
+        assert!(bundle.is_ok(), "expected bundle creation to succeed: {:?}", bundle.err());
     }
 
     #[test]

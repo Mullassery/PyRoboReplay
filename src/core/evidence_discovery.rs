@@ -1,8 +1,7 @@
 use crate::core::incident_bundle::{
-    IncidentBundle, BundleManifest, LayerAvailability, LayerFileInventory,
+    IncidentBundle, LayerFileInventory,
     Layer1Files, Layer2Files, Layer3Files, Layer4Files, BundleError, TimeRange,
 };
-use chrono::{DateTime, Utc};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -232,7 +231,7 @@ impl EvidenceDiscovery {
     }
 
     /// Extract time range from logs
-    fn extract_time_range(bundle: &IncidentBundle) -> Result<Option<TimeRange>, BundleError> {
+    fn extract_time_range(_bundle: &IncidentBundle) -> Result<Option<TimeRange>, BundleError> {
         // This would parse actual log files to find time range
         // For now, return None to indicate it needs to be determined during analysis
         Ok(None)
@@ -275,7 +274,11 @@ mod tests {
 
     #[test]
     fn test_robot_id_extraction() {
-        let mut bundle = IncidentBundle::from_zip(Path::new("test.zip")).unwrap();
+        // Resolve the fixture relative to the crate manifest dir (not the
+        // process CWD) so this test doesn't depend on where `cargo test` is
+        // invoked from.
+        let fixture = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/test.zip"));
+        let mut bundle = IncidentBundle::from_zip(fixture).unwrap();
         bundle.manifest.file_inventory.layer1.ros_bags.push(PathBuf::from("robot1_mission.bag"));
 
         let robot_ids = EvidenceDiscovery::extract_robot_ids(&bundle).unwrap();
