@@ -6,10 +6,11 @@
 //! Supports caching to avoid re-computation.
 
 use crate::analyzers::MissionAnalysisData;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Pre-computed telemetry for efficient gap detection
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GapTelemetry {
     pub mission_id: String,
 
@@ -39,7 +40,7 @@ pub struct GapTelemetry {
 }
 
 /// Linear trend representation: y = slope * x + intercept
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrendLine {
     pub slope: f32,
     pub intercept: f32,
@@ -295,23 +296,92 @@ impl GapTelemetry {
         }
     }
 
-    /// Save telemetry to disk cache (simplified - would use Parquet in production)
-    pub fn save_cache(&self, _path: &str) -> std::io::Result<()> {
-        // TODO: Implement Parquet serialization
-        // For now, this is a placeholder
-        Ok(())
+    /// Save telemetry to disk cache as JSON.
+    ///
+    /// GapTelemetry's shape (HashMaps of variable-length Vecs, nested
+    /// Option<TrendLine>) isn't naturally tabular/columnar, so it doesn't
+    /// map cleanly onto Parquet's schema model without flattening/pivoting
+    /// work first. JSON (via serde, already a dependency here) is a real,
+    /// working serialization for this shape today; if this cache is later
+    /// used for columnar analytics across many missions at once, Parquet
+    /// remains a reasonable upgrade once that flattening is designed.
+    pub fn save_cache(&self, path: &str) -> std::io::Result<()> {
+        let json = serde_json::to_string(self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        std::fs::write(path, json)
     }
 
-    /// Load telemetry from disk cache
-    pub fn load_cache(_path: &str) -> std::io::Result<Option<Self>> {
-        // TODO: Implement Parquet deserialization
-        Ok(None)
+    /// Load telemetry from disk cache. Returns `Ok(None)` (not an error) if
+    /// the cache file doesn't exist yet — a cache miss is a normal outcome,
+    /// not a failure.
+    pub fn load_cache(path: &str) -> std::io::Result<Option<Self>> {
+        let contents = match std::fs::read_to_string(path) {
+            Ok(c) => c,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(e) => return Err(e),
+        };
+        let telemetry = serde_json::from_str(&contents)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        Ok(Some(telemetry))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn sample_telemetry() -> GapTelemetry {
+        let mut joint_oscillation_frequencies = HashMap::new();
+        joint_oscillation_frequencies.insert("j1".to_string(), 12.5);
+        let mut message_interarrivals = HashMap::new();
+        message_interarrivals.insert("imu".to_string(), vec![0.01, 0.011, 0.009]);
+        let mut clock_drift_ppm = HashMap::new();
+        clock_drift_ppm.insert("imu".to_string(), 850.0);
+
+        GapTelemetry {
+            mission_id: "mission-42".to_string(),
+            actuator_response_times: vec![(0.0, 12.0), (1.0, 15.0)],
+            joint_oscillation_frequencies,
+            thermal_readings: vec![(0.0, 22.0), (1.0, 23.5)],
+            motor_currents: vec![(0.0, 1.2)],
+            image_sharpness: vec![(0.0, 0.8)],
+            detection_confidence: vec![(0.0, 0.95)],
+            false_positive_rate: 0.02,
+            message_interarrivals,
+            clock_drift_ppm,
+            response_time_trend: Some(TrendLine { slope: 1.5, intercept: 0.1, r_squared: 0.92 }),
+            sharpness_trend: None,
+            confidence_trend: None,
+            quality_confidence_correlation: 0.7,
+            temperature_efficiency_correlation: -0.3,
+        }
+    }
+
+    #[test]
+    fn save_and_load_cache_round_trips_exactly() {
+        let dir = std::env::temp_dir().join(format!("pyroboreplay_telemetry_test_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("telemetry.json");
+        let path_str = path.to_str().unwrap();
+
+        let original = sample_telemetry();
+        original.save_cache(path_str).unwrap();
+
+        let loaded = GapTelemetry::load_cache(path_str).unwrap().expect("cache file should exist");
+        assert_eq!(loaded.mission_id, original.mission_id);
+        assert_eq!(loaded.actuator_response_times, original.actuator_response_times);
+        assert_eq!(loaded.joint_oscillation_frequencies, original.joint_oscillation_frequencies);
+        assert_eq!(loaded.response_time_trend.unwrap().slope, 1.5);
+        assert!(loaded.sharpness_trend.is_none());
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn load_cache_returns_none_not_an_error_when_file_is_missing() {
+        let result = GapTelemetry::load_cache("/nonexistent/path/that/should/not/exist.json").unwrap();
+        assert!(result.is_none());
+    }
 
     #[test]
     fn test_trend_fitting() {

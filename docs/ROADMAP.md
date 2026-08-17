@@ -293,12 +293,16 @@
 **Gap solved**: Compliance, defense/aerospace forensics, real-time warehouse ops
 
 ### Objectives
-- [ ] **Pluggable storage backends**
-  - PostgreSQL (operational, <1k missions)
-  - BigQuery (analytics scale, 1M+ missions)
-  - S3 + Parquet (long-term archival, compliance)
-  - Redis (streaming buffer)
-  - In-memory (dev/test)
+- [x] **Pluggable storage backends** (PostgreSQL, BigQuery, S3 done as of 2026-08-12;
+  see `docs/IMPLEMENTATION_STATUS.md` — all three are real implementations with
+  integration tests run against live local Docker services, not stubs. Redis
+  streaming buffer and S3+Parquet archival-format specifically remain undone.)
+  - [x] PostgreSQL (operational, <1k missions) — `src/storage/backends.rs::PostgresBackend`
+  - [x] BigQuery (analytics scale, 1M+ missions) — `src/storage/backends.rs::BigQueryBackend`
+  - [x] S3 (long-term archival) — `src/storage/backends.rs::S3Backend` (raw JSON blobs,
+    not yet Parquet-formatted)
+  - [ ] Redis (streaming buffer)
+  - [x] In-memory (dev/test) — `src/storage/sqlite.rs` / in-process backends used by tests
   
 - [ ] **Real-time + historical fusion** (warehouse operations)
   - Stream live robot telemetry + historical replay side-by-side

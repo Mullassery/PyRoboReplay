@@ -742,8 +742,16 @@ impl GeoHotspot {
     }
 }
 
+// Named `_core` (not `pyroboreplay`) because this compiles to the compiled
+// submodule `pyroboreplay._core` that `src/pyroboreplay/__init__.py`
+// re-exports from (`from ._core import *`) — see `[tool.maturin]` in
+// `pyproject.toml` (`module-name = "pyroboreplay._core"`,
+// `python-source = "src"`). PyO3 requires this Rust function name to match
+// the compiled extension's module name (it becomes the `PyInit_<name>`
+// symbol Python's import machinery looks up), so it must stay in sync with
+// `module-name`'s last path segment if either changes.
 #[pymodule]
-fn pyroboreplay(m: &Bound<'_, PyModule>) -> PyResult<()> {
+fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Mission>()?;
     m.add_class::<Event>()?;
     m.add_class::<Failure>()?;

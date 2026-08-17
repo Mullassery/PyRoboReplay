@@ -50,9 +50,18 @@ impl LinuxLogAdapter {
     pub fn new() -> Self {
         Self {
             journalctl_patterns: vec![
-                // OOM kill pattern: "systemd[1]: eviction_cgroup_cleanup[pid]: Killed"
+                // OOM kill pattern. Real kernel/journalctl OOM messages take
+                // several shapes, e.g.:
+                //   "Out of memory: Kill process 2341 (nav_stack) score 999"
+                //   "Out of memory: Killed process 2341 (nav_stack)"
+                //   "nav_stack invoked oom-killer: gfp_mask=..."
+                //   "Memory cgroup out of memory: Killed process 2341"
+                // The previous pattern required the literal word "killed" to
+                // appear *before* "out of memory", which real dmesg/journalctl
+                // OOM lines never do (the killer verdict follows the "out of
+                // memory" announcement), so it never matched real logs.
                 (
-                    Regex::new(r"(?i)killed.*out.of.memory|oom.killer").unwrap(),
+                    Regex::new(r"(?i)out.of.memory|oom.?[-_]?killer").unwrap(),
                     "oom_kill",
                 ),
                 // USB disconnect pattern
@@ -118,7 +127,7 @@ impl LinuxLogAdapter {
 
             let date_str = parts[0];
             let time_str = parts[1];
-            let hostname = parts[2];
+            let _hostname = parts[2];
             let unit_and_msg = parts[4];
 
             // Parse timestamp

@@ -1,16 +1,20 @@
-# PyRoboReplay  
+# PyRoboReplay
+
+Robotics perception and replay engine. RGB+Thermal sensor fusion, invisible person detection, trajectory analysis, multi-modal training datasets. Analyze what happened, why it happened, and how to prevent it.
+
+Includes thermal imaging analysis, motion replay, and causal inference for autonomous systems.
 
 > **Forensic debugging platform for autonomous robot systems.** Replay missions, perform causal analysis, detect hidden objects, fuse multispectral sensors, and reconstruct what really happened—from passive replay to intelligent agent debugging.
 
-[![CI Status](https://git.example.com/user/pyroboreplay/actions/workflows/ci.yml/badge.svg)](https://git.example.com/user/pyroboreplay/actions/workflows/ci.yml)
-[![Security Audit](https://git.example.com/user/pyroboreplay/actions/workflows/security.yml/badge.svg)](https://git.example.com/user/pyroboreplay/actions/workflows/security.yml)
+[![CI Status](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml)
+[![Security Audit](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyPI](https://img.shields.io/badge/PyPI-2.1.0-blue.svg)](https://pypi.org/project/pyroboreplay/)
-[![Tests](https://img.shields.io/badge/Tests-647%20Passing-brightgreen.svg)](#testing)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![PyPI](https://img.shields.io/badge/PyPI-2.9.2-blue.svg)](https://pypi.org/project/pyroboreplay/)
+[![Tests](https://img.shields.io/github/actions/workflow/status/Mullassery/PyRoboReplay/ci.yml?label=tests)](https://github.com/Mullassery/PyRoboReplay/actions)
+[![License](https://img.shields.io/badge/License-Proprietary-lightgrey.svg)](LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
-[![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://git.example.com/user/pyroboreplay)
+[![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/Mullassery/PyRoboReplay)
 
 ---
 
@@ -34,7 +38,7 @@ Robotics teams waste **2-16 hours debugging a single mission failure**—jumping
 
 ---
 
-## What You Get (v2.1.0)
+## What You Get (v2.9.2)
 
 ### Phase 1-4: Reality Gap Detection Foundations
 Comprehensive detection of perception mismatches between simulation and reality. Identifies where and why robot perception diverged from expectations.
@@ -76,13 +80,13 @@ AI-powered navigation failure analysis across 7 dimensions: localization (AMCL d
 ### Installation
 
 ```bash
-pip install pyroboreplay==2.1.0
+pip install pyroboreplay==2.9.2
 
 # or with uv
-uv install pyroboreplay==2.1.0
+uv install pyroboreplay==2.9.2
 
 # From source
-git clone https://git.example.com/user/pyroboreplay.git
+git clone https://github.com/Mullassery/PyRoboReplay.git
 cd pyroboreplay
 cargo build --release
 
@@ -151,7 +155,7 @@ print(f"Likely obstacles: {prediction.expected_obstacles}")
 
 ---
 
-## Feature Matrix: v0.1 to v2.1.0
+## Feature Matrix: v0.1 to v2.9.2
 
 | Feature | v0.1 | v0.5 | v0.9 | v1.0 | v2.0 | v2.1 |
 |---------|:----:|:----:|:----:|:----:|:----:|:----:|
@@ -298,7 +302,7 @@ Output: Forensic Reports, Recommendations, Predictions
 | Forensic analysis (full pipeline) | <5s | Achieved |
 | Multispectral fusion | <2s per frame | Efficient |
 
-**Test Coverage:** 558 passing tests
+**Test Coverage:** 722 passing `cargo test --lib` unit tests (0 failing), plus dedicated Docker-backed integration test suites for the Postgres/S3/BigQuery storage backends and Ollama LLM integration.
 
 - Phases 1-4: 60 tests
 - Phases 5-9: 140 tests
@@ -319,7 +323,7 @@ cargo build --release
 maturin develop # Install Python wheel
 ```
 
-### Test (558 Passing)
+### Test (722 Passing)
 ```bash
 # Full test suite
 cargo test
@@ -358,15 +362,15 @@ cargo audit
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding conventions, and PR guidelines.
 
 **Easiest ways to help:**
-- Report bugs or feature ideas: [GitHub Issues](https://git.example.com/user/pyroboreplay/issues)
-- Share how you're using PyRoboReplay: [GitHub Discussions](https://git.example.com/user/pyroboreplay/discussions)
+- Report bugs or feature ideas: [GitHub Issues](https://github.com/Mullassery/PyRoboReplay/issues)
+- Share how you're using PyRoboReplay: [GitHub Discussions](https://github.com/Mullassery/PyRoboReplay/discussions)
 - Star the repo if it helps you
 
 ---
 
 ## License
 
-Open Source Software — Use freely in academic, commercial, and personal projects. See [LICENSE](LICENSE).
+Proprietary License — Free to use with explicit attribution to the original author. Not OSI-approved open source; see the full terms in [LICENSE](LICENSE).
 
 ---
 
@@ -379,8 +383,8 @@ If PyRoboReplay helps your research or product, please star the repo and cite:
  title={PyRoboReplay: Forensic Debugging and Multispectral Analysis for Autonomous Robots},
  author={Mullassery, Georgi},
  year={2026},
- version={2.0.0},
- url={https://git.example.com/user/pyroboreplay}
+ version={2.9.2},
+ url={https://github.com/Mullassery/PyRoboReplay}
 }
 ```
 

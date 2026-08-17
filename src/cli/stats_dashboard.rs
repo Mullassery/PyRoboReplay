@@ -1,8 +1,8 @@
 /// Separate terminal stats dashboard for real-time mission metrics
 /// Launches in its own terminal window (platform-aware: macOS or Linux)
 
-use crate::core::event::{MissionRecord, MissionEvent};
-use crate::cli::sensor_stats::{SensorMetadataPanel, SensorStats};
+use crate::core::event::MissionRecord;
+use crate::cli::sensor_stats::SensorMetadataPanel;
 use std::process::{Command, Stdio};
 use std::fs;
 use std::path::PathBuf;
@@ -17,12 +17,51 @@ use ratatui::{
     backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Gauge, Paragraph},
+    widgets::{Block, Borders, Paragraph},
     Frame, Terminal,
 };
 use std::io;
 use std::sync::{Arc, Mutex};
+
+/// Escape an arbitrary string for safe inclusion as a single-quoted token in a
+/// POSIX shell script. The returned string is itself a complete, safely-quoted
+/// shell word (including the surrounding quotes) that can be concatenated
+/// directly next to other quoted segments in a generated script.
+///
+/// This is the standard technique for embedding untrusted data in shell
+/// scripts: wrap in single quotes, and turn any embedded single quote into
+/// `'\''` (end quote, escaped literal quote, reopen quote).
+fn shell_single_quote(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + 2);
+    out.push('\'');
+    for ch in s.chars() {
+        if ch == '\'' {
+            out.push_str("'\\''");
+        } else {
+            out.push(ch);
+        }
+    }
+    out.push('\'');
+    out
+}
+
+/// Escape an arbitrary string for safe inclusion inside a double-quoted
+/// AppleScript string literal. Escapes backslashes and double quotes, and
+/// strips control characters (notably newlines/carriage returns) that cannot
+/// appear literally inside an AppleScript string.
+fn applescript_escape(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for ch in s.chars() {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' | '\r' => out.push(' '),
+            c if c.is_control() => {} // drop other control characters
+            c => out.push(c),
+        }
+    }
+    out
+}
 
 /// Platform detection for terminal launcher
 #[derive(Debug, Clone, Copy)]
@@ -102,6 +141,11 @@ impl TerminalLauncher {
 
         let app = if has_iterm { "iTerm" } else { "Terminal" };
 
+        // `app` is one of our own two hard-coded literals ("iTerm"/"Terminal"),
+        // never attacker-influenced. `command` may originate from untrusted
+        // data (e.g. mission/replay content flowing through callers of this
+        // function), so it must be fully escaped for AppleScript string
+        // context, not just quote-escaped.
         let script = format!(
             "tell application \"{}\"
                 create window with default profile
@@ -111,7 +155,8 @@ impl TerminalLauncher {
                     end tell
                 end tell
             end tell",
-            app, command.replace("\"", "\\\"")
+            app,
+            applescript_escape(command)
         );
 
         tracing::info!("Launching {} on macOS using {}", title, app);
@@ -313,10 +358,18 @@ pub fn launch_stats_dashboard_window(
     // Create a temporary script to run the dashboard
     let script_path = PathBuf::from(format!("/tmp/pyroboreplay_stats_{}.sh", uuid::Uuid::new_v4()));
 
+    // `title` is currently always a hard-coded caller literal, but
+    // `mission.name` comes from loaded mission/replay data and must be
+    // treated as untrusted. Both are embedded as safely single-quoted shell
+    // tokens (never interpolated raw into the script source) so that quotes,
+    // `$(...)`, backticks, semicolons, etc. in the data cannot break out of
+    // the quoted context or be interpreted as shell syntax.
+    let title_token = shell_single_quote(title);
+    let mission_name_token = shell_single_quote(&mission.name);
     let script_content = format!(
         "#!/bin/bash\n\
-         echo 'Starting PyRoboReplay Stats Dashboard for: {}'\n\
-         echo 'Mission: {}'\n\
+         echo 'Starting PyRoboReplay Stats Dashboard for: '{}\n\
+         echo 'Mission: '{}\n\
          echo 'Events: {}'\n\
          echo ''\n\
          echo 'Press Ctrl+C to exit'\n\
@@ -327,7 +380,7 @@ pub fn launch_stats_dashboard_window(
            echo 'Last Update: '$(date '+%Y-%m-%d %H:%M:%S')\n\
            sleep 1\n\
          done\n",
-        title, mission.name, mission.events.len()
+        title_token, mission_name_token, mission.events.len()
     );
 
     fs::write(&script_path, &script_content)?;
@@ -376,5 +429,128 @@ mod tests {
         let dashboard = StatsDashboard::new(mission);
         assert_eq!(*dashboard.current_index.lock().unwrap(), 0);
         assert_eq!(*dashboard.playback_speed.lock().unwrap(), 1.0);
+    }
+
+    // --- Shell injection regression tests -----------------------------------
+    //
+    // `mission.name` (and, via TerminalLauncher::launch, arbitrary `command`
+    // strings) originate from loaded mission/replay files and must be treated
+    // as untrusted. These tests prove the escaping helpers neutralize classic
+    // shell/AppleScript metacharacters instead of just asserting on the
+    // string shape.
+
+    #[test]
+    fn test_shell_single_quote_neutralizes_quote_breakout() {
+        // A naive `format!("'{}'", s)` would let this break out of the quotes
+        // and execute `touch <marker>` as a separate command.
+        let marker = std::env::temp_dir().join(format!("pyroboreplay_test_pwn_{}.marker", uuid::Uuid::new_v4()));
+        let _ = fs::remove_file(&marker);
+        let malicious = format!("'; touch {}; echo '", marker.display());
+        let token = shell_single_quote(&malicious);
+
+        // The escaped token must never contain an unescaped closing quote
+        // followed directly by shell syntax that isn't itself quoted.
+        let script = format!("echo {}\n", token);
+
+        // Round-trip through a real shell: the payload must be printed
+        // verbatim, and no injected command may execute.
+        let full_script = format!("#!/bin/bash\n{}\n", script);
+        let output = Command::new("bash")
+            .arg("-c")
+            .arg(&full_script)
+            .output()
+            .expect("failed to run bash");
+        assert!(output.status.success(), "escaped script failed to run: {:?}", output);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        assert!(stdout.contains(&malicious), "payload should be printed literally, got: {}", stdout);
+        assert!(!marker.exists(), "injected command must not have executed");
+        let _ = fs::remove_file(&marker);
+    }
+
+    #[test]
+    fn test_shell_single_quote_handles_command_substitution_and_semicolons() {
+        for payload in [
+            "$(rm -rf /tmp/should-not-run)",
+            "`rm -rf /tmp/should-not-run`",
+            "; rm -rf /tmp/should-not-run #",
+            "a'b\"c$(d)`e`;f",
+        ] {
+            let token = shell_single_quote(payload);
+            let script = format!("#!/bin/bash\nprintf '%s' {}\n", token);
+            let output = Command::new("bash")
+                .arg("-c")
+                .arg(&script)
+                .output()
+                .expect("failed to run bash");
+            assert!(output.status.success(), "script failed for payload {:?}: {:?}", payload, output);
+            assert_eq!(
+                String::from_utf8_lossy(&output.stdout),
+                payload,
+                "payload must round-trip literally for input {:?}",
+                payload
+            );
+        }
+    }
+
+    #[test]
+    fn test_launch_stats_dashboard_window_script_is_safe_with_malicious_mission_name() {
+        // Build a mission whose name is a classic shell-injection payload and
+        // ensure the generated script (a) is syntactically valid bash and
+        // (b) does not execute the injected command when run.
+        let mut mission = MissionRecord::new("'; touch /tmp/pyroboreplay_test_pwned_mission; echo '");
+        mission.events = vec![];
+
+        let title_token = shell_single_quote("PyRoboReplay Stats Dashboard");
+        let mission_name_token = shell_single_quote(&mission.name);
+        let script_content = format!(
+            "#!/bin/bash\n\
+             echo 'Starting PyRoboReplay Stats Dashboard for: '{}\n\
+             echo 'Mission: '{}\n\
+             echo 'Events: {}'\n\
+             exit 0\n",
+            title_token, mission_name_token, mission.events.len()
+        );
+
+        // Syntax check only (bash -n), then a real bounded execution.
+        let syntax_check = Command::new("bash")
+            .arg("-n")
+            .arg("-c")
+            .arg(&script_content)
+            .output()
+            .expect("failed to run bash -n");
+        assert!(syntax_check.status.success(), "generated script has invalid syntax: {:?}", syntax_check);
+
+        let marker = std::env::temp_dir().join("pyroboreplay_test_pwned_mission");
+        let _ = fs::remove_file(&marker);
+        let output = Command::new("bash")
+            .arg("-c")
+            .arg(&script_content)
+            .output()
+            .expect("failed to run generated script");
+        assert!(output.status.success());
+        assert!(!marker.exists(), "malicious mission name must not execute injected command");
+        let _ = fs::remove_file(&marker);
+    }
+
+    #[test]
+    fn test_applescript_escape_neutralizes_quote_and_backslash() {
+        let malicious = "\"\ndo shell script \"touch /tmp/pwned\"";
+        let escaped = applescript_escape(malicious);
+        // No raw double quote or newline should survive unescaped.
+        assert!(!escaped.contains('\n'));
+        // Every `"` in the output must be immediately preceded by a `\`.
+        let bytes: Vec<char> = escaped.chars().collect();
+        for (i, c) in bytes.iter().enumerate() {
+            if *c == '"' {
+                assert!(i > 0 && bytes[i - 1] == '\\', "unescaped quote at {}", i);
+            }
+        }
+    }
+
+    #[test]
+    fn test_applescript_escape_handles_backslash() {
+        let input = r#"a\b"c"#;
+        let escaped = applescript_escape(input);
+        assert_eq!(escaped, r#"a\\b\"c"#);
     }
 }

@@ -1,37 +1,26 @@
 """
-PyRoboReplay: AI Navigation Reliability Engineer for autonomous robots.
+PyRoboReplay: Python package
 
-Rust-powered extension via PyO3/maturin for mission replay, root cause analysis, and fleet monitoring.
+Rust-powered extension via PyO3/maturin. The compiled extension module is
+built from src/lib.rs's `#[pymodule] fn _core` (see `[tool.maturin]` in
+pyproject.toml) and re-exported here so `from pyroboreplay import Mission`
+works directly, matching the classes `src/lib.rs`'s `#[pymodule]` actually
+registers: Mission, Event, Failure, Hypothesis, RootCauseAnalysis, Action,
+FleetStatistics, GeoHotspot.
 """
 
-# Import Rust extension classes
-try:
-    from . import pyroboreplay as _core
+from ._core import (  # noqa: F401
+    Mission,
+    Event,
+    Failure,
+    Hypothesis,
+    RootCauseAnalysis,
+    Action,
+    FleetStatistics,
+    GeoHotspot,
+)
 
-    # Export all Rust classes
-    Mission = _core.Mission
-    Event = _core.Event
-    Failure = _core.Failure
-    Hypothesis = _core.Hypothesis
-    RootCauseAnalysis = _core.RootCauseAnalysis
-    Action = _core.Action
-    FleetStatistics = _core.FleetStatistics
-    GeoHotspot = _core.GeoHotspot
-except (ImportError, AttributeError):
-    # Fallback: undefined if Rust extension not built
-    Mission = None
-    Event = None
-    Failure = None
-    Hypothesis = None
-    RootCauseAnalysis = None
-    Action = None
-    FleetStatistics = None
-    GeoHotspot = None
-
-__version__ = "2.3.1"
-__author__ = "Georgi Mammen Mullassery"
-__license__ = "Proprietary"
-
+__version__ = "2.9.2"
 __all__ = [
     "Mission",
     "Event",

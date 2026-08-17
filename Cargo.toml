@@ -1,6 +1,6 @@
 [package]
 name = "pyroboreplay"
-version = "2.8.0"
+version = "2.9.2"
 edition = "2021"
 authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
 license = "Proprietary"
@@ -13,12 +13,23 @@ categories = ["development-tools", "science"]
 # PyO3 extension module defined in src/lib.rs with #[pymodule]
 # For Python wheels, use: maturin build --release
 
+[lib]
+name = "pyroboreplay"
+# `cdylib` is what maturin needs to build the importable PyO3 extension module
+# (`import pyroboreplay`); without it, maturin's bindings auto-detection falls
+# back to packaging `src/main.rs`'s CLI binary as a "bin"-bindings wheel
+# instead, which is what silently shipped in 2.9.1 (`import pyroboreplay`
+# didn't work — the wheel had no Python module at all, only the CLI script).
+# `rlib` is kept alongside so `cargo build --lib` / `cargo test --lib` keep
+# working the normal way for development and CI.
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 pyo3 = { version = "0.29", features = ["extension-module"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
-tokio = { version = "1.0", features = ["full"] }
+tokio = { version = "1.0", features = ["rt-multi-thread"] }
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 tracing = "0.1"
@@ -32,16 +43,19 @@ clap = { version = "4.5", features = ["derive"] }
 crossterm = "0.28"
 ratatui = "0.27"
 regex = "1.10"
-serde_yaml = "0.9"
-parking_lot = "0.12"
-dashmap = "5.5"
 lru = "0.12"
 nalgebra = "0.33"
 image = "0.25"
 bytes = "1.5"
-crossbeam-channel = "0.5"
-rayon = "1.8"
 hdrhistogram = "7.5"
 num-traits = "0.2"
+tokio-postgres = "0.7.18"
+aws-sdk-s3 = "1.141.0"
+aws-config = { version = "1.10.1", features = ["behavior-version-latest"] }
+ureq = { version = "3.4.0", features = ["json"] }
+serde_norway = "0.9.42"
+gcp-bigquery-client = "0.28.0"
+async-trait = "0.1.92"
+mcap = "0.25.0"
 
 [dev-dependencies]

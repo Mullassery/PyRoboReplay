@@ -38,7 +38,7 @@ impl ExplanationGenerator {
         gaps: &[String],
         causal_chain: &str,
         perception_gaps: &[String],
-        llm_input: &LLMExplanation,
+        _llm_input: &LLMExplanation,
     ) -> CompleteExplanation {
         let summary = Self::generate_summary(gaps, causal_chain);
         let what_happened = Self::generate_what_happened(causal_chain);
@@ -180,6 +180,7 @@ mod tests {
             model: "test".to_string(),
             inference_time_ms: 100.0,
             is_from_llm: false,
+            backend: crate::reasoning::llm_integration::InferenceBackend::Fallback,
         };
 
         let explanation =
