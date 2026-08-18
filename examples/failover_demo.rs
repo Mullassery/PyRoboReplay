@@ -1,4 +1,82 @@
-use pyroboreplay::storage::{FailoverManager, BackupConfig, InMemoryBackend, StorageBackend};
+use pyroboreplay::storage::{
+    FailoverManager, BackupConfig, InMemoryBackend, StorageBackend, StorageError, StorageResult,
+};
+use pyroboreplay::storage::backend::StorageStats;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
+/// Wraps a real `InMemoryBackend` but can be told to fail `connect()` on
+/// demand, so the demo can trigger `FailoverManager`'s real automatic
+/// promotion path (`heartbeat()` -> internal `promote_standby()`) instead of
+/// reaching into a private method that isn't part of the public API.
+struct FlakyPrimary {
+    inner: InMemoryBackend,
+    should_fail_connect: Arc<AtomicBool>,
+}
+
+impl FlakyPrimary {
+    fn new(should_fail_connect: Arc<AtomicBool>) -> Self {
+        FlakyPrimary {
+            inner: InMemoryBackend::new(),
+            should_fail_connect,
+        }
+    }
+}
+
+impl StorageBackend for FlakyPrimary {
+    fn connect(&mut self) -> StorageResult<()> {
+        if self.should_fail_connect.load(Ordering::SeqCst) {
+            return Err(StorageError::ConnectionFailed(
+                "simulated primary failure".to_string(),
+            ));
+        }
+        self.inner.connect()
+    }
+
+    fn store_mission(&self, mission_id: &str, data: &str) -> StorageResult<()> {
+        self.inner.store_mission(mission_id, data)
+    }
+
+    fn retrieve_mission(&self, mission_id: &str) -> StorageResult<String> {
+        self.inner.retrieve_mission(mission_id)
+    }
+
+    fn store_event(&self, mission_id: &str, event_id: &str, data: &str) -> StorageResult<()> {
+        self.inner.store_event(mission_id, event_id, data)
+    }
+
+    fn retrieve_event(&self, mission_id: &str, event_id: &str) -> StorageResult<String> {
+        self.inner.retrieve_event(mission_id, event_id)
+    }
+
+    fn store_report(&self, mission_id: &str, report: &str) -> StorageResult<()> {
+        self.inner.store_report(mission_id, report)
+    }
+
+    fn retrieve_report(&self, mission_id: &str) -> StorageResult<String> {
+        self.inner.retrieve_report(mission_id)
+    }
+
+    fn list_missions(&self, limit: Option<usize>) -> StorageResult<Vec<String>> {
+        self.inner.list_missions(limit)
+    }
+
+    fn delete_mission(&self, mission_id: &str) -> StorageResult<()> {
+        self.inner.delete_mission(mission_id)
+    }
+
+    fn mission_exists(&self, mission_id: &str) -> StorageResult<bool> {
+        self.inner.mission_exists(mission_id)
+    }
+
+    fn get_stats(&self) -> StorageResult<StorageStats> {
+        self.inner.get_stats()
+    }
+
+    fn close(&self) -> StorageResult<()> {
+        self.inner.close()
+    }
+}
 
 fn main() {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
@@ -10,7 +88,8 @@ fn main() {
     println!("DEMO 1: CREATE FAILOVER MANAGER WITH PRIMARY + STANDBYS");
     println!("═══════════════════════════════════════════════════════════════════\n");
 
-    let primary = Box::new(InMemoryBackend::new());
+    let should_fail_connect = Arc::new(AtomicBool::new(false));
+    let primary = Box::new(FlakyPrimary::new(should_fail_connect.clone()));
     let standby1 = Box::new(InMemoryBackend::new());
     let standby2 = Box::new(InMemoryBackend::new());
 
@@ -69,7 +148,14 @@ fn main() {
     println!("Current primary: {}", failover_mgr.current_primary_name());
     println!("Using standby: {}\n", failover_mgr.is_using_standby());
 
-    match failover_mgr.promote_standby("Simulated primary failure") {
+    // Simulate a real primary failure: the next connect() attempt this
+    // FlakyPrimary makes will genuinely return an error, so heartbeat()
+    // detects a real failure and drives the manager's own internal
+    // promotion logic - not a manually-triggered shortcut.
+    should_fail_connect.store(true, Ordering::SeqCst);
+    println!("Simulating primary failure (next heartbeat's connect() will fail)...\n");
+
+    match failover_mgr.heartbeat() {
         Ok(_) => {
             println!("✓ Standby promoted to primary");
             println!("✓ New primary: {}", failover_mgr.current_primary_name());
