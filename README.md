@@ -13,7 +13,6 @@ Includes thermal imaging analysis, motion replay, and causal inference for auton
 [![PyPI](https://img.shields.io/badge/PyPI-2.9.2-blue.svg)](https://pypi.org/project/pyroboreplay/)
 [![Tests](https://img.shields.io/github/actions/workflow/status/Mullassery/PyRoboReplay/ci.yml?label=tests)](https://github.com/Mullassery/PyRoboReplay/actions)
 [![License](https://img.shields.io/badge/License-Proprietary-lightgrey.svg)](LICENSE)
-[![Crates.io](https://img.shields.io/crates/v/pyroboreplay.svg)](https://crates.io/crates/pyroboreplay)
 [![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/Mullassery/PyRoboReplay)
 
 ---
@@ -83,7 +82,7 @@ AI-powered navigation failure analysis across 7 dimensions: localization (AMCL d
 pip install pyroboreplay==2.9.2
 
 # or with uv
-uv install pyroboreplay==2.9.2
+uv pip install pyroboreplay==2.9.2
 
 # From source
 git clone https://github.com/Mullassery/PyRoboReplay.git
@@ -94,64 +93,54 @@ cargo build --release
 pyroboreplay --version
 ```
 
+Note: PyRoboReplay is published to PyPI (`pip install pyroboreplay`). It is **not** currently published to crates.io — build from source via `cargo build --release` if you want the Rust crate/binary directly.
+
 ### Your First Forensic Analysis
+
+The CLI currently exposes four subcommands: `replay`, `analyze`, `compare`, `list`.
 
 ```bash
 # Interactive timeline scrubber
 pyroboreplay replay mission.bag
 
-# Complete forensic investigation
-pyroboreplay forensic mission.bag --output investigation.json
+# Reality-gap analysis with detailed findings, saved to a file
+pyroboreplay analyze mission.bag --detect-gaps --detail --format json --output investigation.json
 
-# Sensor fusion analysis (RGB + thermal)
-pyroboreplay fuse-sensors rgb.bag thermal.bag --report forensic.md
+# Compare two missions side-by-side
+pyroboreplay compare mission_a.bag mission_b.bag
 
-# Cross-mission pattern detection
-pyroboreplay cross-mission *.bag --learn-patterns --predict-next
+# List available topics in a bag file
+pyroboreplay list mission.bag
 ```
 
-Keyboard shortcuts:
-- **Space**: Play/Pause | **/**: Step | **Ctrl+J**: Jump | **f**: Filter | **q**: Quit
+The RGB+thermal fusion, retrospective DINO/SAM detection, cross-mission learning, and Nav2 root-cause-inference capabilities described above (Phases 12-15) are implemented as internal Rust library modules with dedicated unit test coverage — they are not yet wired up as CLI subcommands or Python bindings. Use the Rust library API (`src/fusion`, `src/perception`, `src/intelligence`, `src/phase14`, `src/phase15`) directly, or track CLI/Python exposure on the [roadmap](ROADMAP.md).
+
+Keyboard shortcuts (interactive replay):
+- **Space**: Play/Pause | **n / →**: Next event | **p / ←**: Previous event | **↑ / ↓**: Speed up/down | **?**: Help | **q / Esc**: Quit
 
 ### Python API
 
 ```python
-from pyroboreplay import Mission, ForensicAnalyzer, RGBThermalFusion
+from pyroboreplay import Mission
 
 # Load mission
 mission = Mission.from_ros_bag("warehouse.bag")
 
-# Causal analysis
-hypothesis = mission.analyze_failure(timestamp=1234567890)
-print(f"Root cause: {hypothesis.description}")
-print(f"Confidence: {hypothesis.confidence:.0%}")
+# Detected failures
+failures = mission.detect_failures()
+print(f"Failures detected: {len(failures)}")
 
-# Invisible object detection (DINO + SAM)
-retrospective = mission.analyze_retrospectively()
-print(f"Objects RGB missed: {len(retrospective.gaps)}")
-for gap in retrospective.gaps:
-    print(f"  {gap.dino_detection.class_name} at risk level {gap.severity}")
+# Root cause analysis
+analysis = mission.analyze_failure(timestamp=1234567890.0)
+print(f"Root cause: {analysis.get_primary_hypothesis()}")
+print(f"Confidence: {analysis.get_diagnostic_confidence():.0%}")
 
-# Multispectral forensic analysis
-fusion = RGBThermalFusion()
-fusion.load_rgb_detections(mission.rgb_detections)
-fusion.load_thermal_frame(thermal_data)
-fusion.fuse()
-
-stats = fusion.get_statistics()
-print(f"Thermal-only detections: {stats.thermal_only_detections}")
-print(f"RGB miss rate: {stats.rgb_miss_rate:.1%}")
-print(f"Confidence improvement: +{stats.confidence_improvement:.1%}")
-
-# Persistent world knowledge (cross-mission learning)
-world_model = mission.extract_world_knowledge()
-print(f"Known entities: {len(world_model.entities)}")
-print(f"Temporal facts recorded: {len(world_model.temporal_facts)}")
-
-# Next mission prediction
-prediction = mission.predict_next_mission()
-print(f"Likely obstacles: {prediction.expected_obstacles}")
+# Recommended actions
+for action in mission.recommend_actions(timestamp=1234567890.0):
+    print(f"[{action.get_priority()}] {action.get_description()}")
 ```
+
+The Python package currently exposes `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCauseAnalysis`, `Action`, `FleetStatistics`, and `GeoHotspot` (see `src/pyroboreplay/__init__.py`). The RGB+thermal fusion, retrospective object discovery, persistent world knowledge, and next-mission prediction functionality described earlier in this README exists in the Rust core but is not yet exposed through the Python bindings.
 
 ---
 
@@ -177,7 +166,7 @@ print(f"Likely obstacles: {prediction.expected_obstacles}")
 | **Root Cause Inference Engine** | - | - | - | - | - | **A** |
 | **Nav2 Limitation Detection** | - | - | - | - | - | **A** |
 | **Semantic Gap Analysis** | - | - | - | - | - | **A** |
-| **647 Comprehensive Tests** | - | - | - | - | - | **A** |
+| **826 Comprehensive Tests** | - | - | - | - | - | **A** |
 
 ---
 
@@ -187,34 +176,34 @@ print(f"Likely obstacles: {prediction.expected_obstacles}")
 Debug fleet behavior, identify missed detections, optimize coverage.
 
 ```bash
-# Find what robot missed (RGB vs thermal)
-pyroboreplay invisible-persons warehouse.bag --thermal-data warehouse.thermal
+# Reality-gap analysis on a warehouse mission
+pyroboreplay analyze warehouse.bag --detect-gaps --detail
 ```
 
-Result: Identify undetected workers, near-collisions, coverage gaps.
+Result: Identify missed detections and coverage gaps. (RGB+thermal invisible-person fusion is a Rust library capability today, not yet a CLI flag — see note above.)
 
 ### Precision Agriculture
 Verify inspection coverage, detect missed areas, analyze sensor performance.
 
 ```bash
-# Multispectral analysis with RGB + thermal
-pyroboreplay fuse-sensors rgb_survey.bag thermal_survey.bag
+# Reality-gap analysis on survey coverage
+pyroboreplay analyze rgb_survey.bag --detect-gaps --detail
 ```
 
-Result: Find unscanned areas invisible to standard RGB.
+Result: Find coverage gaps in the survey. (Multispectral RGB+thermal fusion is a Rust library capability today, not yet a CLI flag — see note above.)
 
 ### Research & Development
 Compare perception strategies, analyze fleet behavior, identify sim-to-reality gaps.
 
 ```python
-exp_a = Mission.from_bag("strategy_v1.bag")
-exp_b = Mission.from_bag("strategy_v2.bag")
+exp_a = Mission.from_ros_bag("strategy_v1.bag")
+exp_b = Mission.from_ros_bag("strategy_v2.bag")
 
-# Causal analysis
-causes_a = exp_a.root_cause_analysis()
-causes_b = exp_b.root_cause_analysis()
+# Compare detected failures
+failures_a = exp_a.detect_failures()
+failures_b = exp_b.detect_failures()
 
-improvement = len(causes_a) - len(causes_b)
+improvement = len(failures_a) - len(failures_b)
 print(f"v2 fixes {improvement} issues vs v1")
 ```
 
@@ -224,11 +213,11 @@ Result: Data-driven strategy selection, quantified improvements.
 Verify robot didn't miss people, generate forensic reports, audit sensor performance.
 
 ```bash
-# Complete forensic investigation
-pyroboreplay forensic operation.bag --output compliance_report.json
+# Reality-gap analysis with full findings, saved for audit
+pyroboreplay analyze operation.bag --detect-gaps --detail --format json --output compliance_report.json
 ```
 
-Result: Provable safety assurance, auditable incident investigation.
+Result: Auditable incident investigation. (A dedicated forensic-report CLI command is not yet implemented; `analyze --detect-gaps` is today's closest equivalent — see note above.)
 
 ---
 
@@ -302,16 +291,7 @@ Output: Forensic Reports, Recommendations, Predictions
 | Forensic analysis (full pipeline) | <5s | Achieved |
 | Multispectral fusion | <2s per frame | Efficient |
 
-**Test Coverage:** 722 passing `cargo test --lib` unit tests (0 failing), plus dedicated Docker-backed integration test suites for the Postgres/S3/BigQuery storage backends and Ollama LLM integration.
-
-- Phases 1-4: 60 tests
-- Phases 5-9: 140 tests
-- Phase 10 (Knowledge): 26 tests
-- Phase 7 Enhanced: 15 tests
-- Phase 11: 17 tests
-- Phase 12: 20 tests
-- Phase 13: 18 tests
-- Integration & edge cases: 246 tests
+**Test Coverage:** 826 passing `cargo test --lib` unit tests (0 failing, verified 2026-08-23), plus dedicated Docker-backed integration test suites for the Postgres/S3/BigQuery storage backends and Ollama LLM integration.
 
 ---
 
@@ -323,20 +303,21 @@ cargo build --release
 maturin develop # Install Python wheel
 ```
 
-### Test (722 Passing)
+### Test (826 Passing)
 ```bash
-# Full test suite
-cargo test
+# Unit test suite
+cargo test --lib
 
-# By phase
-cargo test phase_13  # Multispectral fusion
-cargo test phase_12  # Retrospective detection
-cargo test phase_11  # Terrain intelligence
-cargo test knowledge # Persistent world model
+# By module
+cargo test fusion       # Multispectral (Phase 13) fusion
+cargo test perception   # Retrospective/scene detection (Phase 12)
+cargo test knowledge    # Persistent world model (Phase 10)
+cargo test phase14      # Universal temporal fusion
+cargo test phase15      # Root cause inference engine
 
 # Examples
-cargo run --example forensic_analysis_demo
-cargo run --example thermal_fusion_demo
+cargo run --example root_cause_analysis_demo
+cargo run --example compliance_report_demo
 ```
 
 ### Quality Checks
@@ -350,10 +331,10 @@ cargo audit
 
 ## Documentation
 
-- **[CLAUDE.md](CLAUDE.md)** — Complete product vision & architecture
-- **[Examples](examples/)** — Working demos (replay, forensics, fusion, cross-mission learning)
+- **[CLAUDE.md](docs/CLAUDE.md)** — Complete product vision & architecture
+- **[Examples](examples/)** — Working demos (replay, causal analysis, compliance reporting, and more)
 - **[API Reference](docs/API.md)** — Python & Rust APIs
-- **[Phases Overview](docs/PHASES.md)** — Detailed phase descriptions
+- **[Architecture Guide](docs/ARCHITECTURE.md)** — Detailed phase descriptions
 
 ---
 
