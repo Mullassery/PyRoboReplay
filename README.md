@@ -57,8 +57,8 @@ Longitudinal reasoning across mission sequences. Predict entity behavior, detect
 ### Phase 7 Enhanced: Pluggable Detection
 Swappable detection backends (YOLO for speed, SAM for zero-shot flexibility, template fallback for offline). Automatic fallback chain ensures always-working detection.
 
-### Phase 11: PyTerrainMap Integration + Fleet Learning
-Terrain-aware perception. Track zone traversability, assess entity risk by terrain type. Multi-robot fleet consensus on zone difficulty. Anomaly detection at fleet scale.
+### Phase 11: Terrain-Aware Perception + Fleet Learning
+Terrain-aware perception. Track zone traversability, assess entity risk by terrain type. Multi-robot fleet consensus on zone difficulty. Anomaly detection at fleet scale. Despite the module's name (`pyterrain_bridge.rs`) and its doc comments ("from PyTerrainMap"), this is **not a real integration with the separate [PyTerrainMap](https://github.com/Mullassery/PyTerrainMap) repo** — verified by reading both codebases: there's no Cargo/pip dependency between them, no shared serialization format, and `Obstacle`/`TraversabilityZone`/`CoverageMap` here are self-contained structs with no parser for PyTerrainMap's actual output (which uses an unrelated Gaussian-splat-based `TerrainGaussian` shape). It's real, unit-tested, self-contained terrain-modeling logic conceptually inspired by PyTerrainMap's domain — not data interop with it. Like Phases 12-15 below, it's also not exposed via CLI or Python bindings.
 
 ### Phase 12: Retrospective DINO + SAM Analysis
 Open-vocabulary object detection for invisible object discovery. Segment anything model for precise boundaries. Compare YOLO vs DINO to identify perception gaps. Context-aware severity scoring with terrain and historical data.
@@ -335,6 +335,16 @@ cargo audit
 - **[Examples](examples/)** — Working demos (replay, causal analysis, compliance reporting, and more)
 - **[API Reference](docs/API.md)** — Python & Rust APIs
 - **[Architecture Guide](docs/ARCHITECTURE.md)** — Detailed phase descriptions
+
+## Cross-repo compatibility
+
+This repo is one of several independently-published robotics packages by
+the same author (`PyRoboSimulator`, `PyRoboFrames`, `PyRoboVision`,
+`PyTerrainMap`). Verified by reading every `Cargo.toml`/`pyproject.toml` in
+that group: this repo has **no Cargo or pip dependency on any of them**,
+and none of them depend on it. The one apparent exception — Phase 11's
+"PyTerrainMap Integration" — is not real code-level interop; see the
+corrected note under Phase 11 above.
 
 ---
 
