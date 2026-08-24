@@ -20,7 +20,7 @@ from ._core import (  # noqa: F401
     GeoHotspot,
 )
 
-__version__ = "2.9.2"
+__version__ = "2.10.0"
 __all__ = [
     "Mission",
     "Event",

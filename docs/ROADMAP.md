@@ -133,12 +133,11 @@
   - Velocity vectors
   - Coordinate transformations
 
-- [ ] **Scrubbing performance hardening** (external critique, verified real gap)
-  - Frame-skipping throttle + delta-compressed updates during rapid scrubbing — `next_event`/`previous_event` (`src/cli/replay_ui.rs:107-113`) trigger a full redraw per keypress with no batching
-  - No worker-thread/channel infra exists anywhere in `src/cli` (confirmed via grep) — today's bag parsing happens once upfront so this isn't blocking yet, but any future per-frame decode work (e.g. synthetic lidar rendering in `draw_lidar_visualization`) would block the single UI thread; build the crossbeam-channel worker pattern before adding such work, not after
-  - Minimum-viewport guard: no explicit min-size check/warning exists — only an implicit `size.width > 120` gate on the lidar panel; small terminals silently squeeze panels with no message
-  - Note: layout does NOT corrupt on resize — `terminal.draw()` re-queries `f.size()` and rebuilds `Layout` every frame, so this part of the original critique doesn't apply
-  - Note: the separate `--stats-dashboard` flag *does* spawn external OS-specific terminal windows (AppleScript/Terminal.app/iTerm2 on macOS, terminator/gnome-terminal/xterm on Linux via `src/cli/stats_dashboard.rs`) — that's intentional design for a secondary feature, not a flaw in the main embedded ratatui replay UI
+- [x] **Scrubbing performance hardening** (external critique, verified real gap) — DONE
+  - Frame-skipping: `ui_loop` (`src/cli/replay_ui.rs`) now drains every already-queued key event (`poll(Duration::ZERO)`) and applies them all before the next redraw, instead of redrawing once per keypress — holding an arrow key to scrub rapidly no longer triggers one draw (and one lidar-frame request) per queued event.
+  - Worker-thread/channel infra: `spawn_lidar_worker()` runs lidar-frame rendering on a background thread, communicating via bounded (`crossbeam-channel`) request/result channels. `draw_lidar_visualization` uses `try_send`/non-blocking `try_recv` with a cached last-good frame, so it never blocks the UI thread — the per-frame decode work this was meant to protect against now has a real home instead of being added directly to the draw path later.
+  - Minimum-viewport guard: `draw_ui` now checks `MIN_TERMINAL_WIDTH`/`MIN_TERMINAL_HEIGHT` (60x15) and renders an explicit "Terminal too small" message instead of silently squeezing panels.
+  - (Confirmed, unchanged from the original critique review: layout does not corrupt on resize, and `--stats-dashboard`'s external-window spawning is a separate, intentional feature — neither needed a fix.)
 
 - [x] **Comprehensive keyboard shortcuts + help system** ✅ COMPLETE (Phase 2, Task #14)
   - 40+ keyboard shortcuts organized by category ✅

@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "2.9.2"
+version = "2.10.0"
 description = "Forensic debugging platform for autonomous robots: causal analysis, multispectral sensor fusion, invisible object detection, and persistent world knowledge"
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = {text = "Proprietary License — Free to use with explicit attribution"}
