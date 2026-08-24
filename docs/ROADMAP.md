@@ -133,6 +133,13 @@
   - Velocity vectors
   - Coordinate transformations
 
+- [ ] **Scrubbing performance hardening** (external critique, verified real gap)
+  - Frame-skipping throttle + delta-compressed updates during rapid scrubbing — `next_event`/`previous_event` (`src/cli/replay_ui.rs:107-113`) trigger a full redraw per keypress with no batching
+  - No worker-thread/channel infra exists anywhere in `src/cli` (confirmed via grep) — today's bag parsing happens once upfront so this isn't blocking yet, but any future per-frame decode work (e.g. synthetic lidar rendering in `draw_lidar_visualization`) would block the single UI thread; build the crossbeam-channel worker pattern before adding such work, not after
+  - Minimum-viewport guard: no explicit min-size check/warning exists — only an implicit `size.width > 120` gate on the lidar panel; small terminals silently squeeze panels with no message
+  - Note: layout does NOT corrupt on resize — `terminal.draw()` re-queries `f.size()` and rebuilds `Layout` every frame, so this part of the original critique doesn't apply
+  - Note: the separate `--stats-dashboard` flag *does* spawn external OS-specific terminal windows (AppleScript/Terminal.app/iTerm2 on macOS, terminator/gnome-terminal/xterm on Linux via `src/cli/stats_dashboard.rs`) — that's intentional design for a secondary feature, not a flaw in the main embedded ratatui replay UI
+
 - [x] **Comprehensive keyboard shortcuts + help system** ✅ COMPLETE (Phase 2, Task #14)
   - 40+ keyboard shortcuts organized by category ✅
   - Context-sensitive help panels ✅
