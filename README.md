@@ -361,7 +361,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development
 
 ## License
 
-Proprietary License — Free to use with explicit attribution to the original author. Not OSI-approved open source; see the full terms in [LICENSE](LICENSE).
+This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
