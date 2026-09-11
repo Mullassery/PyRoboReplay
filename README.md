@@ -12,7 +12,7 @@ Includes thermal imaging analysis, motion replay, and causal inference for auton
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
 [![PyPI](https://img.shields.io/badge/PyPI-2.9.2-blue.svg)](https://pypi.org/project/pyroboreplay/)
 [![Tests](https://img.shields.io/github/actions/workflow/status/Mullassery/PyRoboReplay/ci.yml?label=tests)](https://github.com/Mullassery/PyRoboReplay/actions)
-[![License](https://img.shields.io/badge/License-Proprietary-lightgrey.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/Mullassery/PyRoboReplay)
 
 ---
