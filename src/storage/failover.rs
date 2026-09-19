@@ -1,4 +1,4 @@
-use crate::storage::backend::{StorageBackend, StorageError, StorageResult, StorageStats};
+use crate::storage::backend::{StorageBackend, StorageResult, StorageStats};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
@@ -127,7 +127,10 @@ impl FailoverManager {
         {
             let mut new_prim = new_primary.lock().unwrap();
             new_prim.connect().map_err(|e| {
-                FailoverError::PrimaryHeartbeatFailed(format!("Failed to connect promoted primary: {:?}", e))
+                FailoverError::PrimaryHeartbeatFailed(format!(
+                    "Failed to connect promoted primary: {:?}",
+                    e
+                ))
             })?;
         }
 
@@ -172,12 +175,12 @@ impl StorageBackend for FailoverManager {
     }
 
     fn store_mission(&self, mission_id: &str, data: &str) -> StorageResult<()> {
-        let mut primary = self.primary.lock().unwrap();
+        let primary = self.primary.lock().unwrap();
         primary.store_mission(mission_id, data)?;
 
         // Write-ahead to all standbys (non-fatal if they fail)
         for (idx, standby) in self.standbys.iter().enumerate() {
-            let mut sb = standby.lock().unwrap();
+            let sb = standby.lock().unwrap();
             if let Err(e) = sb.store_mission(mission_id, data) {
                 self.failover_log.lock().unwrap().push(FailoverEvent {
                     timestamp: Utc::now(),
@@ -199,12 +202,12 @@ impl StorageBackend for FailoverManager {
     }
 
     fn store_event(&self, mission_id: &str, event_id: &str, data: &str) -> StorageResult<()> {
-        let mut primary = self.primary.lock().unwrap();
+        let primary = self.primary.lock().unwrap();
         primary.store_event(mission_id, event_id, data)?;
 
         // Write-ahead to all standbys (non-fatal if they fail)
         for (idx, standby) in self.standbys.iter().enumerate() {
-            let mut sb = standby.lock().unwrap();
+            let sb = standby.lock().unwrap();
             if let Err(e) = sb.store_event(mission_id, event_id, data) {
                 self.failover_log.lock().unwrap().push(FailoverEvent {
                     timestamp: Utc::now(),
@@ -226,12 +229,12 @@ impl StorageBackend for FailoverManager {
     }
 
     fn store_report(&self, mission_id: &str, report: &str) -> StorageResult<()> {
-        let mut primary = self.primary.lock().unwrap();
+        let primary = self.primary.lock().unwrap();
         primary.store_report(mission_id, report)?;
 
         // Write-ahead to all standbys (non-fatal if they fail)
         for (idx, standby) in self.standbys.iter().enumerate() {
-            let mut sb = standby.lock().unwrap();
+            let sb = standby.lock().unwrap();
             if let Err(e) = sb.store_report(mission_id, report) {
                 self.failover_log.lock().unwrap().push(FailoverEvent {
                     timestamp: Utc::now(),
@@ -258,12 +261,12 @@ impl StorageBackend for FailoverManager {
     }
 
     fn delete_mission(&self, mission_id: &str) -> StorageResult<()> {
-        let mut primary = self.primary.lock().unwrap();
+        let primary = self.primary.lock().unwrap();
         primary.delete_mission(mission_id)?;
 
         // Write-ahead to all standbys (non-fatal if they fail)
         for (idx, standby) in self.standbys.iter().enumerate() {
-            let mut sb = standby.lock().unwrap();
+            let sb = standby.lock().unwrap();
             if let Err(e) = sb.delete_mission(mission_id) {
                 self.failover_log.lock().unwrap().push(FailoverEvent {
                     timestamp: Utc::now(),
@@ -290,7 +293,7 @@ impl StorageBackend for FailoverManager {
     }
 
     fn close(&self) -> StorageResult<()> {
-        let mut primary = self.primary.lock().unwrap();
+        let primary = self.primary.lock().unwrap();
         primary.close()
     }
 }
@@ -412,7 +415,7 @@ mod tests {
 
     #[test]
     fn test_write_ahead_continues_if_standby_fails() {
-        let mut manager = create_failover_manager();
+        let manager = create_failover_manager();
         let data = r#"{"id":"mission_1"}"#;
 
         assert!(manager.store_mission("mission_1", data).is_ok());
@@ -422,17 +425,23 @@ mod tests {
     #[test]
     fn test_store_event_write_ahead() {
         let manager = create_failover_manager();
-        manager.store_mission("mission_1", r#"{"id":"mission_1"}"#).ok();
+        manager
+            .store_mission("mission_1", r#"{"id":"mission_1"}"#)
+            .ok();
 
         let event_data = r#"{"type":"lidar_scan"}"#;
-        assert!(manager.store_event("mission_1", "event_1", event_data).is_ok());
+        assert!(manager
+            .store_event("mission_1", "event_1", event_data)
+            .is_ok());
         assert!(manager.retrieve_event("mission_1", "event_1").is_ok());
     }
 
     #[test]
     fn test_delete_mission_cascades_to_standbys() {
         let manager = create_failover_manager();
-        manager.store_mission("mission_1", r#"{"id":"mission_1"}"#).ok();
+        manager
+            .store_mission("mission_1", r#"{"id":"mission_1"}"#)
+            .ok();
 
         assert!(manager.delete_mission("mission_1").is_ok());
         assert!(manager.retrieve_mission("mission_1").is_err());

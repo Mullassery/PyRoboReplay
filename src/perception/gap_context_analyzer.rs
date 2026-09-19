@@ -111,20 +111,14 @@ impl GapContextAnalyzer {
         };
 
         // Look up historical occurrences
-        let pattern_key = format!(
-            "{}_{:?}",
-            gap.dino_detection.class_name, zone_id
-        );
+        let pattern_key = format!("{}_{:?}", gap.dino_detection.class_name, zone_id);
         let previous_occurrences = *self.gap_history.get(&pattern_key).unwrap_or(&0);
 
         // Increment history
-        *self
-            .gap_history
-            .entry(pattern_key)
-            .or_insert(0) += 1;
+        *self.gap_history.entry(pattern_key).or_insert(0) += 1;
 
         // Confidence: increases with each occurrence (pattern gets more reliable)
-        let confidence = (1.0 - (-1.0 * (previous_occurrences as f32 / 5.0)).exp()).min(0.95);
+        let confidence = (1.0 - (-(previous_occurrences as f32 / 5.0)).exp()).min(0.95);
 
         let contextual = ContextualGap {
             gap,
@@ -196,17 +190,12 @@ impl GapContextAnalyzer {
 
     /// Identify patterns across gaps
     pub fn identify_patterns(&self) -> Vec<GapPattern> {
-        let mut patterns: std::collections::HashMap<String, (usize, f32)> = std::collections::HashMap::new();
+        let mut patterns: std::collections::HashMap<String, (usize, f32)> =
+            std::collections::HashMap::new();
 
         for gap in &self.gaps {
-            let pattern_key = format!(
-                "{}_{:?}",
-                gap.gap.dino_detection.class_name, gap.zone_type
-            );
-            patterns
-                .entry(pattern_key)
-                .or_insert((0, 0.0))
-                .0 += 1;
+            let pattern_key = format!("{}_{:?}", gap.gap.dino_detection.class_name, gap.zone_type);
+            patterns.entry(pattern_key).or_insert((0, 0.0)).0 += 1;
         }
 
         patterns
@@ -263,7 +252,8 @@ impl GapContextAnalyzer {
             ));
 
             if let Some(zone_type) = &gap.zone_type {
-                report.push_str(&format!("  Zone: {} (traversability: {:.0}%)\n",
+                report.push_str(&format!(
+                    "  Zone: {} (traversability: {:.0}%)\n",
                     zone_type,
                     gap.zone_traversability.unwrap_or(0.5) * 100.0
                 ));
@@ -279,7 +269,7 @@ impl GapContextAnalyzer {
             if !severity.contributing_factors.is_empty() {
                 report.push_str("  Factors: ");
                 report.push_str(&severity.contributing_factors.join(", "));
-                report.push_str("\n");
+                report.push('\n');
             }
         }
 

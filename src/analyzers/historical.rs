@@ -2,7 +2,7 @@
 //!
 //! Tracks gap findings across fleet to enable learning and improve scoring.
 
-use crate::analyzers::{RealityGapFinding, MissionAnalysisData};
+use crate::analyzers::{MissionAnalysisData, RealityGapFinding};
 use std::collections::HashMap;
 
 /// Historical findings database
@@ -144,9 +144,7 @@ impl HistoricalDatabase {
         let correct = self
             .findings
             .iter()
-            .filter(|f| {
-                f.confidence > 0.7 && f.verified && f.actual_root_cause.is_some()
-            })
+            .filter(|f| f.confidence > 0.7 && f.verified && f.actual_root_cause.is_some())
             .count();
 
         correct as f32 / high_confidence as f32
@@ -164,10 +162,10 @@ impl HistoricalDatabase {
             return CategoryStats::default();
         }
 
-        let avg_gap_score: f32 = findings.iter().map(|f| f.reality_gap_score).sum::<f32>()
-            / findings.len() as f32;
-        let avg_confidence: f32 = findings.iter().map(|f| f.confidence).sum::<f32>()
-            / findings.len() as f32;
+        let avg_gap_score: f32 =
+            findings.iter().map(|f| f.reality_gap_score).sum::<f32>() / findings.len() as f32;
+        let avg_confidence: f32 =
+            findings.iter().map(|f| f.confidence).sum::<f32>() / findings.len() as f32;
         let verified_count = findings.iter().filter(|f| f.verified).count();
 
         CategoryStats {
@@ -210,14 +208,11 @@ impl HistoricalDatabase {
             *gap_counts.entry(finding.category.clone()).or_insert(0) += 1;
         }
 
-        gap_counts
-            .into_iter()
-            .max_by_key(|(_, count)| *count)
-            .map(|(cat, count)| (cat, count))
+        gap_counts.into_iter().max_by_key(|(_, count)| *count)
     }
 
     /// Get trending gaps (increasing frequency)
-    pub fn trending_gaps(&self, robot_type: &str, time_window_hours: f32) -> Vec<(String, f32)> {
+    pub fn trending_gaps(&self, _robot_type: &str, _time_window_hours: f32) -> Vec<(String, f32)> {
         // In real implementation, would slice findings by time window
         // For now, return all unique categories with their frequency
         let mut categories: HashMap<String, usize> = HashMap::new();

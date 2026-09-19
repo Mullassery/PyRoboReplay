@@ -3,11 +3,17 @@
 //! Detects actuator wear, increased response times, backlash, and other mechanical issues.
 
 use crate::analyzers::{
-    GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity, Evidence,
+    Evidence, GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity,
 };
 use std::collections::HashMap;
 
 pub struct MechanicalDegradationDetector;
+
+impl Default for MechanicalDegradationDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl MechanicalDegradationDetector {
     pub fn new() -> Self {
@@ -30,7 +36,7 @@ impl MechanicalDegradationDetector {
         for control in control_messages {
             joint_controls
                 .entry(control.joint_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((control.timestamp, control.value));
         }
 
@@ -71,7 +77,10 @@ impl MechanicalDegradationDetector {
             };
 
             let mut metrics = HashMap::new();
-            metrics.insert("initial_response_time_ms".to_string(), initial_time * 1000.0);
+            metrics.insert(
+                "initial_response_time_ms".to_string(),
+                initial_time * 1000.0,
+            );
             metrics.insert("final_response_time_ms".to_string(), final_time * 1000.0);
             metrics.insert("trend_slope_ms_per_hour".to_string(), trend_slope * 60.0);
             metrics.insert("degradation_factor".to_string(), degradation_factor);
@@ -211,10 +220,9 @@ impl MechanicalDegradationDetector {
                     "Model wheel wear: friction_left = base_friction * (1.0 - wear_factor). \
                      Simulate with one wheel having 20% less friction than the other."
                         .to_string(),
-                remediation:
-                    "1. Inspect tire tread depth (one wheel more worn than other). \
+                remediation: "1. Inspect tire tread depth (one wheel more worn than other). \
                      2. Check wheel alignment. 3. Consider tire replacement."
-                        .to_string(),
+                    .to_string(),
                 detection_time_sec: encoder_data.last().map(|e| e.timestamp),
             });
         }
@@ -227,17 +235,15 @@ impl GapDetector for MechanicalDegradationDetector {
     fn analyze(&self, mission_data: &MissionAnalysisData) -> Vec<RealityGapFinding> {
         let mut findings = Vec::new();
 
-        if let Some(finding) = self.analyze_response_time_trend(
-            &mission_data.control_messages,
-            &mission_data.joint_states,
-        ) {
+        if let Some(finding) = self
+            .analyze_response_time_trend(&mission_data.control_messages, &mission_data.joint_states)
+        {
             findings.push(finding);
         }
 
-        if let Some(finding) = self.analyze_wheel_slip(
-            &mission_data.encoder_data,
-            &mission_data.imu_measurements,
-        ) {
+        if let Some(finding) =
+            self.analyze_wheel_slip(&mission_data.encoder_data, &mission_data.imu_measurements)
+        {
             findings.push(finding);
         }
 

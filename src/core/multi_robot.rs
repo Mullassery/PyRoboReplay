@@ -1,4 +1,3 @@
-use crate::core::causality::CausalLink;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -156,7 +155,7 @@ impl MultiRobotCoordinationAnalyzer {
         for (robot_id, state) in &snapshot.robots {
             self.robot_trajectories
                 .entry(robot_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((snapshot.timestamp, state.position));
         }
 
@@ -210,10 +209,7 @@ impl MultiRobotCoordinationAnalyzer {
 
         for event in &self.coordination_events {
             let pattern_key = format!("{:?}", event.robots); // Simplified pattern key
-            pattern_map
-                .entry(pattern_key)
-                .or_insert_with(Vec::new)
-                .push(event);
+            pattern_map.entry(pattern_key).or_default().push(event);
         }
 
         // Convert to CoordinationPattern
@@ -221,7 +217,10 @@ impl MultiRobotCoordinationAnalyzer {
             if events.len() >= min_occurrences {
                 let mut robots: Vec<String> = pattern_key
                     .split(',')
-                    .map(|s| s.trim_matches(|c| c == '[' || c == ']' || c == '"').to_string())
+                    .map(|s| {
+                        s.trim_matches(|c| c == '[' || c == ']' || c == '"')
+                            .to_string()
+                    })
                     .filter(|s| !s.is_empty())
                     .collect();
                 robots.sort();
@@ -266,7 +265,10 @@ impl MultiRobotCoordinationAnalyzer {
     }
 
     /// Get fleet centroid at timestamp
-    pub fn fleet_centroid(&self, timestamp: chrono::DateTime<chrono::Utc>) -> Option<(f64, f64, f64)> {
+    pub fn fleet_centroid(
+        &self,
+        timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> Option<(f64, f64, f64)> {
         let snapshot = self
             .fleet_snapshots
             .iter()
@@ -277,10 +279,17 @@ impl MultiRobotCoordinationAnalyzer {
             return None;
         }
 
-        let (sum_x, sum_y, sum_z) = snapshot.robots.values().fold(
-            (0.0, 0.0, 0.0),
-            |(sx, sy, sz), state| (sx + state.position.0, sy + state.position.1, sz + state.position.2),
-        );
+        let (sum_x, sum_y, sum_z) =
+            snapshot
+                .robots
+                .values()
+                .fold((0.0, 0.0, 0.0), |(sx, sy, sz), state| {
+                    (
+                        sx + state.position.0,
+                        sy + state.position.1,
+                        sz + state.position.2,
+                    )
+                });
 
         Some((
             sum_x / snapshot.robots.len() as f64,
@@ -315,11 +324,7 @@ impl MultiRobotCoordinationAnalyzer {
     /// Compute multi-robot coordination statistics
     pub fn compute_stats(&self) -> MultiRobotCoordinationStats {
         let robot_count = self.active_robots().len();
-        let avg_fleet_spread = self
-            .fleet_snapshots
-            .iter()
-            .map(|s| s.spread)
-            .sum::<f64>()
+        let avg_fleet_spread = self.fleet_snapshots.iter().map(|s| s.spread).sum::<f64>()
             / self.fleet_snapshots.len().max(1) as f64;
 
         let avg_coord_confidence = self
@@ -500,7 +505,7 @@ mod tests {
         }
 
         analyzer.detect_patterns(2); // Min 2 occurrences
-        assert!(analyzer.patterns.len() > 0);
+        assert!(!analyzer.patterns.is_empty());
     }
 
     #[test]

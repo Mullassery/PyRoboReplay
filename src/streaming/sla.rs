@@ -1,4 +1,6 @@
-use crate::streaming::live_diagnostics::{LiveAlert, AlertSeverity};
+#[cfg(test)]
+use crate::streaming::live_diagnostics::AlertSeverity;
+use crate::streaming::live_diagnostics::LiveAlert;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -216,11 +218,15 @@ impl SlaMonitor {
         let compliance_score = if overall_compliant {
             1.0
         } else {
-            let penalty: f32 = state.violations.iter().map(|v| match v.severity {
-                SlaViolationSeverity::Critical => 0.3,
-                SlaViolationSeverity::High => 0.2,
-                SlaViolationSeverity::Medium => 0.1,
-            }).sum();
+            let penalty: f32 = state
+                .violations
+                .iter()
+                .map(|v| match v.severity {
+                    SlaViolationSeverity::Critical => 0.3,
+                    SlaViolationSeverity::High => 0.2,
+                    SlaViolationSeverity::Medium => 0.1,
+                })
+                .sum();
             (1.0 - penalty).max(0.0)
         };
 

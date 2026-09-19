@@ -6,10 +6,8 @@
 /// - LiDAR interruption (point cloud publishing stops)
 /// - Synchronization issues (sensor data misaligned in time)
 /// - Low confidence detections
-
 use super::{DetectedFailure, FailureDetector, FailureDomain, FailureSeverity};
 use crate::core::timeline_correlation::NormalizedEvent;
-use chrono::Duration;
 
 pub struct PerceptionFailureDetector;
 

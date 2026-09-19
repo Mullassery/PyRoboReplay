@@ -62,10 +62,8 @@ impl Ros2Adapter {
         tracing::info!("Found {} topics in bag", topics.len());
 
         // Build a map of topic_id -> topic_name for reference
-        let topic_map: std::collections::HashMap<i64, String> = topics
-            .iter()
-            .map(|t| (t.id, t.name.clone()))
-            .collect();
+        let topic_map: std::collections::HashMap<i64, String> =
+            topics.iter().map(|t| (t.id, t.name.clone())).collect();
 
         // Get messages and convert to events
         for topic in &topics {
@@ -82,43 +80,44 @@ impl Ros2Adapter {
         // Sort events by timestamp
         mission.sort_by_timestamp();
 
-        tracing::info!(
-            "Parsed {} events from bag file",
-            mission.event_count()
-        );
+        tracing::info!("Parsed {} events from bag file", mission.event_count());
         Ok(mission)
     }
 
     fn get_topics(&self, conn: &Connection) -> AnyResult<Vec<RosTopic>> {
-        let mut stmt = conn.prepare(
-            "SELECT id, name, type FROM topics"
-        )?;
+        let mut stmt = conn.prepare("SELECT id, name, type FROM topics")?;
 
-        let topics = stmt.query_map([], |row| {
-            Ok(RosTopic {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                msg_type: row.get(2)?,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+        let topics = stmt
+            .query_map([], |row| {
+                Ok(RosTopic {
+                    id: row.get(0)?,
+                    name: row.get(1)?,
+                    msg_type: row.get(2)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(topics)
     }
 
-    fn get_messages_for_topic(&self, conn: &Connection, topic_id: i64) -> AnyResult<Vec<RosMessage>> {
+    fn get_messages_for_topic(
+        &self,
+        conn: &Connection,
+        topic_id: i64,
+    ) -> AnyResult<Vec<RosMessage>> {
         let mut stmt = conn.prepare(
-            "SELECT timestamp, data FROM messages WHERE topic_id = ? ORDER BY timestamp"
+            "SELECT timestamp, data FROM messages WHERE topic_id = ? ORDER BY timestamp",
         )?;
 
-        let messages = stmt.query_map([topic_id], |row| {
-            Ok(RosMessage {
-                timestamp: row.get(0)?,
-                data: row.get(1)?,
-                topic_id,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+        let messages = stmt
+            .query_map([topic_id], |row| {
+                Ok(RosMessage {
+                    timestamp: row.get(0)?,
+                    data: row.get(1)?,
+                    topic_id,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(messages)
     }
@@ -143,7 +142,10 @@ impl Ros2Adapter {
         } else if topic.name.contains("pose") {
             self.parse_pose_message(topic, msg, timestamp)
         } else {
-            Err(anyhow::anyhow!("Unsupported message type: {}", topic.msg_type))
+            Err(anyhow::anyhow!(
+                "Unsupported message type: {}",
+                topic.msg_type
+            ))
         }
     }
 

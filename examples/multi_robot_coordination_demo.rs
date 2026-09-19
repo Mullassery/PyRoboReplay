@@ -1,6 +1,6 @@
 use chrono::Utc;
 use pyroboreplay::core::{
-    CoordinationEvent, CommunicationLink, FleetSnapshot, InterRobotCausalLink,
+    CommunicationLink, CoordinationEvent, FleetSnapshot, InterRobotCausalLink,
     MultiRobotCoordinationAnalyzer, RobotState,
 };
 use std::collections::HashMap;
@@ -185,9 +185,15 @@ fn main() {
     println!("\nCoordination Statistics:");
     println!("  Total coordination events: {}", stats.coordination_events);
     println!("  Communication links: {}", stats.communication_links);
-    println!("  Inter-robot causal links: {}", stats.inter_robot_causal_links);
+    println!(
+        "  Inter-robot causal links: {}",
+        stats.inter_robot_causal_links
+    );
     println!("  Avg fleet spread: {:.1}m", stats.avg_fleet_spread);
-    println!("  Avg coordination confidence: {:.2}", stats.avg_coordination_confidence);
+    println!(
+        "  Avg coordination confidence: {:.2}",
+        stats.avg_coordination_confidence
+    );
     println!("  Patterns detected: {}", stats.patterns_detected);
 
     println!("\n═══════════════════════════════════════════════════════════════════");
@@ -199,10 +205,7 @@ fn main() {
         println!("Detected Patterns:");
         for (idx, pattern) in patterns.iter().enumerate() {
             println!("\n  Pattern {}: {}", idx, pattern.id);
-            println!(
-                "    Robots: {}",
-                pattern.robots.join(", ")
-            );
+            println!("    Robots: {}", pattern.robots.join(", "));
             println!("    Type: {}", pattern.pattern_type);
             println!("    Occurrences: {}", pattern.occurrence_count);
             if let Some(interval) = pattern.avg_repeat_interval {
@@ -247,7 +250,11 @@ fn main() {
         );
     }
 
-    if let Some(distance) = analyzer.pairwise_distance("robot_1", "robot_2", base_time + chrono::Duration::seconds(4)) {
+    if let Some(distance) = analyzer.pairwise_distance(
+        "robot_1",
+        "robot_2",
+        base_time + chrono::Duration::seconds(4),
+    ) {
         println!("  ✓ robot_1 ↔ robot_2 distance at t=4s: {:.1}m", distance);
     }
 

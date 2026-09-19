@@ -1,5 +1,4 @@
 /// Decision Clustering - Group similar decisions into templates
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -7,7 +6,7 @@ use std::collections::HashMap;
 pub struct DecisionTemplate {
     pub template_id: String,
     pub name: String,
-    pub decision_signature: String,  // Hash of key characteristics
+    pub decision_signature: String, // Hash of key characteristics
     pub preconditions: Vec<String>,
     pub actions: Vec<String>,
     pub expected_outcomes: Vec<String>,
@@ -104,9 +103,7 @@ impl ClusterAnalyzer {
             return 1.0;
         }
 
-        let intersection = v1.iter()
-            .filter(|item| v2.contains(item))
-            .count();
+        let intersection = v1.iter().filter(|item| v2.contains(item)).count();
         let union = v1.len() + v2.len() - intersection;
 
         if union == 0 {
@@ -117,7 +114,11 @@ impl ClusterAnalyzer {
     }
 
     /// Build decision templates from clusters
-    pub fn build_templates(&self, decisions: &[DecisionData], clusters: &[Vec<usize>]) -> Vec<DecisionTemplate> {
+    pub fn build_templates(
+        &self,
+        decisions: &[DecisionData],
+        clusters: &[Vec<usize>],
+    ) -> Vec<DecisionTemplate> {
         let mut templates = Vec::new();
 
         for cluster in clusters {
@@ -125,11 +126,10 @@ impl ClusterAnalyzer {
                 continue;
             }
 
-            let mut template = DecisionTemplate::new(
-                format!("Template_{}", templates.len())
-            );
+            let mut template = DecisionTemplate::new(format!("Template_{}", templates.len()));
 
-            let cluster_decisions: Vec<_> = cluster.iter()
+            let cluster_decisions: Vec<_> = cluster
+                .iter()
                 .filter_map(|&idx| decisions.get(idx))
                 .collect();
 
@@ -142,13 +142,12 @@ impl ClusterAnalyzer {
             }
 
             // Calculate success rate
-            let successful = cluster_decisions.iter()
-                .filter(|d| d.succeeded)
-                .count();
+            let successful = cluster_decisions.iter().filter(|d| d.succeeded).count();
             template.success_rate = successful as f32 / cluster.len() as f32;
             template.instances = cluster.len();
 
-            template.decision_signature = format!("{:?}_{:?}", template.preconditions, template.actions);
+            template.decision_signature =
+                format!("{:?}_{:?}", template.preconditions, template.actions);
 
             templates.push(template);
         }
@@ -240,15 +239,13 @@ mod tests {
     #[test]
     fn test_build_templates() {
         let analyzer = ClusterAnalyzer::new(0.3);
-        let decisions = vec![
-            DecisionData {
-                decision_id: "d1".to_string(),
-                preconditions: vec!["obstacle".to_string()],
-                actions: vec!["avoid".to_string()],
-                outcomes: vec!["safe".to_string()],
-                succeeded: true,
-            },
-        ];
+        let decisions = vec![DecisionData {
+            decision_id: "d1".to_string(),
+            preconditions: vec!["obstacle".to_string()],
+            actions: vec!["avoid".to_string()],
+            outcomes: vec!["safe".to_string()],
+            succeeded: true,
+        }];
 
         let clusters = vec![vec![0]];
         let templates = analyzer.build_templates(&decisions, &clusters);

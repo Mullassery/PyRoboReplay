@@ -17,7 +17,10 @@ use pyroboreplay::storage::{BigQueryBackend, StorageBackend, StorageError};
 fn connection_string() -> String {
     std::env::var("PYROBOREPLAY_TEST_BIGQUERY_URL").unwrap_or_else(|_| {
         let dataset = format!("pyroboreplay_test_{}", std::process::id());
-        format!("bigquery://test-project/{}?endpoint=http://localhost:9050", dataset)
+        format!(
+            "bigquery://test-project/{}?endpoint=http://localhost:9050",
+            dataset
+        )
     })
 }
 
@@ -33,7 +36,9 @@ fn connected_backend() -> BigQueryBackend {
 #[ignore]
 fn test_connect_creates_schema_and_reports_stats() {
     let backend = connected_backend();
-    let stats = backend.get_stats().expect("get_stats should succeed once connected");
+    let stats = backend
+        .get_stats()
+        .expect("get_stats should succeed once connected");
     assert!(stats.connected);
 }
 
@@ -44,20 +49,34 @@ fn test_store_and_retrieve_mission_round_trip() {
     let mission_id = format!("test-mission-{}", uuid::Uuid::new_v4());
     let payload = r#"{"name":"integration test mission","events":3}"#;
 
-    backend.store_mission(&mission_id, payload).expect("store_mission failed");
-    let retrieved = backend.retrieve_mission(&mission_id).expect("retrieve_mission failed");
+    backend
+        .store_mission(&mission_id, payload)
+        .expect("store_mission failed");
+    let retrieved = backend
+        .retrieve_mission(&mission_id)
+        .expect("retrieve_mission failed");
     assert_eq!(retrieved, payload);
 
-    assert!(backend.mission_exists(&mission_id).expect("mission_exists failed"));
+    assert!(backend
+        .mission_exists(&mission_id)
+        .expect("mission_exists failed"));
 
     // Overwrite (delete-then-insert upsert) and confirm the update took effect.
     let updated_payload = r#"{"name":"integration test mission","events":5}"#;
-    backend.store_mission(&mission_id, updated_payload).expect("store_mission (update) failed");
-    let retrieved_again = backend.retrieve_mission(&mission_id).expect("retrieve_mission after update failed");
+    backend
+        .store_mission(&mission_id, updated_payload)
+        .expect("store_mission (update) failed");
+    let retrieved_again = backend
+        .retrieve_mission(&mission_id)
+        .expect("retrieve_mission after update failed");
     assert_eq!(retrieved_again, updated_payload);
 
-    backend.delete_mission(&mission_id).expect("delete_mission failed");
-    assert!(!backend.mission_exists(&mission_id).expect("mission_exists after delete failed"));
+    backend
+        .delete_mission(&mission_id)
+        .expect("delete_mission failed");
+    assert!(!backend
+        .mission_exists(&mission_id)
+        .expect("mission_exists after delete failed"));
 }
 
 #[test]
@@ -76,26 +95,38 @@ fn test_retrieve_missing_mission_returns_not_found() {
 fn test_store_and_retrieve_events_and_reports() {
     let backend = connected_backend();
     let mission_id = format!("test-mission-events-{}", uuid::Uuid::new_v4());
-    backend.store_mission(&mission_id, r#"{"name":"events test"}"#).expect("store_mission failed");
+    backend
+        .store_mission(&mission_id, r#"{"name":"events test"}"#)
+        .expect("store_mission failed");
 
     for i in 0..5 {
         let event_id = format!("evt-{}", i);
         let data = format!(r#"{{"index":{}}}"#, i);
-        backend.store_event(&mission_id, &event_id, &data).expect("store_event failed");
+        backend
+            .store_event(&mission_id, &event_id, &data)
+            .expect("store_event failed");
     }
 
-    let evt2 = backend.retrieve_event(&mission_id, "evt-2").expect("retrieve_event failed");
+    let evt2 = backend
+        .retrieve_event(&mission_id, "evt-2")
+        .expect("retrieve_event failed");
     assert_eq!(evt2, r#"{"index":2}"#);
 
     let report = r#"{"summary":"all good"}"#;
-    backend.store_report(&mission_id, report).expect("store_report failed");
-    let retrieved_report = backend.retrieve_report(&mission_id).expect("retrieve_report failed");
+    backend
+        .store_report(&mission_id, report)
+        .expect("store_report failed");
+    let retrieved_report = backend
+        .retrieve_report(&mission_id)
+        .expect("retrieve_report failed");
     assert_eq!(retrieved_report, report);
 
     // delete_mission only issues DELETEs against events/reports/missions
     // directly (BigQuery has no FK cascade), so this proves that path is
     // genuinely wired up rather than relying on a database-level cascade.
-    backend.delete_mission(&mission_id).expect("delete_mission failed");
+    backend
+        .delete_mission(&mission_id)
+        .expect("delete_mission failed");
     match backend.retrieve_event(&mission_id, "evt-2") {
         Err(StorageError::NotFound(_)) => {}
         other => panic!("expected event to be deleted, got {:?}", other),
@@ -121,7 +152,9 @@ fn test_list_missions_respects_limit() {
     let matching: Vec<_> = all.iter().filter(|id| id.starts_with(&prefix)).collect();
     assert_eq!(matching.len(), 3);
 
-    let limited = backend.list_missions(Some(1)).expect("list_missions with limit failed");
+    let limited = backend
+        .list_missions(Some(1))
+        .expect("list_missions with limit failed");
     assert_eq!(limited.len(), 1);
 }
 
@@ -143,9 +176,15 @@ fn test_get_stats_counts_reflect_stores() {
     let before = backend.get_stats().expect("get_stats failed");
 
     let mission_id = format!("stats-test-{}", uuid::Uuid::new_v4());
-    backend.store_mission(&mission_id, r#"{"a":1}"#).expect("store_mission failed");
-    backend.store_event(&mission_id, "evt-0", r#"{"b":2}"#).expect("store_event failed");
-    backend.store_report(&mission_id, r#"{"c":3}"#).expect("store_report failed");
+    backend
+        .store_mission(&mission_id, r#"{"a":1}"#)
+        .expect("store_mission failed");
+    backend
+        .store_event(&mission_id, "evt-0", r#"{"b":2}"#)
+        .expect("store_event failed");
+    backend
+        .store_report(&mission_id, r#"{"c":3}"#)
+        .expect("store_report failed");
 
     let after = backend.get_stats().expect("get_stats failed");
     assert_eq!(after.total_missions, before.total_missions + 1);

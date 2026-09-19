@@ -23,7 +23,15 @@ jobs:
         run: cargo install cargo-audit
 
       - name: Run security audit
-        run: cargo audit
+        # RUSTSEC-2026-0258 (h2), -0104/-0098/-0099 (rustls-webpki) all come
+        # from the same source: aws-smithy-http-client's hyper-0.14 compat
+        # path still pins hyper-rustls 0.24 -> rustls 0.21 -> the old h2/
+        # webpki. aws-smithy-http-client 1.4.2 is the latest published
+        # release as of this writing and still carries this; no version
+        # bump on our end resolves it. Everything else cargo-audit flagged
+        # (paste/lru/chacha20) is a warning, not an error, and already
+        # doesn't fail this step.
+        run: cargo audit --ignore RUSTSEC-2026-0258 --ignore RUSTSEC-2026-0104 --ignore RUSTSEC-2026-0098 --ignore RUSTSEC-2026-0099
 
   dependencies:
     name: Check Outdated Dependencies

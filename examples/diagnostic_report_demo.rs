@@ -9,44 +9,59 @@ fn main() {
     println!("SCENARIO 1: NAVIGATION DEADLOCK MISSION FAILURE");
     println!("═══════════════════════════════════════════════════════════════════\n");
 
-    let generator = DiagnosticReportGenerator::new("warehouse_exploration_001", "navigation_deadlock")
-        .with_root_cause(
-            "Robot encountered obstacle blocking all viable paths to target location. \
+    let generator =
+        DiagnosticReportGenerator::new("warehouse_exploration_001", "navigation_deadlock")
+            .with_root_cause(
+                "Robot encountered obstacle blocking all viable paths to target location. \
             Navigation system lacks recovery strategy for deadlock situations. \
             Path planner using greedy nearest-neighbor approach without obstacle avoidance.",
-        )
-        .with_counterfactual(
-            "Simulation shows that:\n\
+            )
+            .with_counterfactual(
+                "Simulation shows that:\n\
             1. If timeout had been implemented: Robot would escape deadlock (90% confidence)\n\
             2. If multi-planner approach used: Alternative path would be found (85% confidence)\n\
             3. If recovery behaviors deployed: Mission would recover within 30s (92% confidence)",
-        )
-        .with_recommendations(
-            "1. **QUICK WIN**: Implement 30-second navigation timeout\n\
+            )
+            .with_recommendations(
+                "1. **QUICK WIN**: Implement 30-second navigation timeout\n\
             2. **QUICK WIN**: Add simple backup-and-rotate recovery behavior\n\
             3. **STRATEGIC**: Switch to multi-planner approach with Dijkstra\n\
             4. **STRATEGIC**: Deploy supervised learning for obstacle anticipation",
-        );
+            );
 
     println!("Generating diagnostic report...\n");
 
     // Generate in multiple formats
     let markdown_report = generator.generate_formatted(ReportFormat::Markdown);
     let plain_text_report = generator.generate_formatted(ReportFormat::PlainText);
-    let json_report = generator.generate_formatted(ReportFormat::Json);
+    let _json_report = generator.generate_formatted(ReportFormat::Json);
 
     // Show markdown version
     println!("═══════════════════════════════════════════════════════════════════");
     println!("MARKDOWN FORMAT");
     println!("═══════════════════════════════════════════════════════════════════\n");
-    println!("{}\n", markdown_report.lines().take(40).collect::<Vec<_>>().join("\n"));
+    println!(
+        "{}\n",
+        markdown_report
+            .lines()
+            .take(40)
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
     println!("[... (truncated for display) ...]\n");
 
     // Show plain text version
     println!("═══════════════════════════════════════════════════════════════════");
     println!("PLAIN TEXT FORMAT");
     println!("═══════════════════════════════════════════════════════════════════\n");
-    println!("{}\n", plain_text_report.lines().take(35).collect::<Vec<_>>().join("\n"));
+    println!(
+        "{}\n",
+        plain_text_report
+            .lines()
+            .take(35)
+            .collect::<Vec<_>>()
+            .join("\n")
+    );
 
     // Show structured report
     println!("\n═══════════════════════════════════════════════════════════════════");
@@ -60,26 +75,47 @@ fn main() {
     println!("  Generated: {}", report.executive_summary.generated_at);
     println!("  Failure Type: {}", report.executive_summary.failure_type);
     println!("  Severity: {}", report.executive_summary.severity);
-    println!("  Diagnostic Confidence: {:.0}%", report.executive_summary.diagnostic_confidence * 100.0);
+    println!(
+        "  Diagnostic Confidence: {:.0}%",
+        report.executive_summary.diagnostic_confidence * 100.0
+    );
     println!("  Summary: {}\n", report.executive_summary.summary);
 
     println!("Root Cause Section:");
     println!("  Title: {}", report.root_cause_section.title);
-    println!("  Confidence: {:.0}%", report.root_cause_section.confidence * 100.0);
-    println!("  Evidence Count: {}\n", report.root_cause_section.evidence.len());
+    println!(
+        "  Confidence: {:.0}%",
+        report.root_cause_section.confidence * 100.0
+    );
+    println!(
+        "  Evidence Count: {}\n",
+        report.root_cause_section.evidence.len()
+    );
 
     println!("Impact Section:");
     println!("  Title: {}", report.impact_section.title);
-    println!("  Confidence: {:.0}%", report.impact_section.confidence * 100.0);
-    println!("  Evidence: {}\n", report.impact_section.evidence.join(", "));
+    println!(
+        "  Confidence: {:.0}%",
+        report.impact_section.confidence * 100.0
+    );
+    println!(
+        "  Evidence: {}\n",
+        report.impact_section.evidence.join(", ")
+    );
 
     println!("Counterfactual Section:");
     println!("  Title: {}", report.counterfactual_section.title);
-    println!("  Confidence: {:.0}%", report.counterfactual_section.confidence * 100.0);
+    println!(
+        "  Confidence: {:.0}%",
+        report.counterfactual_section.confidence * 100.0
+    );
 
     println!("Recommendations Section:");
     println!("  Title: {}", report.recommendations_section.title);
-    println!("  Confidence: {:.0}%", report.recommendations_section.confidence * 100.0);
+    println!(
+        "  Confidence: {:.0}%",
+        report.recommendations_section.confidence * 100.0
+    );
 
     println!("\n═══════════════════════════════════════════════════════════════════");
     println!("SCENARIO 2: BATTERY DRAIN FAILURE");
@@ -107,7 +143,10 @@ fn main() {
     let battery_report = battery_gen.generate();
     println!("Report: {}", battery_report.executive_summary.summary);
     println!("Severity: {}", battery_report.executive_summary.severity);
-    println!("Confidence: {:.0}%\n", battery_report.executive_summary.diagnostic_confidence * 100.0);
+    println!(
+        "Confidence: {:.0}%\n",
+        battery_report.executive_summary.diagnostic_confidence * 100.0
+    );
 
     println!("═══════════════════════════════════════════════════════════════════");
     println!("REPORT GENERATION OPTIONS");

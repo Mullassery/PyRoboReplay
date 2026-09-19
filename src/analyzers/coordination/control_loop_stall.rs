@@ -23,7 +23,11 @@ impl ControlLoopStallDetector {
         ControlLoopStallDetector
     }
 
-    pub fn analyze(&self, control_messages: &[ControlMessage], mission_duration_sec: f32) -> Vec<RealityGapFinding> {
+    pub fn analyze(
+        &self,
+        control_messages: &[ControlMessage],
+        mission_duration_sec: f32,
+    ) -> Vec<RealityGapFinding> {
         if control_messages.len() < MIN_MESSAGES {
             return Vec::new();
         }
@@ -31,7 +35,11 @@ impl ControlLoopStallDetector {
         let mut timestamps: Vec<f32> = control_messages.iter().map(|m| m.timestamp).collect();
         timestamps.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-        let mut intervals: Vec<f32> = timestamps.windows(2).map(|w| w[1] - w[0]).filter(|d| *d > 0.0).collect();
+        let mut intervals: Vec<f32> = timestamps
+            .windows(2)
+            .map(|w| w[1] - w[0])
+            .filter(|d| *d > 0.0)
+            .collect();
         if intervals.len() < MIN_MESSAGES - 1 {
             return Vec::new();
         }
@@ -54,7 +62,10 @@ impl ControlLoopStallDetector {
             return Vec::new();
         }
 
-        let longest = stalls.iter().cloned().fold((0.0, 0.0), |acc, s| if s.1 > acc.1 { s } else { acc });
+        let longest = stalls
+            .iter()
+            .cloned()
+            .fold((0.0, 0.0), |acc, s| if s.1 > acc.1 { s } else { acc });
         let total_stall_time: f32 = stalls.iter().map(|(_, d)| d).sum();
 
         let severity = if longest.1 > mission_duration_sec * 0.1 {
@@ -116,7 +127,12 @@ mod tests {
     use super::*;
 
     fn msg(timestamp: f32) -> ControlMessage {
-        ControlMessage { timestamp, joint_id: "j1".to_string(), command_type: "position".to_string(), value: 0.0 }
+        ControlMessage {
+            timestamp,
+            joint_id: "j1".to_string(),
+            command_type: "position".to_string(),
+            value: 0.0,
+        }
     }
 
     #[test]

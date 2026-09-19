@@ -1,8 +1,11 @@
 // Phase 1-3: Performance Benchmark Tests
 // Tests latency, throughput, and memory efficiency targets
 
-use pyroboreplay::core::{MissionEvent, AnomalyDetector, ExplanationGenerator, ActionRecommender, GeospatialExporter, Failure, GeoHotspot};
 use chrono::Utc;
+use pyroboreplay::core::{
+    ActionRecommender, AnomalyDetector, ExplanationGenerator, Failure, GeoHotspot,
+    GeospatialExporter, MissionEvent,
+};
 use std::time::Instant;
 
 // ============================================================================
@@ -340,7 +343,11 @@ fn test_detection_throughput() {
     println!("Detection throughput: {:.0} events/sec", throughput);
 
     // Should process at least 100 events per second
-    assert!(throughput > 100.0, "Throughput: {:.0} events/sec", throughput);
+    assert!(
+        throughput > 100.0,
+        "Throughput: {:.0} events/sec",
+        throughput
+    );
 }
 
 // ============================================================================

@@ -37,10 +37,10 @@ pub struct MLRIASRecommendation {
     pub title: String,
     pub description: String,
     pub priority: Priority,
-    pub impact: f32, // 0.0-1.0: how much does this fix help?
-    pub effort: f32, // 0.0-1.0: how hard to implement?
-    pub confidence: f32, // 0.0-1.0: confidence this fixes the issue
-    pub roi_score: f32, // impact / effort (impact per unit effort)
+    pub impact: f32,                 // 0.0-1.0: how much does this fix help?
+    pub effort: f32,                 // 0.0-1.0: how hard to implement?
+    pub confidence: f32,             // 0.0-1.0: confidence this fixes the issue
+    pub roi_score: f32,              // impact / effort (impact per unit effort)
     pub evidence_chain: Vec<String>, // evidence supporting this recommendation
     pub implementation_details: Option<String>,
     pub related_parameters: Vec<String>,
@@ -96,10 +96,7 @@ pub struct MLRIASRecommendationsEngine {
 }
 
 impl MLRIASRecommendationsEngine {
-    pub fn new(
-        failures: Vec<DetectedFailure>,
-        confidence_chains: Vec<ConfidenceChain>,
-    ) -> Self {
+    pub fn new(failures: Vec<DetectedFailure>, confidence_chains: Vec<ConfidenceChain>) -> Self {
         Self {
             failures,
             confidence_chains,
@@ -168,7 +165,7 @@ impl MLRIASRecommendationsEngine {
                     0.65, // confidence
                 )
                 .with_details(
-                    "Replace DWBLocalPlanner with SmacPlannerLattice in launch file".to_string()
+                    "Replace DWBLocalPlanner with SmacPlannerLattice in launch file".to_string(),
                 )
                 .with_parameters(vec![
                     "planner_server.ros__parameters.planning_plugin_names".to_string(),
@@ -372,7 +369,9 @@ impl MLRIASRecommendationsEngine {
                     0.30,
                     0.85,
                 )
-                .with_details("Consider using costmap caching, particle filter optimization".to_string()),
+                .with_details(
+                    "Consider using costmap caching, particle filter optimization".to_string(),
+                ),
             );
 
             recs.push(
@@ -520,7 +519,10 @@ mod tests {
         .with_parameters(vec!["param_1".to_string()]);
 
         assert_eq!(rec.evidence_chain.len(), 1);
-        assert_eq!(rec.implementation_details, Some("Implementation steps".to_string()));
+        assert_eq!(
+            rec.implementation_details,
+            Some("Implementation steps".to_string())
+        );
         assert_eq!(rec.related_parameters.len(), 1);
     }
 
@@ -533,9 +535,18 @@ mod tests {
 
     #[test]
     fn test_priority_from_severity() {
-        assert_eq!(Priority::from_severity(FailureSeverity::Critical), Priority::Critical);
-        assert_eq!(Priority::from_severity(FailureSeverity::High), Priority::High);
-        assert_eq!(Priority::from_severity(FailureSeverity::Medium), Priority::Medium);
+        assert_eq!(
+            Priority::from_severity(FailureSeverity::Critical),
+            Priority::Critical
+        );
+        assert_eq!(
+            Priority::from_severity(FailureSeverity::High),
+            Priority::High
+        );
+        assert_eq!(
+            Priority::from_severity(FailureSeverity::Medium),
+            Priority::Medium
+        );
         assert_eq!(Priority::from_severity(FailureSeverity::Low), Priority::Low);
     }
 }

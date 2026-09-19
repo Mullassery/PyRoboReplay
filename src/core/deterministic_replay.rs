@@ -1,6 +1,6 @@
+use crate::core::causality::CausalGraphBuilder;
 use crate::core::event::MissionEvent;
 use crate::core::root_cause::RootCauseAnalyzer;
-use crate::core::causality::CausalGraphBuilder;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -16,7 +16,10 @@ impl EventHasher {
     pub fn hash_event(event: &MissionEvent) -> String {
         let canonical_bytes = Self::canonical_json(event);
         let digest = Sha256::digest(&canonical_bytes);
-        format!("{:02x?}", digest).replace(", ", "").replace("[", "").replace("]", "")
+        format!("{:02x?}", digest)
+            .replace(", ", "")
+            .replace("[", "")
+            .replace("]", "")
     }
 
     /// Produce canonical (byte-stable) JSON for an event
@@ -40,7 +43,7 @@ impl EventHasher {
                 serde_json::Value::Object(sorted_map)
             }
             serde_json::Value::Array(arr) => {
-                serde_json::Value::Array(arr.iter().map(|v| Self::sort_json_keys(v)).collect())
+                serde_json::Value::Array(arr.iter().map(Self::sort_json_keys).collect())
             }
             other => other.clone(),
         }
@@ -51,7 +54,10 @@ impl EventHasher {
     pub fn chain_hash(event_hashes: &[String]) -> String {
         let concatenated = event_hashes.join("");
         let digest = Sha256::digest(concatenated.as_bytes());
-        format!("{:02x?}", digest).replace(", ", "").replace("[", "").replace("]", "")
+        format!("{:02x?}", digest)
+            .replace(", ", "")
+            .replace("[", "")
+            .replace("]", "")
     }
 }
 
@@ -94,7 +100,9 @@ pub struct DeterministicReplay {
 
 impl DeterministicReplay {
     /// Create a deterministic replay from a mission record
-    pub fn from_mission(mission: &crate::core::event::MissionRecord) -> Result<Self, DeterministicReplayError> {
+    pub fn from_mission(
+        mission: &crate::core::event::MissionRecord,
+    ) -> Result<Self, DeterministicReplayError> {
         let events = mission.events.clone();
         let event_hashes: Vec<String> = events.iter().map(EventHasher::hash_event).collect();
         let chain_hash = EventHasher::chain_hash(&event_hashes);
@@ -151,7 +159,10 @@ impl DeterministicReplay {
 
     /// Assert that two replays are identical
     /// Compares chain hashes (fast proof of identity)
-    pub fn assert_identical_to(&self, other: &DeterministicReplay) -> Result<(), DeterministicReplayError> {
+    pub fn assert_identical_to(
+        &self,
+        other: &DeterministicReplay,
+    ) -> Result<(), DeterministicReplayError> {
         if self.manifest.chain_hash != other.manifest.chain_hash {
             return Err(DeterministicReplayError::ChainHashMismatch {
                 expected: self.manifest.chain_hash.clone(),
@@ -164,7 +175,7 @@ impl DeterministicReplay {
     /// Run causal analysis on this deterministic replay
     /// Results are guaranteed to be identical if run multiple times
     pub fn run_causal_analysis(&self) -> Option<crate::core::root_cause::RootCauseAnalysis> {
-        let mut graph_builder = CausalGraphBuilder::new(self.events.clone());
+        let graph_builder = CausalGraphBuilder::new(self.events.clone());
         let graph = graph_builder.build();
 
         let mut analyzer = RootCauseAnalyzer::new(self.events.clone());
@@ -362,7 +373,10 @@ mod tests {
         let mission = create_test_mission();
         let replay = DeterministicReplay::from_mission(&mission).unwrap();
 
-        assert_eq!(replay.manifest.event_hashes.len(), replay.manifest.event_count);
+        assert_eq!(
+            replay.manifest.event_hashes.len(),
+            replay.manifest.event_count
+        );
         assert_eq!(replay.events.len(), replay.manifest.event_count);
     }
 
@@ -396,7 +410,10 @@ mod tests {
         };
 
         let result = replay.verify_manifest();
-        assert!(matches!(result, Err(DeterministicReplayError::HashMismatch { .. })));
+        assert!(matches!(
+            result,
+            Err(DeterministicReplayError::HashMismatch { .. })
+        ));
     }
 
     #[test]

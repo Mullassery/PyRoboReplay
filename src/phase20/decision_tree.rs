@@ -1,5 +1,4 @@
 /// Decision Tree Generation - Build interpretable trees from causal graphs
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -15,11 +14,11 @@ pub enum SplitCriterion {
 pub struct TreeNode {
     pub node_id: String,
     pub is_leaf: bool,
-    pub feature: Option<String>,           // Feature to split on
+    pub feature: Option<String>, // Feature to split on
     pub split: Option<SplitCriterion>,
-    pub class: Option<String>,             // For leaf nodes: predicted class
-    pub samples: usize,                    // Number of samples reaching this node
-    pub gini: f32,                         // Gini impurity (0-1)
+    pub class: Option<String>, // For leaf nodes: predicted class
+    pub samples: usize,        // Number of samples reaching this node
+    pub gini: f32,             // Gini impurity (0-1)
     pub left_child: Option<Box<TreeNode>>,
     pub right_child: Option<Box<TreeNode>>,
 }
@@ -69,8 +68,16 @@ impl TreeNode {
             return 1;
         }
 
-        let left_leaves = self.left_child.as_ref().map(|c| c.leaf_count()).unwrap_or(0);
-        let right_leaves = self.right_child.as_ref().map(|c| c.leaf_count()).unwrap_or(0);
+        let left_leaves = self
+            .left_child
+            .as_ref()
+            .map(|c| c.leaf_count())
+            .unwrap_or(0);
+        let right_leaves = self
+            .right_child
+            .as_ref()
+            .map(|c| c.leaf_count())
+            .unwrap_or(0);
 
         left_leaves + right_leaves
     }
@@ -150,9 +157,13 @@ impl DecisionTree {
         };
 
         if should_go_left {
-            node.left_child.as_ref().and_then(|child| self._predict_node(child, sample))
+            node.left_child
+                .as_ref()
+                .and_then(|child| self._predict_node(child, sample))
         } else {
-            node.right_child.as_ref().and_then(|child| self._predict_node(child, sample))
+            node.right_child
+                .as_ref()
+                .and_then(|child| self._predict_node(child, sample))
         }
     }
 
@@ -172,6 +183,12 @@ impl DecisionTree {
 pub struct TreeBuilder {
     max_depth: usize,
     min_samples_split: usize,
+}
+
+impl Default for TreeBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TreeBuilder {
@@ -220,12 +237,10 @@ impl TreeBuilder {
         let (best_feature, best_split) = self._find_best_split(data)?;
 
         // Partition data into left and right groups
-        let (left_refs, right_refs): (Vec<_>, Vec<_>) = data
-            .iter()
-            .partition(|(sample, _)| {
-                let value = sample.get(&best_feature).unwrap_or(&0.0);
-                matches!(&best_split, SplitCriterion::LessThan(t) if value < t)
-            });
+        let (left_refs, right_refs): (Vec<_>, Vec<_>) = data.iter().partition(|(sample, _)| {
+            let value = sample.get(&best_feature).unwrap_or(&0.0);
+            matches!(&best_split, SplitCriterion::LessThan(t) if value < t)
+        });
 
         if left_refs.is_empty() || right_refs.is_empty() {
             return Some(TreeNode::new_leaf(first_class.clone(), data.len()));
@@ -337,7 +352,12 @@ mod tests {
 
     #[test]
     fn test_tree_node_depth() {
-        let mut root = TreeNode::new_split("feature1".to_string(), SplitCriterion::GreaterThan(0.5), 20, 0.5);
+        let mut root = TreeNode::new_split(
+            "feature1".to_string(),
+            SplitCriterion::GreaterThan(0.5),
+            20,
+            0.5,
+        );
         root.left_child = Some(Box::new(TreeNode::new_leaf("left".to_string(), 10)));
         root.right_child = Some(Box::new(TreeNode::new_leaf("right".to_string(), 10)));
 
@@ -346,7 +366,12 @@ mod tests {
 
     #[test]
     fn test_tree_node_leaf_count() {
-        let mut root = TreeNode::new_split("feature1".to_string(), SplitCriterion::GreaterThan(0.5), 20, 0.5);
+        let mut root = TreeNode::new_split(
+            "feature1".to_string(),
+            SplitCriterion::GreaterThan(0.5),
+            20,
+            0.5,
+        );
         root.left_child = Some(Box::new(TreeNode::new_leaf("left".to_string(), 10)));
         root.right_child = Some(Box::new(TreeNode::new_leaf("right".to_string(), 10)));
 

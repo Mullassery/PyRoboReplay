@@ -12,10 +12,10 @@ pub struct RobotTypeProfile {
     pub failure_count: usize,
     pub gap_frequencies: HashMap<String, f32>, // category -> frequency (0.0-1.0)
     pub gap_severities: HashMap<String, (f32, f32)>, // category -> (avg_severity_score, std_dev)
-    pub thermal_sensitivity: f32,      // How much thermal effects matter (0.0-1.0)
-    pub mechanical_sensitivity: f32,   // How much mechanical wear matters
-    pub sensor_sensitivity: f32,       // How much sensor issues matter
-    pub learned_severity_threshold: f32, // Customized threshold for this robot type
+    pub thermal_sensitivity: f32,              // How much thermal effects matter (0.0-1.0)
+    pub mechanical_sensitivity: f32,           // How much mechanical wear matters
+    pub sensor_sensitivity: f32,               // How much sensor issues matter
+    pub learned_severity_threshold: f32,       // Customized threshold for this robot type
 }
 
 impl RobotTypeProfile {
@@ -27,7 +27,7 @@ impl RobotTypeProfile {
             failure_count: 0,
             gap_frequencies: HashMap::new(),
             gap_severities: HashMap::new(),
-            thermal_sensitivity: 1.0,      // Default: neutral
+            thermal_sensitivity: 1.0, // Default: neutral
             mechanical_sensitivity: 1.0,
             sensor_sensitivity: 1.0,
             learned_severity_threshold: 0.6, // Default: medium/high cutoff
@@ -36,7 +36,10 @@ impl RobotTypeProfile {
 
     /// Update gap frequency for a category
     pub fn record_gap(&mut self, category: &str, severity_score: f32) {
-        *self.gap_frequencies.entry(category.to_string()).or_insert(0.0) += 0.01; // Incremental
+        *self
+            .gap_frequencies
+            .entry(category.to_string())
+            .or_insert(0.0) += 0.01; // Incremental
         self.gap_frequencies
             .entry(category.to_string())
             .and_modify(|f| *f = f.min(1.0)); // Cap at 1.0
@@ -49,8 +52,8 @@ impl RobotTypeProfile {
         let new_count = count + 1.0;
         let new_sum = sum + severity_score;
         let avg = new_sum / new_count;
-        let std_dev = ((sum * sum + severity_score * severity_score) / new_count - avg * avg)
-            .sqrt();
+        let std_dev =
+            ((sum * sum + severity_score * severity_score) / new_count - avg * avg).sqrt();
 
         self.gap_severities
             .insert(category.to_string(), (avg, std_dev));
@@ -103,10 +106,8 @@ impl RobotCalibrationManager {
 
     /// Register a new robot type in the fleet
     pub fn register_robot_type(&mut self, robot_type: &str) {
-        self.profiles.insert(
-            robot_type.to_string(),
-            RobotTypeProfile::new(robot_type),
-        );
+        self.profiles
+            .insert(robot_type.to_string(), RobotTypeProfile::new(robot_type));
     }
 
     /// Record gap observation for a robot type
@@ -137,11 +138,19 @@ impl RobotCalibrationManager {
     pub fn calibrate_sensitivities(&mut self) {
         for profile in self.profiles.values_mut() {
             // Thermal sensitivity: how common are thermal gaps?
-            let thermal_freq = profile.gap_frequencies.get("Thermal Effects").copied().unwrap_or(0.0);
+            let thermal_freq = profile
+                .gap_frequencies
+                .get("Thermal Effects")
+                .copied()
+                .unwrap_or(0.0);
             profile.thermal_sensitivity = 1.0 + thermal_freq; // Range: 1.0-2.0
 
             // Mechanical sensitivity: how common are mechanical gaps?
-            let mech_freq = profile.gap_frequencies.get("Mechanical Degradation").copied().unwrap_or(0.0);
+            let mech_freq = profile
+                .gap_frequencies
+                .get("Mechanical Degradation")
+                .copied()
+                .unwrap_or(0.0);
             profile.mechanical_sensitivity = 1.0 + mech_freq * 0.5; // Range: 1.0-1.5
 
             // Sensor sensitivity: how common are sensor gaps?
@@ -210,12 +219,7 @@ impl RobotCalibrationManager {
     }
 
     /// Predict severity score for a gap given robot type
-    pub fn predict_severity(
-        &self,
-        robot_type: &str,
-        category: &str,
-        base_severity: f32,
-    ) -> f32 {
+    pub fn predict_severity(&self, robot_type: &str, category: &str, base_severity: f32) -> f32 {
         if let Some(profile) = self.get_profile(robot_type) {
             let mut multiplier = 1.0;
 
@@ -223,7 +227,9 @@ impl RobotCalibrationManager {
             match category {
                 "Thermal Effects" => multiplier = profile.thermal_sensitivity,
                 "Mechanical Degradation" => multiplier = profile.mechanical_sensitivity,
-                "Optical Contamination" | "Detection Robustness" => multiplier = profile.sensor_sensitivity,
+                "Optical Contamination" | "Detection Robustness" => {
+                    multiplier = profile.sensor_sensitivity
+                }
                 _ => {}
             }
 
@@ -277,7 +283,10 @@ mod tests {
         profile.record_gap("Mechanical Degradation", 0.7);
         profile.record_gap("Mechanical Degradation", 0.8);
 
-        let freq = profile.gap_frequencies.get("Mechanical Degradation").unwrap();
+        let freq = profile
+            .gap_frequencies
+            .get("Mechanical Degradation")
+            .unwrap();
         assert!(*freq > 0.0);
     }
 
@@ -323,7 +332,9 @@ mod tests {
         manager.register_robot_type("thermal_bot");
 
         let profile = manager.profiles.get_mut("thermal_bot").unwrap();
-        profile.gap_frequencies.insert("Thermal Effects".to_string(), 0.8);
+        profile
+            .gap_frequencies
+            .insert("Thermal Effects".to_string(), 0.8);
 
         drop(profile);
         manager.calibrate_sensitivities();

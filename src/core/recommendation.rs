@@ -94,12 +94,18 @@ impl RecommendationEngine {
             "battery_drain" => self._recommend_battery_optimization(root_cause, severity),
             "collision" => self._recommend_collision_prevention(root_cause, severity),
             "coverage_gap" => self._recommend_coverage_improvement(root_cause, severity),
-            "communication_failure" => self._recommend_communication_improvement(root_cause, severity),
+            "communication_failure" => {
+                self._recommend_communication_improvement(root_cause, severity)
+            }
             _ => self._recommend_generic(failure_type, root_cause, severity),
         };
 
         // Sort by ROI
-        recs.sort_by(|a, b| b.roi_score.partial_cmp(&a.roi_score).unwrap_or(std::cmp::Ordering::Equal));
+        recs.sort_by(|a, b| {
+            b.roi_score
+                .partial_cmp(&a.roi_score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         self.recommendations.extend(recs.clone());
         recs
@@ -112,7 +118,11 @@ impl RecommendationEngine {
         root_cause: &str,
     ) -> RecommendationSet {
         let mut recs = self.recommendations.clone();
-        recs.sort_by(|a, b| b.roi_score.partial_cmp(&a.roi_score).unwrap_or(std::cmp::Ordering::Equal));
+        recs.sort_by(|a, b| {
+            b.roi_score
+                .partial_cmp(&a.roi_score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Categorize into quick wins and strategic improvements
         let quick_wins: Vec<_> = recs
@@ -381,16 +391,44 @@ impl RecommendationEngine {
             };
         }
 
-        let avg_impact = recommendations.iter().map(|r| r.expected_impact).sum::<f32>() / recommendations.len() as f32;
-        let avg_effort = recommendations.iter().map(|r| r.implementation_effort).sum::<f32>() / recommendations.len() as f32;
-        let avg_confidence = recommendations.iter().map(|r| r.confidence).sum::<f32>() / recommendations.len() as f32;
-        let avg_regression = recommendations.iter().map(|r| r.risk_of_regression).sum::<f32>() / recommendations.len() as f32;
-        let best_roi = recommendations.iter().map(|r| r.roi_score).fold(0.0, f32::max);
+        let avg_impact = recommendations
+            .iter()
+            .map(|r| r.expected_impact)
+            .sum::<f32>()
+            / recommendations.len() as f32;
+        let avg_effort = recommendations
+            .iter()
+            .map(|r| r.implementation_effort)
+            .sum::<f32>()
+            / recommendations.len() as f32;
+        let avg_confidence = recommendations.iter().map(|r| r.confidence).sum::<f32>()
+            / recommendations.len() as f32;
+        let avg_regression = recommendations
+            .iter()
+            .map(|r| r.risk_of_regression)
+            .sum::<f32>()
+            / recommendations.len() as f32;
+        let best_roi = recommendations
+            .iter()
+            .map(|r| r.roi_score)
+            .fold(0.0, f32::max);
 
-        let critical_count = recommendations.iter().filter(|r| r.priority == "critical").count();
-        let high_count = recommendations.iter().filter(|r| r.priority == "high").count();
-        let medium_count = recommendations.iter().filter(|r| r.priority == "medium").count();
-        let low_count = recommendations.iter().filter(|r| r.priority == "low").count();
+        let critical_count = recommendations
+            .iter()
+            .filter(|r| r.priority == "critical")
+            .count();
+        let high_count = recommendations
+            .iter()
+            .filter(|r| r.priority == "high")
+            .count();
+        let medium_count = recommendations
+            .iter()
+            .filter(|r| r.priority == "medium")
+            .count();
+        let low_count = recommendations
+            .iter()
+            .filter(|r| r.priority == "low")
+            .count();
 
         RecommendationStats {
             total_recommendations: recommendations.len(),
@@ -432,14 +470,14 @@ mod tests {
     fn test_generate_deadlock_recommendations() {
         let mut engine = RecommendationEngine::new();
         let recs = engine.generate_for_failure("navigation_deadlock", "obstacle_blocking", "high");
-        assert!(recs.len() > 0);
+        assert!(!recs.is_empty());
     }
 
     #[test]
     fn test_generate_battery_recommendations() {
         let mut engine = RecommendationEngine::new();
         let recs = engine.generate_for_failure("battery_drain", "suboptimal_planning", "medium");
-        assert!(recs.len() > 0);
+        assert!(!recs.is_empty());
         assert!(recs.iter().any(|r| r.title.contains("Path")));
     }
 
@@ -468,7 +506,7 @@ mod tests {
         engine.generate_for_failure("battery_drain", "suboptimal_planning", "high");
         let set = engine.create_recommendation_set("Battery critical", "Suboptimal path planning");
 
-        assert!(set.recommendations.len() > 0);
+        assert!(!set.recommendations.is_empty());
         assert_eq!(set.failure_description, "Battery critical");
     }
 

@@ -161,11 +161,12 @@ impl TrackingEngine {
             }
 
             // Calculate distance
-            if let (Some(det_pos), Some(last_pos)) = (detection.position_3d, track.positions.last()) {
+            if let (Some(det_pos), Some(last_pos)) = (detection.position_3d, track.positions.last())
+            {
                 let distance = ((det_pos.0 - last_pos.position_3d.0).powi(2)
                     + (det_pos.1 - last_pos.position_3d.1).powi(2)
                     + (det_pos.2 - last_pos.position_3d.2).powi(2))
-                    .sqrt();
+                .sqrt();
 
                 if distance < best_distance {
                     best_distance = distance;
@@ -243,11 +244,7 @@ impl TrajectoryStatistics {
         let mut total_length = 0;
         let mut total_persistence = 0.0;
 
-        let all_tracks = [
-            engine.get_active_tracks(),
-            engine.get_completed_tracks(),
-        ]
-        .concat();
+        let all_tracks = [engine.get_active_tracks(), engine.get_completed_tracks()].concat();
 
         for track in &all_tracks {
             *trajectories_by_class.entry(track.class).or_insert(0) += 1;
@@ -257,11 +254,7 @@ impl TrajectoryStatistics {
 
         let completed = engine.get_completed_tracks().len();
         let total = all_tracks.len();
-        let avg_length = if total > 0 {
-            total_length / total
-        } else {
-            0
-        };
+        let avg_length = if total > 0 { total_length / total } else { 0 };
         let avg_persistence = if total > 0 {
             total_persistence / total as f32
         } else {
@@ -283,8 +276,12 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
-    fn create_test_frame(timestamp: f32, index: usize, objects: Vec<DetectedObject>) -> DetectionFrame {
-        use crate::perception::object_detection::{BoundingBox, FrameMetadata};
+    fn create_test_frame(
+        timestamp: f32,
+        index: usize,
+        objects: Vec<DetectedObject>,
+    ) -> DetectionFrame {
+        use crate::perception::object_detection::FrameMetadata;
 
         DetectionFrame {
             timestamp_sec: timestamp,

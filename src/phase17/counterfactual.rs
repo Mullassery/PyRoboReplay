@@ -1,24 +1,23 @@
-/// Counterfactual Analysis Engine - Generate "what if?" alternative histories
-
-use crate::phase16::causal_builder::CausalGraphV2;
 use crate::core::event::MissionEvent;
+/// Counterfactual Analysis Engine - Generate "what if?" alternative histories
+use crate::phase16::causal_builder::CausalGraphV2;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum QueryType {
-    RemoveNode,                          // "What if this decision didn't happen?"
-    ReplaceNode,                         // "What if this decision was different?"
-    ModifyEdgeWeight,                    // "What if factor A was stronger?"
-    RemoveEdge,                          // "What if this causal link didn't exist?"
-    ParallelDecisions,                   // "What if we chose alternative B instead of A?"
+    RemoveNode,        // "What if this decision didn't happen?"
+    ReplaceNode,       // "What if this decision was different?"
+    ModifyEdgeWeight,  // "What if factor A was stronger?"
+    RemoveEdge,        // "What if this causal link didn't exist?"
+    ParallelDecisions, // "What if we chose alternative B instead of A?"
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CounterfactualQuery {
     pub query_type: String,
     pub target_node_id: String,
-    pub parameter: Option<String>,  // e.g., new confidence, alternative action
+    pub parameter: Option<String>, // e.g., new confidence, alternative action
     pub timestamp: i64,
 }
 
@@ -56,11 +55,11 @@ pub struct CounterfactualResult {
     pub query: CounterfactualQuery,
     pub original_outcome: String,
     pub alternative_outcome: String,
-    pub divergence_point: usize,      // Event index where timeline diverges
+    pub divergence_point: usize, // Event index where timeline diverges
     pub outcome_change_magnitude: f32, // 0-1 scale, how different?
-    pub confidence: f32,               // How certain about this counterfactual?
-    pub affected_events: Vec<usize>,   // Which events would differ
-    pub summary: String,               // Human-readable explanation
+    pub confidence: f32,         // How certain about this counterfactual?
+    pub affected_events: Vec<usize>, // Which events would differ
+    pub summary: String,         // Human-readable explanation
 }
 
 pub struct CounterfactualAnalyzer {
@@ -84,7 +83,8 @@ impl CounterfactualAnalyzer {
         let alternative_outcome = self._simulate_alternative(&query, &affected);
 
         let divergence = affected.first().copied().unwrap_or(0);
-        let magnitude = self._calculate_outcome_change(&self.baseline_outcome, &alternative_outcome);
+        let magnitude =
+            self._calculate_outcome_change(&self.baseline_outcome, &alternative_outcome);
 
         CounterfactualResult {
             query: query.clone(),
@@ -102,10 +102,15 @@ impl CounterfactualAnalyzer {
         let mut affected = Vec::new();
 
         // Find events that depend on the target node
-        for (idx, edge) in self.graph.edges.iter().enumerate() {
+        for edge in self.graph.edges.iter() {
             if edge.source_id == query.target_node_id {
                 // This edge emanates from the target node
-                if let Ok(target_idx) = edge.target_id.strip_prefix("event_").unwrap_or("").parse::<usize>() {
+                if let Ok(target_idx) = edge
+                    .target_id
+                    .strip_prefix("event_")
+                    .unwrap_or("")
+                    .parse::<usize>()
+                {
                     affected.push(target_idx);
                 }
             }
@@ -119,16 +124,21 @@ impl CounterfactualAnalyzer {
         match query.query_type.as_str() {
             "remove_node" => {
                 if affected.is_empty() {
-                    format!("Mission outcome unchanged (isolated event)")
+                    "Mission outcome unchanged (isolated event)".to_string()
                 } else {
                     format!("Mission delayed by ~{} events", affected.len())
                 }
             }
             "replace_node" => {
-                format!("Alternative path taken: {}", query.parameter.as_ref().unwrap_or(&"unknown".to_string()))
+                format!(
+                    "Alternative path taken: {}",
+                    query.parameter.as_ref().unwrap_or(&"unknown".to_string())
+                )
             }
             "modify_edge_weight" => {
-                let new_conf: f32 = query.parameter.as_ref()
+                let new_conf: f32 = query
+                    .parameter
+                    .as_ref()
                     .and_then(|s| s.parse().ok())
                     .unwrap_or(0.5);
 
@@ -146,24 +156,29 @@ impl CounterfactualAnalyzer {
 
     fn _calculate_outcome_change(&self, original: &str, alternative: &str) -> f32 {
         if original == alternative {
-            0.0  // No change
+            0.0 // No change
         } else if original.contains("success") && alternative.contains("failure") {
-            1.0  // Complete reversal
+            1.0 // Complete reversal
         } else if original.contains("failure") && alternative.contains("success") {
-            1.0  // Complete reversal
+            1.0 // Complete reversal
         } else {
-            0.5  // Partial change
+            0.5 // Partial change
         }
     }
 
-    fn _calculate_confidence(&self, query: &CounterfactualQuery, affected: &[usize]) -> f32 {
+    fn _calculate_confidence(&self, _query: &CounterfactualQuery, affected: &[usize]) -> f32 {
         // Confidence decreases with number of affected events
         let base_confidence = 0.85;
         let penalty = (affected.len() as f32) * 0.02;
         (base_confidence - penalty).max(0.3)
     }
 
-    fn _generate_summary(&self, query: &CounterfactualQuery, outcome: &str, magnitude: f32) -> String {
+    fn _generate_summary(
+        &self,
+        query: &CounterfactualQuery,
+        outcome: &str,
+        magnitude: f32,
+    ) -> String {
         let impact = match magnitude {
             m if m > 0.8 => "drastically",
             m if m > 0.5 => "significantly",
@@ -186,12 +201,19 @@ impl CounterfactualAnalyzer {
                     outcome
                 )
             }
-            _ => format!("Counterfactual scenario would {} affect outcome: {}", impact, outcome),
+            _ => format!(
+                "Counterfactual scenario would {} affect outcome: {}",
+                impact, outcome
+            ),
         }
     }
 
     /// Compare two potential decisions at a divergence point
-    pub fn compare_decision_paths(&self, decision_a: &str, decision_b: &str) -> HashMap<String, f32> {
+    pub fn compare_decision_paths(
+        &self,
+        _decision_a: &str,
+        _decision_b: &str,
+    ) -> HashMap<String, f32> {
         let mut comparison = HashMap::new();
 
         // Placeholder metrics
@@ -236,10 +258,16 @@ mod tests {
         );
 
         // No change
-        assert_eq!(analyzer._calculate_outcome_change("success", "success"), 0.0);
+        assert_eq!(
+            analyzer._calculate_outcome_change("success", "success"),
+            0.0
+        );
 
         // Complete reversal
-        assert_eq!(analyzer._calculate_outcome_change("success", "failure"), 1.0);
+        assert_eq!(
+            analyzer._calculate_outcome_change("success", "failure"),
+            1.0
+        );
 
         // Partial change
         let change = analyzer._calculate_outcome_change("success with delay", "partial success");

@@ -1,7 +1,6 @@
 /// Integration tests for PyRoboReplay
 /// Tests end-to-end pipeline: generation → parsing → replay → queries
-
-use pyroboreplay::adapters::{MissionAdapter, ros2::Ros2Adapter};
+use pyroboreplay::adapters::{ros2::Ros2Adapter, MissionAdapter};
 use pyroboreplay::core::Timeline;
 use std::path::Path;
 
@@ -49,8 +48,7 @@ fn test_event_type_breakdown() {
         .expect("Failed to parse warehouse mission");
 
     // Count events by type
-    let mut event_counts: std::collections::HashMap<&str, usize> =
-        std::collections::HashMap::new();
+    let mut event_counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
 
     for event in &mission.events {
         *event_counts.entry(event.event_type()).or_insert(0) += 1;
@@ -151,7 +149,10 @@ fn test_available_sensors() {
     assert!(sensor_set.contains("lidar"), "Should have lidar sensor");
     assert!(sensor_set.contains("camera"), "Should have camera sensor");
     assert!(sensor_set.contains("imu"), "Should have imu sensor");
-    assert!(sensor_set.contains("odometry"), "Should have odometry sensor");
+    assert!(
+        sensor_set.contains("odometry"),
+        "Should have odometry sensor"
+    );
 
     println!("✅ Available sensors: {}", sensors.join(", "));
 }
@@ -194,10 +195,7 @@ fn test_event_ordering() {
     for i in 0..mission.events.len() - 1 {
         let curr_ts = mission.events[i].timestamp();
         let next_ts = mission.events[i + 1].timestamp();
-        assert!(
-            curr_ts <= next_ts,
-            "Events should be sorted by timestamp"
-        );
+        assert!(curr_ts <= next_ts, "Events should be sorted by timestamp");
     }
 
     println!("✅ Event ordering verified");
@@ -309,7 +307,10 @@ fn test_mission_metadata() {
         .expect("Failed to parse warehouse mission");
 
     // Verify mission has valid metadata
-    assert!(!mission.id.to_string().is_empty(), "Mission ID should not be empty");
+    assert!(
+        !mission.id.to_string().is_empty(),
+        "Mission ID should not be empty"
+    );
     assert!(!mission.name.is_empty(), "Mission name should not be empty");
 
     // Created at should be recent (within last minute)

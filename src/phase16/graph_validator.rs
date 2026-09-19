@@ -1,7 +1,6 @@
 /// Causal Graph Validator for Phase 16
 ///
 /// Ensures quality: DAG property, confidence calibration, variance explanation
-
 use super::causal_builder::CausalGraphV2;
 use serde::{Deserialize, Serialize};
 
@@ -42,7 +41,9 @@ impl CausalGraphValidator {
 
         // Test 1: DAG property
         if !result.is_valid_dag {
-            result.issues.push("Graph contains cycles (not a DAG)".to_string());
+            result
+                .issues
+                .push("Graph contains cycles (not a DAG)".to_string());
         }
 
         // Test 2: Edge confidence interpretability
@@ -59,7 +60,9 @@ impl CausalGraphValidator {
         // Test 4: Find conflicting edges
         result.conflicts = Self::_find_conflicting_edges(graph);
         if !result.conflicts.is_empty() {
-            result.issues.push(format!("Found {} edge conflicts", result.conflicts.len()));
+            result
+                .issues
+                .push(format!("Found {} edge conflicts", result.conflicts.len()));
         }
 
         // Test 5: Confidence distribution
@@ -87,7 +90,11 @@ impl CausalGraphValidator {
         }
 
         // Medium confidence should be majority
-        let med_conf = graph.edges.iter().filter(|e| e.confidence >= 0.5 && e.confidence <= 0.8).count();
+        let med_conf = graph
+            .edges
+            .iter()
+            .filter(|e| e.confidence >= 0.5 && e.confidence <= 0.8)
+            .count();
         let med_conf_ratio = med_conf as f32 / graph.edges.len() as f32;
 
         if med_conf_ratio > 0.5 {
@@ -141,7 +148,8 @@ impl CausalGraphValidator {
             return;
         }
 
-        let avg_conf: f32 = graph.edges.iter().map(|e| e.confidence).sum::<f32>() / graph.edges.len() as f32;
+        let avg_conf: f32 =
+            graph.edges.iter().map(|e| e.confidence).sum::<f32>() / graph.edges.len() as f32;
 
         if avg_conf < 0.5 {
             issues.push(format!(
@@ -152,7 +160,10 @@ impl CausalGraphValidator {
 
         // Check for all edges having identical confidence
         let first_conf = graph.edges[0].confidence;
-        let all_same = graph.edges.iter().all(|e| (e.confidence - first_conf).abs() < 0.01);
+        let all_same = graph
+            .edges
+            .iter()
+            .all(|e| (e.confidence - first_conf).abs() < 0.01);
 
         if all_same {
             issues.push("All edges have identical confidence (poor discrimination)".to_string());
@@ -177,8 +188,15 @@ mod tests {
     #[test]
     fn test_validate_simple_dag() {
         let mut graph = CausalGraphV2::new();
-        graph.vertices.push(Vertex::new("v1".to_string(), "sensor".to_string(), 0, 0.8));
-        graph.vertices.push(Vertex::new("v2".to_string(), "sensor".to_string(), 100, 0.8));
+        graph
+            .vertices
+            .push(Vertex::new("v1".to_string(), "sensor".to_string(), 0, 0.8));
+        graph.vertices.push(Vertex::new(
+            "v2".to_string(),
+            "sensor".to_string(),
+            100,
+            0.8,
+        ));
         graph.edges.push(Edge::new(
             "v1".to_string(),
             "v2".to_string(),
@@ -234,6 +252,6 @@ mod tests {
         ));
 
         let conflicts = CausalGraphValidator::_find_conflicting_edges(&graph);
-        assert!(conflicts.len() > 0);
+        assert!(!conflicts.is_empty());
     }
 }

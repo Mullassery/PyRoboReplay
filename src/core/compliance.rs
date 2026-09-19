@@ -1,7 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use thiserror::Error;
 use uuid::Uuid;
 
 /// Proximity zone type classification
@@ -223,7 +222,9 @@ impl ComplianceReportGenerator {
                         timestamp: pz_event.timestamp,
                         description: format!(
                             "Proximity distance {:.2}m below minimum {:.2}m in zone {}",
-                            pz_event.distance_m, self.config.min_proximity_distance_m, pz_event.zone_id
+                            pz_event.distance_m,
+                            self.config.min_proximity_distance_m,
+                            pz_event.zone_id
                         ),
                         severity: ViolationSeverity::Critical,
                     });
@@ -235,7 +236,10 @@ impl ComplianceReportGenerator {
     }
 
     /// Check emergency stop violations
-    fn check_emergency_stop_violations(&self, events: &[ComplianceEvent]) -> Vec<ComplianceViolation> {
+    fn check_emergency_stop_violations(
+        &self,
+        events: &[ComplianceEvent],
+    ) -> Vec<ComplianceViolation> {
         let mut violations = Vec::new();
 
         for event in events {
@@ -267,7 +271,9 @@ impl ComplianceReportGenerator {
 
         for event in events {
             if let ComplianceEvent::SpeedCompliance(speed_event) = event {
-                if !speed_event.compliant && speed_event.actual_speed_mps > self.config.max_speed_mps {
+                if !speed_event.compliant
+                    && speed_event.actual_speed_mps > self.config.max_speed_mps
+                {
                     violations.push(ComplianceViolation {
                         violation_id: format!("speed_{}", Uuid::new_v4()),
                         violation_type: ViolationType::SpeedLimitExceeded,
@@ -287,7 +293,10 @@ impl ComplianceReportGenerator {
     }
 
     /// Check operator presence violations
-    fn check_operator_presence_violations(&self, events: &[ComplianceEvent]) -> Vec<ComplianceViolation> {
+    fn check_operator_presence_violations(
+        &self,
+        events: &[ComplianceEvent],
+    ) -> Vec<ComplianceViolation> {
         let mut violations = Vec::new();
         let mut robot_absence_start: HashMap<String, DateTime<Utc>> = HashMap::new();
 
@@ -297,7 +306,9 @@ impl ComplianceReportGenerator {
                     robot_absence_start.insert(op_event.robot_id.clone(), op_event.timestamp);
                 } else if let Some(absence_start) = robot_absence_start.remove(&op_event.robot_id) {
                     let absence_duration = op_event.timestamp - absence_start;
-                    if absence_duration.num_milliseconds() > self.config.operator_motion_tolerance_ms as i64 {
+                    if absence_duration.num_milliseconds()
+                        > self.config.operator_motion_tolerance_ms as i64
+                    {
                         violations.push(ComplianceViolation {
                             violation_id: format!("op_absence_{}", Uuid::new_v4()),
                             violation_type: ViolationType::OperatorAbsenceDuringMotion,
@@ -440,7 +451,10 @@ mod tests {
 
         assert!(!report.overall_compliant);
         assert_eq!(report.violations.len(), 1);
-        assert_eq!(report.violations[0].violation_type, ViolationType::SpeedLimitExceeded);
+        assert_eq!(
+            report.violations[0].violation_type,
+            ViolationType::SpeedLimitExceeded
+        );
     }
 
     #[test]

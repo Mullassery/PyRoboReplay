@@ -30,10 +30,7 @@ pub struct AgentOutputGenerator;
 
 impl AgentOutputGenerator {
     /// Convert analysis to agent-friendly format
-    pub fn generate_agent_summary(
-        mission_id: &str,
-        duration_sec: f32,
-    ) -> AgentMission {
+    pub fn generate_agent_summary(mission_id: &str, duration_sec: f32) -> AgentMission {
         AgentMission {
             mission_id: mission_id.to_string(),
             duration_sec,

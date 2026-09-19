@@ -3,11 +3,17 @@
 //! Detects vibration, oscillation, and resonance effects.
 
 use crate::analyzers::{
-    GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity, Evidence,
+    Evidence, GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity,
 };
 use std::collections::HashMap;
 
 pub struct StructuralDynamicsDetector;
+
+impl Default for StructuralDynamicsDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl StructuralDynamicsDetector {
     pub fn new() -> Self {
@@ -15,7 +21,10 @@ impl StructuralDynamicsDetector {
     }
 
     /// Detect post-motion oscillation indicating structural flex
-    pub fn analyze_oscillation(&self, joint_states: &[crate::analyzers::JointState]) -> Option<RealityGapFinding> {
+    pub fn analyze_oscillation(
+        &self,
+        joint_states: &[crate::analyzers::JointState],
+    ) -> Option<RealityGapFinding> {
         if joint_states.len() < 20 {
             return None;
         }
@@ -48,7 +57,8 @@ impl StructuralDynamicsDetector {
                 let post_motion = &joint_states[stop_idx..stop_idx + 20];
 
                 // Compute position variance (oscillation indicator)
-                let mean_pos = post_motion.iter().map(|s| s.position).sum::<f32>() / post_motion.len() as f32;
+                let mean_pos =
+                    post_motion.iter().map(|s| s.position).sum::<f32>() / post_motion.len() as f32;
                 let variance = post_motion
                     .iter()
                     .map(|s| (s.position - mean_pos).powi(2))
@@ -66,8 +76,14 @@ impl StructuralDynamicsDetector {
 
         if oscillation_detected {
             let mut metrics = HashMap::new();
-            metrics.insert("max_oscillation_amplitude_rad".to_string(), max_oscillation_amplitude);
-            metrics.insert("oscillation_detections".to_string(), oscillation_detected as i32 as f32);
+            metrics.insert(
+                "max_oscillation_amplitude_rad".to_string(),
+                max_oscillation_amplitude,
+            );
+            metrics.insert(
+                "oscillation_detections".to_string(),
+                oscillation_detected as i32 as f32,
+            );
 
             return Some(RealityGapFinding {
                 domain: RealityDomain::Physical,
@@ -92,11 +108,10 @@ impl StructuralDynamicsDetector {
                     "Add joint compliance and damping: τ + 2ζω₀τ̇ + ω₀²τ = command. \
                      Use ζ ≈ 0.3-0.5, ω₀ ≈ 2π*5 Hz (typical structural mode)."
                         .to_string(),
-                remediation:
-                    "1. Increase joint controller damping (PD gains). \
+                remediation: "1. Increase joint controller damping (PD gains). \
                      2. Add series damper if available. \
                      3. Reduce motion speed commands to limit excitation."
-                        .to_string(),
+                    .to_string(),
                 detection_time_sec: joint_states.last().map(|s| s.timestamp),
             });
         }

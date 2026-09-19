@@ -1,10 +1,8 @@
 // Phase 2: Cross-Mission Pattern Extraction Tests
 // Tests pattern learning, fleet analytics, and failure prediction
 
-use pyroboreplay::core::{
-    Failure, CrossMissionAnalyzer, PatternLibrary,
-};
 use chrono::Utc;
+use pyroboreplay::core::{CrossMissionAnalyzer, Failure, PatternLibrary};
 use std::collections::HashMap;
 
 // ============================================================================
@@ -13,57 +11,69 @@ use std::collections::HashMap;
 
 fn create_warehouse_mission_1() -> (String, Vec<Failure>) {
     // Mission 1: Collision near loading dock
-    let mut failures = vec![
-        Failure::new(
-            "near_collision".to_string(),
-            Utc::now(),
-            0.85,
-            "high".to_string(),
-            "Obstacle at loading dock (40.7128, -74.0060)".to_string(),
-        ),
-    ];
+    let mut failures = vec![Failure::new(
+        "near_collision".to_string(),
+        Utc::now(),
+        0.85,
+        "high".to_string(),
+        "Obstacle at loading dock (40.7128, -74.0060)".to_string(),
+    )];
 
-    failures[0].evidence.insert("location_x".to_string(), "40.7128".to_string());
-    failures[0].evidence.insert("location_y".to_string(), "-74.0060".to_string());
-    failures[0].evidence.insert("min_range_m".to_string(), "0.35".to_string());
+    failures[0]
+        .evidence
+        .insert("location_x".to_string(), "40.7128".to_string());
+    failures[0]
+        .evidence
+        .insert("location_y".to_string(), "-74.0060".to_string());
+    failures[0]
+        .evidence
+        .insert("min_range_m".to_string(), "0.35".to_string());
 
     ("warehouse_run_1".to_string(), failures)
 }
 
 fn create_warehouse_mission_2() -> (String, Vec<Failure>) {
     // Mission 2: Same location collision (pattern!)
-    let mut failures = vec![
-        Failure::new(
-            "near_collision".to_string(),
-            Utc::now(),
-            0.82,
-            "high".to_string(),
-            "Obstacle at loading dock (40.7128, -74.0060)".to_string(),
-        ),
-    ];
+    let mut failures = vec![Failure::new(
+        "near_collision".to_string(),
+        Utc::now(),
+        0.82,
+        "high".to_string(),
+        "Obstacle at loading dock (40.7128, -74.0060)".to_string(),
+    )];
 
-    failures[0].evidence.insert("location_x".to_string(), "40.7128".to_string());
-    failures[0].evidence.insert("location_y".to_string(), "-74.0060".to_string());
-    failures[0].evidence.insert("min_range_m".to_string(), "0.40".to_string());
+    failures[0]
+        .evidence
+        .insert("location_x".to_string(), "40.7128".to_string());
+    failures[0]
+        .evidence
+        .insert("location_y".to_string(), "-74.0060".to_string());
+    failures[0]
+        .evidence
+        .insert("min_range_m".to_string(), "0.40".to_string());
 
     ("warehouse_run_2".to_string(), failures)
 }
 
 fn create_warehouse_mission_3() -> (String, Vec<Failure>) {
     // Mission 3: Same location, third occurrence (strong pattern)
-    let mut failures = vec![
-        Failure::new(
-            "near_collision".to_string(),
-            Utc::now(),
-            0.88,
-            "high".to_string(),
-            "Obstacle at loading dock (40.7128, -74.0060)".to_string(),
-        ),
-    ];
+    let mut failures = vec![Failure::new(
+        "near_collision".to_string(),
+        Utc::now(),
+        0.88,
+        "high".to_string(),
+        "Obstacle at loading dock (40.7128, -74.0060)".to_string(),
+    )];
 
-    failures[0].evidence.insert("location_x".to_string(), "40.7128".to_string());
-    failures[0].evidence.insert("location_y".to_string(), "-74.0060".to_string());
-    failures[0].evidence.insert("min_range_m".to_string(), "0.32".to_string());
+    failures[0]
+        .evidence
+        .insert("location_x".to_string(), "40.7128".to_string());
+    failures[0]
+        .evidence
+        .insert("location_y".to_string(), "-74.0060".to_string());
+    failures[0]
+        .evidence
+        .insert("min_range_m".to_string(), "0.32".to_string());
 
     ("warehouse_run_3".to_string(), failures)
 }
@@ -146,7 +156,10 @@ fn test_repeated_collision_at_same_location() {
         failure_count += failures.len();
     }
 
-    assert_eq!(failure_count, 3, "Should have 3 collisions at same location");
+    assert_eq!(
+        failure_count, 3,
+        "Should have 3 collisions at same location"
+    );
 }
 
 #[test]
@@ -176,10 +189,14 @@ fn test_location_proximity_matching() {
     let mission_1 = create_warehouse_mission_1();
     let mission_2 = create_warehouse_mission_2();
 
-    let loc_1 = (&mission_1.1[0].evidence.get("location_x"),
-                 &mission_1.1[0].evidence.get("location_y"));
-    let loc_2 = (&mission_2.1[0].evidence.get("location_x"),
-                 &mission_2.1[0].evidence.get("location_y"));
+    let loc_1 = (
+        &mission_1.1[0].evidence.get("location_x"),
+        &mission_1.1[0].evidence.get("location_y"),
+    );
+    let loc_2 = (
+        &mission_2.1[0].evidence.get("location_x"),
+        &mission_2.1[0].evidence.get("location_y"),
+    );
 
     // Locations should be very close (same loading dock)
     assert_eq!(loc_1.0, loc_2.0);
@@ -310,7 +327,7 @@ fn test_least_common_failure_type() {
 #[test]
 fn test_hotspot_identification() {
     // Three missions with same location = hotspot
-    let collision_missions = vec![
+    let collision_missions = [
         create_warehouse_mission_1(),
         create_warehouse_mission_2(),
         create_warehouse_mission_3(),
@@ -332,7 +349,7 @@ fn test_hotspot_clustering() {
     let y: f64 = y_str.parse().unwrap();
 
     // Should be valid coordinates
-    assert!(x > 40.0 && x < 41.0);  // NYC latitude
+    assert!(x > 40.0 && x < 41.0); // NYC latitude
     assert!(y > -75.0 && y < -74.0); // NYC longitude
 }
 
@@ -362,7 +379,9 @@ fn test_failure_co_occurrence() {
     let mission_5 = create_diverse_missions()[4].clone();
 
     assert_eq!(mission_5.1.len(), 2);
-    let failure_types: Vec<_> = mission_5.1.iter()
+    let failure_types: Vec<_> = mission_5
+        .1
+        .iter()
         .map(|f| f.failure_type.as_str())
         .collect();
 

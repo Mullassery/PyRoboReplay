@@ -5,11 +5,11 @@
 //!
 //! This is the bridge connecting reality gap detection with causal reasoning and human-readable output.
 
-use crate::analyzers::gap_to_causal::{GapToCausalAdapter, GapCausalLink};
-use crate::analyzers::multi_factor_causality::{MultiFactorInferenceEngine, MultiFactorCausalChain};
+use crate::analyzers::evidence_quality_scoring::{EvidenceQualityScore, EvidenceQualityScorer};
+use crate::analyzers::gap_to_causal::GapToCausalAdapter;
 use crate::analyzers::incident_narrative::{IncidentNarrative, IncidentNarrativeGenerator};
-use crate::analyzers::evidence_quality_scoring::{
-    EvidenceQualityScore, EvidenceQualityScorer,
+use crate::analyzers::multi_factor_causality::{
+    MultiFactorCausalChain, MultiFactorInferenceEngine,
 };
 use crate::analyzers::RealityGapFinding;
 use std::collections::HashMap;
@@ -78,13 +78,13 @@ impl GapNarrativePipeline {
         }
 
         // Step 1: Convert gaps to causal events
-        let gap_events: Vec<_> = gaps
+        let _gap_events: Vec<_> = gaps
             .iter()
             .flat_map(|gap| GapToCausalAdapter::gap_to_causal_events(gap, "mission"))
             .collect();
 
         // Step 2: Link gaps causally
-        let gap_links = GapToCausalAdapter::infer_gap_causal_links(gaps);
+        let _gap_links = GapToCausalAdapter::infer_gap_causal_links(gaps);
 
         // Step 3: Build multi-factor causal chains
         let quality_context = HashMap::new();
@@ -103,8 +103,11 @@ impl GapNarrativePipeline {
             let narrative = IncidentNarrativeGenerator::from_causal_chain(&chain, gaps);
 
             // Step 5: Score evidence quality
-            let evidence_quality =
-                EvidenceQualityScorer::score_narrative_evidence(&narrative, gaps, &detector_agreement_matrix);
+            let evidence_quality = EvidenceQualityScorer::score_narrative_evidence(
+                &narrative,
+                gaps,
+                &detector_agreement_matrix,
+            );
 
             let adjusted_confidence = EvidenceQualityScorer::apply_quality_adjustment(
                 narrative.narrative_confidence,
@@ -121,7 +124,8 @@ impl GapNarrativePipeline {
                     .map(|g| g.category.clone())
                     .collect::<std::collections::HashSet<_>>()
                     .len(),
-                avg_gap_confidence: gaps.iter().map(|g| g.confidence).sum::<f32>() / gaps.len() as f32,
+                avg_gap_confidence: gaps.iter().map(|g| g.confidence).sum::<f32>()
+                    / gaps.len() as f32,
                 duration_sec: narrative.end_time_sec - narrative.start_time_sec,
                 intervention_count: chain.intervention_points.len(),
                 strongest_gap_type: gaps
@@ -231,7 +235,10 @@ impl GapNarrativePipeline {
             report.narrative.end_time_sec,
             report.summary.duration_sec
         ));
-        output.push_str(&format!("Executive Summary: {}\n\n", report.narrative.executive_summary));
+        output.push_str(&format!(
+            "Executive Summary: {}\n\n",
+            report.narrative.executive_summary
+        ));
 
         output.push_str("WHAT HAPPENED\n");
         output.push_str("──────────────\n");
@@ -266,7 +273,10 @@ impl GapNarrativePipeline {
                 action.effort
             ));
             output.push_str(&format!("   Description: {}\n", action.description));
-            output.push_str(&format!("   Expected effectiveness: {:.0}%\n", action.effectiveness * 100.0));
+            output.push_str(&format!(
+                "   Expected effectiveness: {:.0}%\n",
+                action.effectiveness * 100.0
+            ));
             output.push_str("   Implementation:\n");
             for line in action.implementation.lines() {
                 output.push_str(&format!("     {}\n", line));
@@ -276,7 +286,9 @@ impl GapNarrativePipeline {
 
         output.push_str("EVIDENCE QUALITY ASSESSMENT\n");
         output.push_str("──────────────────────────────\n");
-        output.push_str(&EvidenceQualityScorer::generate_quality_report(&report.evidence_quality));
+        output.push_str(&EvidenceQualityScorer::generate_quality_report(
+            &report.evidence_quality,
+        ));
 
         output.push('\n');
         output.push_str("STATISTICS\n");
@@ -341,7 +353,9 @@ mod tests {
         // Pipeline may produce 0 reports if no causal chains match
         // This is OK - not all gap combinations produce chains
         // We just verify the pipeline doesn't crash
-        assert!(reports.iter().all(|r| r.narrative.narrative_confidence > 0.0));
+        assert!(reports
+            .iter()
+            .all(|r| r.narrative.narrative_confidence > 0.0));
     }
 
     #[test]
@@ -383,7 +397,7 @@ mod tests {
         let reports = GapNarrativePipeline::process_gaps(&gaps, &environment);
 
         // If reports are generated, verify risk level is appropriate
-        if reports.len() > 0 {
+        if !reports.is_empty() {
             assert!(
                 reports[0].risk_level == "Critical" || reports[0].risk_level == "High",
                 "Expected high risk level, got {}",

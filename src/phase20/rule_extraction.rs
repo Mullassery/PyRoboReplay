@@ -1,17 +1,16 @@
 /// Rule Extraction - Extract interpretable decision rules from models
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DecisionRule {
     pub rule_id: String,
-    pub antecedent: Vec<String>,        // Conditions (e.g., "sensor_drift > 0.7")
-    pub consequent: String,             // Conclusion (e.g., "navigation_failure")
-    pub support: f32,                   // % of data matching this rule
-    pub confidence: f32,                // % of matches that lead to conclusion
-    pub lift: f32,                      // How much better than baseline?
-    pub complexity: usize,              // Number of conditions
+    pub antecedent: Vec<String>, // Conditions (e.g., "sensor_drift > 0.7")
+    pub consequent: String,      // Conclusion (e.g., "navigation_failure")
+    pub support: f32,            // % of data matching this rule
+    pub confidence: f32,         // % of matches that lead to conclusion
+    pub lift: f32,               // How much better than baseline?
+    pub complexity: usize,       // Number of conditions
 }
 
 impl DecisionRule {
@@ -42,8 +41,14 @@ impl DecisionRule {
 pub struct RuleSet {
     pub rules: Vec<DecisionRule>,
     pub total_patterns: usize,
-    pub coverage: f32,                  // % of data covered by rules
+    pub coverage: f32, // % of data covered by rules
     pub avg_confidence: f32,
+}
+
+impl Default for RuleSet {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RuleSet {
@@ -65,8 +70,8 @@ impl RuleSet {
             return;
         }
 
-        let avg_confidence: f32 = self.rules.iter().map(|r| r.confidence).sum::<f32>()
-            / self.rules.len() as f32;
+        let avg_confidence: f32 =
+            self.rules.iter().map(|r| r.confidence).sum::<f32>() / self.rules.len() as f32;
         let total_support: f32 = self.rules.iter().map(|r| r.support).sum::<f32>();
 
         self.avg_confidence = avg_confidence;
@@ -80,7 +85,11 @@ impl RuleSet {
     }
 
     pub fn get_actionable_rules(&self) -> Vec<DecisionRule> {
-        self.rules.iter().filter(|r| r.is_actionable()).cloned().collect()
+        self.rules
+            .iter()
+            .filter(|r| r.is_actionable())
+            .cloned()
+            .collect()
     }
 }
 
@@ -89,11 +98,17 @@ pub struct RuleExtractor {
     min_confidence: f32,
 }
 
+impl Default for RuleExtractor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RuleExtractor {
     pub fn new() -> Self {
         RuleExtractor {
-            min_support: 0.05,        // At least 5% of data
-            min_confidence: 0.6,      // At least 60% confidence
+            min_support: 0.05,   // At least 5% of data
+            min_confidence: 0.6, // At least 60% confidence
         }
     }
 
@@ -122,7 +137,7 @@ impl RuleExtractor {
 
             // Simulate support and confidence calculation
             let rule_support = (path.len() as f32 / data_size as f32).max(self.min_support);
-            let rule_confidence = 0.5 + (path.len() as f32 * 0.1).min(0.4);  // Simplified
+            let rule_confidence = 0.5 + (path.len() as f32 * 0.1).min(0.4); // Simplified
 
             if rule_support >= self.min_support && rule_confidence >= self.min_confidence {
                 let mut rule = DecisionRule::new(target.clone());
@@ -130,7 +145,7 @@ impl RuleExtractor {
                 rule.support = rule_support;
                 rule.confidence = rule_confidence;
                 rule.complexity = path.len();
-                rule.lift = rule_confidence / 0.5;  // Simplified baseline
+                rule.lift = rule_confidence / 0.5; // Simplified baseline
 
                 ruleset.add_rule(rule);
             }
@@ -143,7 +158,7 @@ impl RuleExtractor {
     /// Extract association rules from feature combinations
     pub fn extract_associations(
         &self,
-        patterns: &HashMap<Vec<String>, (usize, usize)>,  // Pattern -> (occurrences, success_count)
+        patterns: &HashMap<Vec<String>, (usize, usize)>, // Pattern -> (occurrences, success_count)
         data_size: usize,
     ) -> RuleSet {
         let mut ruleset = RuleSet::new();

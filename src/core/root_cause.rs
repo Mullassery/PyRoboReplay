@@ -1,4 +1,4 @@
-use crate::core::causality::{CausalGraph, CausalLink};
+use crate::core::causality::CausalGraph;
 use crate::core::event::MissionEvent;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
@@ -126,7 +126,7 @@ impl RootCauseAnalyzer {
         let most_likely = hypotheses.first().cloned();
 
         // Diagnostic confidence based on hypothesis consistency
-        let diagnostic_confidence = if hypotheses.len() > 0 {
+        let diagnostic_confidence = if !hypotheses.is_empty() {
             hypotheses.first().map(|h| h.confidence).unwrap_or(0.0)
         } else {
             0.0
@@ -149,27 +149,24 @@ impl RootCauseAnalyzer {
         while i < self.events.len() {
             match &self.events[i] {
                 // Navigation deadlock: repeated identical positions
-                MissionEvent::RobotPose { pose, .. } => {
-                    if i + 2 < self.events.len() {
-                        if let MissionEvent::RobotPose { pose: pose2, .. } = &self.events[i + 1] {
-                            if let MissionEvent::RobotPose { pose: pose3, .. } = &self.events[i + 2]
-                            {
-                                let dist1 = (pose.x - pose2.x).powi(2)
-                                    + (pose.y - pose2.y).powi(2)
-                                    + (pose.z - pose2.z).powi(2);
-                                let dist2 = (pose2.x - pose3.x).powi(2)
-                                    + (pose2.y - pose3.y).powi(2)
-                                    + (pose2.z - pose3.z).powi(2);
+                MissionEvent::RobotPose { pose, .. } if i + 2 < self.events.len() => {
+                    if let MissionEvent::RobotPose { pose: pose2, .. } = &self.events[i + 1] {
+                        if let MissionEvent::RobotPose { pose: pose3, .. } = &self.events[i + 2] {
+                            let dist1 = (pose.x - pose2.x).powi(2)
+                                + (pose.y - pose2.y).powi(2)
+                                + (pose.z - pose2.z).powi(2);
+                            let dist2 = (pose2.x - pose3.x).powi(2)
+                                + (pose2.y - pose3.y).powi(2)
+                                + (pose2.z - pose3.z).powi(2);
 
-                                if dist1 < 0.01 && dist2 < 0.01 {
-                                    self.failure_modes.push(FailureMode {
-                                        failure_type: "navigation_deadlock".to_string(),
-                                        severity: "high".to_string(),
-                                        first_event_idx: i,
-                                        event_chain: vec![i, i + 1, i + 2],
-                                        confidence: 0.9,
-                                    });
-                                }
+                            if dist1 < 0.01 && dist2 < 0.01 {
+                                self.failure_modes.push(FailureMode {
+                                    failure_type: "navigation_deadlock".to_string(),
+                                    severity: "high".to_string(),
+                                    first_event_idx: i,
+                                    event_chain: vec![i, i + 1, i + 2],
+                                    confidence: 0.9,
+                                });
                             }
                         }
                     }
@@ -185,7 +182,11 @@ impl RootCauseAnalyzer {
         &self.failure_modes
     }
 
-    fn _trace_root_causes(&self, failure_idx: usize, graph: &CausalGraph) -> Vec<RootCauseHypothesis> {
+    fn _trace_root_causes(
+        &self,
+        failure_idx: usize,
+        graph: &CausalGraph,
+    ) -> Vec<RootCauseHypothesis> {
         let mut hypotheses = Vec::new();
         let mut visited = std::collections::HashSet::new();
 
@@ -230,7 +231,11 @@ impl RootCauseAnalyzer {
         }
 
         // Sort by confidence descending
-        hypotheses.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+        hypotheses.sort_by(|a, b| {
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Keep top hypotheses
         hypotheses.truncate(10);
@@ -302,10 +307,16 @@ impl RootCauseAnalyzer {
         // Simplified: return common alternatives
         match self.events.get(root_idx) {
             Some(MissionEvent::ObstacleDetected { .. }) => {
-                vec!["Sensor malfunction".to_string(), "False positive detection".to_string()]
+                vec![
+                    "Sensor malfunction".to_string(),
+                    "False positive detection".to_string(),
+                ]
             }
             Some(MissionEvent::NavigationDecision { .. }) => {
-                vec!["Suboptimal path planning".to_string(), "State estimation error".to_string()]
+                vec![
+                    "Suboptimal path planning".to_string(),
+                    "State estimation error".to_string(),
+                ]
             }
             _ => vec!["Environmental change".to_string()],
         }
@@ -425,7 +436,7 @@ mod tests {
         };
 
         let analyzer = RootCauseAnalyzer::new(vec![]);
-        let stats = analyzer._compute_stats(&vec![hyp1, hyp2]);
+        let stats = analyzer._compute_stats(&[hyp1, hyp2]);
 
         assert_eq!(stats.total_hypotheses, 2);
         assert_eq!(stats.high_confidence_hypotheses, 1);

@@ -3,7 +3,7 @@
 //! Estimates P(SimGap | Evidence) using Bayesian inference.
 //! Distinguishes sim-to-real gaps from algorithm bugs.
 
-use crate::analyzers::{RealityGapFinding, MissionAnalysisData};
+use crate::analyzers::{MissionAnalysisData, RealityGapFinding};
 use std::collections::HashMap;
 
 /// Probabilistically score gap findings
@@ -56,10 +56,7 @@ impl RealityGapScorer {
     /// Base prior: P(SimGap) by category
     /// How likely is this gap type to be sim-related vs algorithmic?
     fn base_probability(&self, category: &str) -> f32 {
-        *self
-            .base_probabilities
-            .get(category)
-            .unwrap_or(&0.5)
+        *self.base_probabilities.get(category).unwrap_or(&0.5)
     }
 
     /// Likelihood: P(Evidence | SimGap)
@@ -102,12 +99,9 @@ impl RealityGapScorer {
         }
 
         let evidence_count = (finding.evidence.len() as f32).min(5.0) / 5.0;
-        let avg_evidence_confidence: f32 = finding
-            .evidence
-            .iter()
-            .map(|e| e.confidence)
-            .sum::<f32>()
-            / finding.evidence.len() as f32;
+        let avg_evidence_confidence: f32 =
+            finding.evidence.iter().map(|e| e.confidence).sum::<f32>()
+                / finding.evidence.len() as f32;
 
         let base_confidence = (evidence_count * 0.4) + (avg_evidence_confidence * 0.6);
 
@@ -115,12 +109,7 @@ impl RealityGapScorer {
     }
 
     /// Apply domain knowledge adjustments
-    pub fn adjust_score(
-        &self,
-        base_score: f32,
-        category: &str,
-        robot_type: &str,
-    ) -> f32 {
+    pub fn adjust_score(&self, base_score: f32, category: &str, robot_type: &str) -> f32 {
         let mut adjusted = base_score;
 
         // Adjustment 1: Simulator representability

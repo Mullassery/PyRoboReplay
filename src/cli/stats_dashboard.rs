@@ -1,13 +1,7 @@
+use crate::cli::sensor_stats::SensorMetadataPanel;
 /// Separate terminal stats dashboard for real-time mission metrics
 /// Launches in its own terminal window (platform-aware: macOS or Linux)
-
 use crate::core::event::MissionRecord;
-use crate::cli::sensor_stats::SensorMetadataPanel;
-use std::process::{Command, Stdio};
-use std::fs;
-use std::path::PathBuf;
-use std::thread;
-use std::time::Duration;
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent},
     execute,
@@ -20,8 +14,13 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame, Terminal,
 };
+use std::fs;
 use std::io;
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
 
 /// Escape an arbitrary string for safe inclusion as a single-quoted token in a
 /// POSIX shell script. The returned string is itself a complete, safely-quoted
@@ -113,6 +112,12 @@ pub struct TerminalLauncher {
     platform: Platform,
 }
 
+impl Default for TerminalLauncher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TerminalLauncher {
     pub fn new() -> Self {
         Self {
@@ -121,7 +126,11 @@ impl TerminalLauncher {
     }
 
     /// Launch a separate terminal window with a command
-    pub fn launch(&self, title: &str, command: &str) -> Result<std::process::Child, Box<dyn std::error::Error>> {
+    pub fn launch(
+        &self,
+        title: &str,
+        command: &str,
+    ) -> Result<std::process::Child, Box<dyn std::error::Error>> {
         match self.platform {
             Platform::MacOS => self.launch_macos(title, command),
             Platform::Linux => self.launch_linux(title, command),
@@ -130,7 +139,11 @@ impl TerminalLauncher {
     }
 
     /// Launch terminal on macOS (uses Terminal.app or iTerm2 if available)
-    fn launch_macos(&self, title: &str, command: &str) -> Result<std::process::Child, Box<dyn std::error::Error>> {
+    fn launch_macos(
+        &self,
+        title: &str,
+        command: &str,
+    ) -> Result<std::process::Child, Box<dyn std::error::Error>> {
         // Try iTerm2 first, fall back to Terminal.app
         let has_iterm = Command::new("pgrep")
             .arg("-x")
@@ -161,20 +174,24 @@ impl TerminalLauncher {
 
         tracing::info!("Launching {} on macOS using {}", title, app);
 
-        let child = Command::new("osascript")
-            .arg("-e")
-            .arg(&script)
-            .spawn()?;
+        let child = Command::new("osascript").arg("-e").arg(&script).spawn()?;
 
         Ok(child)
     }
 
     /// Launch terminal on Linux (uses terminator, then falls back to gnome-terminal, xterm)
-    fn launch_linux(&self, title: &str, command: &str) -> Result<std::process::Child, Box<dyn std::error::Error>> {
+    fn launch_linux(
+        &self,
+        title: &str,
+        command: &str,
+    ) -> Result<std::process::Child, Box<dyn std::error::Error>> {
         // Try different terminal emulators in order of preference
         let terminals = vec![
             ("terminator", vec!["-t", title, "-e", command]),
-            ("gnome-terminal", vec!["--title", title, "--", "/bin/bash", "-c", command]),
+            (
+                "gnome-terminal",
+                vec!["--title", title, "--", "/bin/bash", "-c", command],
+            ),
             ("xterm", vec!["-title", title, "-e", command]),
             ("xfce4-terminal", vec!["--title", title, "-e", command]),
         ];
@@ -197,7 +214,10 @@ impl TerminalLauncher {
             }
         }
 
-        Err("No suitable terminal emulator found. Install terminator, gnome-terminal, or xterm.".into())
+        Err(
+            "No suitable terminal emulator found. Install terminator, gnome-terminal, or xterm."
+                .into(),
+        )
     }
 }
 
@@ -298,9 +318,15 @@ impl StatsDashboard {
         // Header
         let header = Paragraph::new(format!(
             "📊 PyRoboReplay Stats Dashboard | Mission: {} | Event: {}/{}",
-            mission.name, current_idx, mission.events.len()
+            mission.name,
+            current_idx,
+            mission.events.len()
         ))
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+        .style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
         .block(Block::default().borders(Borders::ALL));
         f.render_widget(header, chunks[0]);
 
@@ -327,8 +353,15 @@ impl StatsDashboard {
         let mut output = String::new();
         output.push_str("⚡ Real-time Stats\n");
         output.push_str(&format!("Total Events: {}\n", mission.events.len()));
-        output.push_str(&format!("Current Position: {} / {}\n", current_idx, mission.events.len()));
-        output.push_str(&format!("Progress: {:.1}%\n", (current_idx as f32 / mission.events.len().max(1) as f32) * 100.0));
+        output.push_str(&format!(
+            "Current Position: {} / {}\n",
+            current_idx,
+            mission.events.len()
+        ));
+        output.push_str(&format!(
+            "Progress: {:.1}%\n",
+            (current_idx as f32 / mission.events.len().max(1) as f32) * 100.0
+        ));
         output.push_str(&format!("Playback Speed: {:.1}x\n", speed));
         output.push('\n');
 
@@ -356,7 +389,10 @@ pub fn launch_stats_dashboard_window(
     let launcher = TerminalLauncher::new();
 
     // Create a temporary script to run the dashboard
-    let script_path = PathBuf::from(format!("/tmp/pyroboreplay_stats_{}.sh", uuid::Uuid::new_v4()));
+    let script_path = PathBuf::from(format!(
+        "/tmp/pyroboreplay_stats_{}.sh",
+        uuid::Uuid::new_v4()
+    ));
 
     // `title` is currently always a hard-coded caller literal, but
     // `mission.name` comes from loaded mission/replay data and must be
@@ -380,7 +416,9 @@ pub fn launch_stats_dashboard_window(
            echo 'Last Update: '$(date '+%Y-%m-%d %H:%M:%S')\n\
            sleep 1\n\
          done\n",
-        title_token, mission_name_token, mission.events.len()
+        title_token,
+        mission_name_token,
+        mission.events.len()
     );
 
     fs::write(&script_path, &script_content)?;
@@ -443,7 +481,10 @@ mod tests {
     fn test_shell_single_quote_neutralizes_quote_breakout() {
         // A naive `format!("'{}'", s)` would let this break out of the quotes
         // and execute `touch <marker>` as a separate command.
-        let marker = std::env::temp_dir().join(format!("pyroboreplay_test_pwn_{}.marker", uuid::Uuid::new_v4()));
+        let marker = std::env::temp_dir().join(format!(
+            "pyroboreplay_test_pwn_{}.marker",
+            uuid::Uuid::new_v4()
+        ));
         let _ = fs::remove_file(&marker);
         let malicious = format!("'; touch {}; echo '", marker.display());
         let token = shell_single_quote(&malicious);
@@ -460,9 +501,17 @@ mod tests {
             .arg(&full_script)
             .output()
             .expect("failed to run bash");
-        assert!(output.status.success(), "escaped script failed to run: {:?}", output);
+        assert!(
+            output.status.success(),
+            "escaped script failed to run: {:?}",
+            output
+        );
         let stdout = String::from_utf8_lossy(&output.stdout);
-        assert!(stdout.contains(&malicious), "payload should be printed literally, got: {}", stdout);
+        assert!(
+            stdout.contains(&malicious),
+            "payload should be printed literally, got: {}",
+            stdout
+        );
         assert!(!marker.exists(), "injected command must not have executed");
         let _ = fs::remove_file(&marker);
     }
@@ -482,7 +531,12 @@ mod tests {
                 .arg(&script)
                 .output()
                 .expect("failed to run bash");
-            assert!(output.status.success(), "script failed for payload {:?}: {:?}", payload, output);
+            assert!(
+                output.status.success(),
+                "script failed for payload {:?}: {:?}",
+                payload,
+                output
+            );
             assert_eq!(
                 String::from_utf8_lossy(&output.stdout),
                 payload,
@@ -497,7 +551,8 @@ mod tests {
         // Build a mission whose name is a classic shell-injection payload and
         // ensure the generated script (a) is syntactically valid bash and
         // (b) does not execute the injected command when run.
-        let mut mission = MissionRecord::new("'; touch /tmp/pyroboreplay_test_pwned_mission; echo '");
+        let mut mission =
+            MissionRecord::new("'; touch /tmp/pyroboreplay_test_pwned_mission; echo '");
         mission.events = vec![];
 
         let title_token = shell_single_quote("PyRoboReplay Stats Dashboard");
@@ -508,7 +563,9 @@ mod tests {
              echo 'Mission: '{}\n\
              echo 'Events: {}'\n\
              exit 0\n",
-            title_token, mission_name_token, mission.events.len()
+            title_token,
+            mission_name_token,
+            mission.events.len()
         );
 
         // Syntax check only (bash -n), then a real bounded execution.
@@ -518,7 +575,11 @@ mod tests {
             .arg(&script_content)
             .output()
             .expect("failed to run bash -n");
-        assert!(syntax_check.status.success(), "generated script has invalid syntax: {:?}", syntax_check);
+        assert!(
+            syntax_check.status.success(),
+            "generated script has invalid syntax: {:?}",
+            syntax_check
+        );
 
         let marker = std::env::temp_dir().join("pyroboreplay_test_pwned_mission");
         let _ = fs::remove_file(&marker);
@@ -528,7 +589,10 @@ mod tests {
             .output()
             .expect("failed to run generated script");
         assert!(output.status.success());
-        assert!(!marker.exists(), "malicious mission name must not execute injected command");
+        assert!(
+            !marker.exists(),
+            "malicious mission name must not execute injected command"
+        );
         let _ = fs::remove_file(&marker);
     }
 

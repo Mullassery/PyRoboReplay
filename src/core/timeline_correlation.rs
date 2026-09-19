@@ -6,11 +6,10 @@
 /// 3. Reconstructs causal chains with confidence scores
 ///
 /// This is separate from the replay Timeline - focused on forensic analysis.
-
 use crate::core::event::MissionEvent;
-use chrono::{DateTime, Utc, Duration};
-use std::collections::HashMap;
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Represents an event with normalized timestamp
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -280,7 +279,7 @@ impl TimelineCorrelationEngine {
             if let Some(sync_state) = self.clock_sync.get(&event.origin) {
                 // Apply offset correction
                 let correction = Duration::milliseconds(sync_state.clock_offset_ms);
-                event.timestamp = event.timestamp - correction;
+                event.timestamp -= correction;
                 event.timestamp_confidence = sync_state.sync_confidence;
             }
         }
@@ -333,7 +332,11 @@ impl TimelineCorrelationEngine {
     }
 
     /// Infer causal link between two events
-    fn infer_causal_link(&self, event_a: &NormalizedEvent, event_b: &NormalizedEvent) -> Option<MLRIASCausalLink> {
+    fn infer_causal_link(
+        &self,
+        event_a: &NormalizedEvent,
+        event_b: &NormalizedEvent,
+    ) -> Option<MLRIASCausalLink> {
         use crate::core::event::MissionEvent::*;
 
         let latency_ms = (event_b.timestamp - event_a.timestamp).num_milliseconds();
@@ -427,8 +430,13 @@ mod tests {
             robot_id: "robot1".to_string(),
             timestamp: Utc::now(),
             pose: crate::core::event::Pose {
-                x: 0.0, y: 0.0, z: 0.0,
-                qx: 0.0, qy: 0.0, qz: 0.0, qw: 1.0,
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+                qx: 0.0,
+                qy: 0.0,
+                qz: 0.0,
+                qw: 1.0,
             },
             confidence: None,
         };

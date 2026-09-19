@@ -4,11 +4,17 @@
 //! Correlates detection confidence with image quality to classify root cause.
 
 use crate::analyzers::{
-    GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity, Evidence,
+    Evidence, GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity,
 };
 use std::collections::HashMap;
 
 pub struct DetectionRobustnessAnalyzer;
+
+impl Default for DetectionRobustnessAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl DetectionRobustnessAnalyzer {
     pub fn new() -> Self {
@@ -58,10 +64,7 @@ impl DetectionRobustnessAnalyzer {
         metrics.insert("initial_confidence".to_string(), initial_conf);
         metrics.insert("final_confidence".to_string(), final_conf);
         metrics.insert("trend_slope_per_hour".to_string(), trend_slope);
-        metrics.insert(
-            "image_quality_correlation".to_string(),
-            correlation,
-        );
+        metrics.insert("image_quality_correlation".to_string(), correlation);
 
         // Classify root cause based on correlation
         let (finding_type, description, gap_score, confidence, severity) = if correlation > 0.6 {
@@ -72,8 +75,7 @@ impl DetectionRobustnessAnalyzer {
                     "Object detection confidence declined {:.1}% over mission. \
                      Strong correlation with image quality (r={:.2}). \
                      Likely environmental factors: lighting, shadows, weather.",
-                    confidence_decline_pct,
-                    correlation
+                    confidence_decline_pct, correlation
                 ),
                 0.80,
                 0.78,
@@ -87,8 +89,7 @@ impl DetectionRobustnessAnalyzer {
                     "Object detection confidence declined {:.1}%. \
                      Moderate correlation with image quality (r={:.2}). \
                      Could be environmental or algorithmic.",
-                    confidence_decline_pct,
-                    correlation
+                    confidence_decline_pct, correlation
                 ),
                 0.60,
                 0.65,
@@ -140,30 +141,28 @@ impl DetectionRobustnessAnalyzer {
                 },
             ],
             metrics,
-            sim_recreation_suggestion:
-                if correlation > 0.6 {
-                    "Model dynamic lighting: sky dome sun position(time), glare effects, shadows. \
+            sim_recreation_suggestion: if correlation > 0.6 {
+                "Model dynamic lighting: sky dome sun position(time), glare effects, shadows. \
                      Run sim with time-varying lighting to reproduce degradation."
-                        .to_string()
-                } else {
-                    "Model distribution shift: real-world data differs from training data. \
+                    .to_string()
+            } else {
+                "Model distribution shift: real-world data differs from training data. \
                      Augment training with challenging lighting/weather conditions."
-                        .to_string()
-                },
-            remediation:
-                if correlation > 0.6 {
-                    "1. Ensure adequate robot lighting (LED ring). \
+                    .to_string()
+            },
+            remediation: if correlation > 0.6 {
+                "1. Ensure adequate robot lighting (LED ring). \
                      2. Add lens hood to reduce glare. \
                      3. Use polarizing filter for reflections. \
                      4. Train model with lighting augmentation."
-                        .to_string()
-                } else {
-                    "1. Re-train detection model with real deployment data. \
+                    .to_string()
+            } else {
+                "1. Re-train detection model with real deployment data. \
                      2. Implement online learning / active learning. \
                      3. Add model monitoring / drift detection. \
                      4. Consider domain adaptation techniques."
-                        .to_string()
-                },
+                    .to_string()
+            },
             detection_time_sec: frame_confidences.last().map(|(t, _)| *t),
         })
     }
@@ -178,7 +177,10 @@ impl DetectionRobustnessAnalyzer {
         }
 
         // Heuristic: consider detections with confidence < 0.3 as likely false positives
-        let low_confidence_count = detection_results.iter().filter(|d| d.confidence < 0.3).count();
+        let low_confidence_count = detection_results
+            .iter()
+            .filter(|d| d.confidence < 0.3)
+            .count();
         let fp_rate = low_confidence_count as f32 / detection_results.len() as f32;
 
         if fp_rate < 0.05 {
@@ -197,7 +199,10 @@ impl DetectionRobustnessAnalyzer {
 
         let mut metrics = HashMap::new();
         metrics.insert("false_positive_rate".to_string(), fp_rate * 100.0);
-        metrics.insert("low_confidence_detections".to_string(), low_confidence_count as f32);
+        metrics.insert(
+            "low_confidence_detections".to_string(),
+            low_confidence_count as f32,
+        );
         metrics.insert("spatial_clustering_score".to_string(), clustering_score);
 
         let (description, gap_score, remediation) = if clustering_score > 0.7 {
@@ -253,13 +258,12 @@ impl DetectionRobustnessAnalyzer {
                 },
             ],
             metrics,
-            sim_recreation_suggestion:
-                if clustering_score > 0.7 {
-                    "Add lens artifacts to simulation: vignetting, flare, edge distortion."
-                } else {
-                    "Train detection model with out-of-distribution examples."
-                }
-                .to_string(),
+            sim_recreation_suggestion: if clustering_score > 0.7 {
+                "Add lens artifacts to simulation: vignetting, flare, edge distortion."
+            } else {
+                "Train detection model with out-of-distribution examples."
+            }
+            .to_string(),
             remediation,
             detection_time_sec: detection_results.last().map(|d| d.timestamp),
         })
@@ -274,7 +278,7 @@ impl DetectionRobustnessAnalyzer {
         for detection in detections {
             frame_conf
                 .entry(detection.frame_index)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(detection.confidence);
         }
 
@@ -329,9 +333,7 @@ impl DetectionRobustnessAnalyzer {
     ) -> Vec<(f32, f32)> {
         frames
             .iter()
-            .filter_map(|f| {
-                f.quality_sharpness.map(|s| (f.frame_index as f32, s))
-            })
+            .filter_map(|f| f.quality_sharpness.map(|s| (f.frame_index as f32, s)))
             .collect()
     }
 

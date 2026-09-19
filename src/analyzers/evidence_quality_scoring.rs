@@ -62,7 +62,8 @@ impl EvidenceQualityScorer {
         detector_agreement_matrix: &HashMap<String, Vec<String>>,
     ) -> EvidenceQualityScore {
         let source_quality = Self::assess_source_quality(gaps);
-        let temporal_consistency = Self::assess_temporal_consistency(&narrative.supporting_evidence);
+        let temporal_consistency =
+            Self::assess_temporal_consistency(&narrative.supporting_evidence);
         let detector_agreement = Self::assess_detector_agreement(gaps, detector_agreement_matrix);
         let signal_to_noise = Self::assess_signal_to_noise(gaps);
         let recency = Self::assess_recency(narrative.end_time_sec);
@@ -147,7 +148,8 @@ impl EvidenceQualityScorer {
         }
 
         // Average confidence of all gaps
-        let avg_confidence: f32 = gaps.iter().map(|g| g.confidence).sum::<f32>() / gaps.len() as f32;
+        let avg_confidence: f32 =
+            gaps.iter().map(|g| g.confidence).sum::<f32>() / gaps.len() as f32;
 
         // Penalize if gaps are from unreliable domains
         let unreliable_domains = ["Sensor", "Environmental"];
@@ -186,20 +188,18 @@ impl EvidenceQualityScorer {
     /// Assess agreement between multiple detectors
     fn assess_detector_agreement(
         gaps: &[RealityGapFinding],
-        detector_matrix: &HashMap<String, Vec<String>>,
+        _detector_matrix: &HashMap<String, Vec<String>>,
     ) -> f32 {
         if gaps.is_empty() {
             return 0.5;
         }
 
         // If we have multiple gaps in the same domain, detectors agree
-        let domain_groups: HashMap<String, usize> = gaps.iter().fold(
-            HashMap::new(),
-            |mut acc, gap| {
+        let domain_groups: HashMap<String, usize> =
+            gaps.iter().fold(HashMap::new(), |mut acc, gap| {
                 *acc.entry(gap.domain.to_string()).or_insert(0) += 1;
                 acc
-            },
-        );
+            });
 
         let agreement_score: f32 = domain_groups
             .values()
@@ -225,7 +225,8 @@ impl EvidenceQualityScorer {
         }
 
         // SNR is high if gaps have high confidence and clear severity
-        let avg_confidence: f32 = gaps.iter().map(|g| g.confidence).sum::<f32>() / gaps.len() as f32;
+        let avg_confidence: f32 =
+            gaps.iter().map(|g| g.confidence).sum::<f32>() / gaps.len() as f32;
 
         // Strong signal if findings are consistent across different categories
         let unique_categories: std::collections::HashSet<_> =

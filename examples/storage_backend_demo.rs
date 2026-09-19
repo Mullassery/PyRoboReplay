@@ -1,4 +1,6 @@
-use pyroboreplay::storage::{InMemoryBackend, StorageBackend, StorageConfig, AuditTrail, AuditEvent, AuditEventType};
+use pyroboreplay::storage::{
+    AuditEvent, AuditEventType, AuditTrail, InMemoryBackend, StorageBackend, StorageConfig,
+};
 
 fn main() {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
@@ -26,7 +28,8 @@ fn main() {
     println!("Connected to in-memory backend.\n");
 
     // Store missions
-    let mission_data = r#"{"id": "mission_001", "name": "Warehouse Exploration", "status": "completed"}"#;
+    let mission_data =
+        r#"{"id": "mission_001", "name": "Warehouse Exploration", "status": "completed"}"#;
     backend
         .store_mission("mission_001", mission_data)
         .expect("Failed to store mission");
@@ -35,7 +38,10 @@ fn main() {
 
     // Store events
     for i in 0..5 {
-        let event_data = format!(r#"{{"id": "event_{}", "type": "odometry", "timestamp": "2024-01-01T12:0{:02}:00Z"}}"#, i, i);
+        let event_data = format!(
+            r#"{{"id": "event_{}", "type": "odometry", "timestamp": "2024-01-01T12:0{:02}:00Z"}}"#,
+            i, i
+        );
         backend
             .store_event("mission_001", &format!("event_{}", i), &event_data)
             .expect("Failed to store event");
@@ -44,7 +50,8 @@ fn main() {
     println!("✓ Stored 5 events for mission_001");
 
     // Store diagnostic report
-    let report = r#"{"failure_type": "navigation_deadlock", "confidence": 0.85, "recommendations": 3}"#;
+    let report =
+        r#"{"failure_type": "navigation_deadlock", "confidence": 0.85, "recommendations": 3}"#;
     backend
         .store_report("mission_001", report)
         .expect("Failed to store report");
@@ -94,7 +101,8 @@ fn main() {
         "mission_001",
         "robot_service",
         "Created new warehouse exploration mission",
-    ).with_hash("abc123".to_string());
+    )
+    .with_hash("abc123".to_string());
 
     audit_trail.record(create_event);
 
@@ -113,13 +121,17 @@ fn main() {
         "mission_001",
         "diagnostic_engine",
         "Generated root-cause analysis report",
-    ).with_hash("def456".to_string());
+    )
+    .with_hash("def456".to_string());
 
     audit_trail.record(report_event);
 
     println!("Audit Trail Summary:");
     println!("  Total audit events: {}", audit_trail.event_count());
-    println!("  Events for mission_001: {}", audit_trail.events_for_mission("mission_001").len());
+    println!(
+        "  Events for mission_001: {}",
+        audit_trail.events_for_mission("mission_001").len()
+    );
     println!("  Integrity verified: {}\n", audit_trail.verify_integrity());
 
     println!("Audit Events (recent):");

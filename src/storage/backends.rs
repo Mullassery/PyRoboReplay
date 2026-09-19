@@ -214,30 +214,33 @@ impl StorageBackend for PostgresBackend {
                     .await
             })
         })?;
-        row.map(|r| r.get::<_, String>(0))
-            .ok_or_else(|| StorageError::NotFound(format!("report for mission '{}' not found", mission_id)))
+        row.map(|r| r.get::<_, String>(0)).ok_or_else(|| {
+            StorageError::NotFound(format!("report for mission '{}' not found", mission_id))
+        })
     }
 
     fn list_missions(&self, limit: Option<usize>) -> StorageResult<Vec<String>> {
-        let rows = self.with_client(move |client| {
-            Box::pin(async move {
-                match limit {
-                    Some(limit) => {
-                        client
+        let rows =
+            self.with_client(move |client| {
+                Box::pin(async move {
+                    match limit {
+                        Some(limit) => client
                             .query(
                                 "SELECT mission_id FROM missions ORDER BY created_at DESC LIMIT $1",
                                 &[&(limit as i64)],
                             )
-                            .await
+                            .await,
+                        None => {
+                            client
+                                .query(
+                                    "SELECT mission_id FROM missions ORDER BY created_at DESC",
+                                    &[],
+                                )
+                                .await
+                        }
                     }
-                    None => {
-                        client
-                            .query("SELECT mission_id FROM missions ORDER BY created_at DESC", &[])
-                            .await
-                    }
-                }
-            })
-        })?;
+                })
+            })?;
         Ok(rows.iter().map(|r| r.get::<_, String>(0)).collect())
     }
 
@@ -246,12 +249,18 @@ impl StorageBackend for PostgresBackend {
         let affected = self.with_client(move |client| {
             Box::pin(async move {
                 client
-                    .execute("DELETE FROM missions WHERE mission_id = $1", &[&mission_id_owned])
+                    .execute(
+                        "DELETE FROM missions WHERE mission_id = $1",
+                        &[&mission_id_owned],
+                    )
                     .await
             })
         })?;
         if affected == 0 {
-            return Err(StorageError::NotFound(format!("mission '{}' not found", mission_id)));
+            return Err(StorageError::NotFound(format!(
+                "mission '{}' not found",
+                mission_id
+            )));
         }
         Ok(())
     }
@@ -261,7 +270,10 @@ impl StorageBackend for PostgresBackend {
         let row = self.with_client(move |client| {
             Box::pin(async move {
                 client
-                    .query_opt("SELECT 1 FROM missions WHERE mission_id = $1", &[&mission_id_owned])
+                    .query_opt(
+                        "SELECT 1 FROM missions WHERE mission_id = $1",
+                        &[&mission_id_owned],
+                    )
                     .await
             })
         })?;
@@ -271,9 +283,18 @@ impl StorageBackend for PostgresBackend {
     fn get_stats(&self) -> StorageResult<StorageStats> {
         let (missions, events, reports) = self.with_client(move |client| {
             Box::pin(async move {
-                let missions: i64 = client.query_one("SELECT COUNT(*) FROM missions", &[]).await?.get(0);
-                let events: i64 = client.query_one("SELECT COUNT(*) FROM events", &[]).await?.get(0);
-                let reports: i64 = client.query_one("SELECT COUNT(*) FROM reports", &[]).await?.get(0);
+                let missions: i64 = client
+                    .query_one("SELECT COUNT(*) FROM missions", &[])
+                    .await?
+                    .get(0);
+                let events: i64 = client
+                    .query_one("SELECT COUNT(*) FROM events", &[])
+                    .await?
+                    .get(0);
+                let reports: i64 = client
+                    .query_one("SELECT COUNT(*) FROM reports", &[])
+                    .await?
+                    .get(0);
                 Ok((missions, events, reports))
             })
         })?;
@@ -387,7 +408,11 @@ fn parse_bigquery_connection_string(s: &str) -> StorageResult<BigQueryTarget> {
         }
     }
 
-    Ok(BigQueryTarget { project_id, dataset_id, endpoint })
+    Ok(BigQueryTarget {
+        project_id,
+        dataset_id,
+        endpoint,
+    })
 }
 
 /// Authenticator used only in emulator mode. `bigquery-emulator` (like most
@@ -423,8 +448,16 @@ fn bq_query_request(sql: String, params: Vec<QueryParameter>) -> QueryRequest {
     QueryRequest {
         query: sql,
         use_legacy_sql: false,
-        parameter_mode: if params.is_empty() { None } else { Some("NAMED".to_string()) },
-        query_parameters: if params.is_empty() { None } else { Some(params) },
+        parameter_mode: if params.is_empty() {
+            None
+        } else {
+            Some("NAMED".to_string())
+        },
+        query_parameters: if params.is_empty() {
+            None
+        } else {
+            Some(params)
+        },
         ..Default::default()
     }
 }
@@ -447,7 +480,9 @@ impl BigQueryBackend {
     }
 
     fn not_connected() -> StorageError {
-        StorageError::ConnectionFailed("BigQuery backend not connected; call connect() first".to_string())
+        StorageError::ConnectionFailed(
+            "BigQuery backend not connected; call connect() first".to_string(),
+        )
     }
 
     /// Run an async closure against the live client + resolved connection
@@ -457,7 +492,9 @@ impl BigQueryBackend {
         F: for<'c> FnOnce(
             &'c BigQueryClient,
             &'c BigQueryTarget,
-        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<T, BQError>> + Send + 'c>>,
+        ) -> std::pin::Pin<
+            Box<dyn std::future::Future<Output = Result<T, BQError>> + Send + 'c>,
+        >,
     {
         let runtime_guard = self.runtime.lock().unwrap();
         let runtime = runtime_guard.as_ref().ok_or_else(Self::not_connected)?;
@@ -604,7 +641,9 @@ impl StorageBackend for BigQueryBackend {
                 }
             })
         })?;
-        value.ok_or_else(|| StorageError::NotFound(format!("mission '{}' not found", mission_id_for_err)))
+        value.ok_or_else(|| {
+            StorageError::NotFound(format!("mission '{}' not found", mission_id_for_err))
+        })
     }
 
     fn store_event(&self, mission_id: &str, event_id: &str, data: &str) -> StorageResult<()> {
@@ -737,7 +776,12 @@ impl StorageBackend for BigQueryBackend {
                 }
             })
         })?;
-        value.ok_or_else(|| StorageError::NotFound(format!("report for mission '{}' not found", mission_id_for_err)))
+        value.ok_or_else(|| {
+            StorageError::NotFound(format!(
+                "report for mission '{}' not found",
+                mission_id_for_err
+            ))
+        })
     }
 
     fn list_missions(&self, limit: Option<usize>) -> StorageResult<Vec<String>> {
@@ -754,7 +798,10 @@ impl StorageBackend for BigQueryBackend {
             };
             let proj = target.project_id.clone();
             Box::pin(async move {
-                let resp = client.job().query(&proj, bq_query_request(sql, vec![])).await?;
+                let resp = client
+                    .job()
+                    .query(&proj, bq_query_request(sql, vec![]))
+                    .await?;
                 let mut rs = ResultSet::new_from_query_response(resp);
                 let mut ids = Vec::new();
                 while rs.next_row() {
@@ -796,7 +843,10 @@ impl StorageBackend for BigQueryBackend {
             })
         })?;
         if !existed {
-            return Err(StorageError::NotFound(format!("mission '{}' not found", mission_id_for_err)));
+            return Err(StorageError::NotFound(format!(
+                "mission '{}' not found",
+                mission_id_for_err
+            )));
         }
         Ok(())
     }
@@ -826,9 +876,16 @@ impl StorageBackend for BigQueryBackend {
                 let mut counts = Vec::with_capacity(3);
                 for table in ["missions", "events", "reports"] {
                     let sql = format!("SELECT COUNT(*) AS c FROM `{proj}.{ds}.{table}`");
-                    let resp = client.job().query(&proj, bq_query_request(sql, vec![])).await?;
+                    let resp = client
+                        .job()
+                        .query(&proj, bq_query_request(sql, vec![]))
+                        .await?;
                     let mut rs = ResultSet::new_from_query_response(resp);
-                    let c = if rs.next_row() { rs.get_i64_by_name("c")?.unwrap_or(0) } else { 0 };
+                    let c = if rs.next_row() {
+                        rs.get_i64_by_name("c")?.unwrap_or(0)
+                    } else {
+                        0
+                    };
                     counts.push(c);
                 }
                 Ok::<_, BQError>((counts[0], counts[1], counts[2]))
@@ -909,11 +966,7 @@ fn parse_s3_connection_string(s: &str) -> StorageResult<S3Target> {
             s
         )));
     }
-    let prefix = parts
-        .next()
-        .unwrap_or("")
-        .trim_matches('/')
-        .to_string();
+    let prefix = parts.next().unwrap_or("").trim_matches('/').to_string();
 
     let mut endpoint_url = None;
     let mut force_path_style = false;
@@ -959,7 +1012,10 @@ impl S3Target {
         if self.prefix.is_empty() {
             format!("missions/{}/events/{}.json", mission_id, event_id)
         } else {
-            format!("{}/missions/{}/events/{}.json", self.prefix, mission_id, event_id)
+            format!(
+                "{}/missions/{}/events/{}.json",
+                self.prefix, mission_id, event_id
+            )
         }
     }
 
@@ -1074,7 +1130,9 @@ impl StorageBackend for S3Backend {
                     .put_object()
                     .bucket(&target.bucket)
                     .key(&key)
-                    .body(aws_sdk_s3::primitives::ByteStream::from(data.as_bytes().to_vec()))
+                    .body(aws_sdk_s3::primitives::ByteStream::from(
+                        data.as_bytes().to_vec(),
+                    ))
                     .content_type("application/json")
                     .send(),
             )
@@ -1096,7 +1154,10 @@ impl StorageBackend for S3Backend {
             Ok(output) => output,
             Err(e) => {
                 if is_not_found(&e) {
-                    return Err(StorageError::NotFound(format!("mission '{}' not found", mission_id)));
+                    return Err(StorageError::NotFound(format!(
+                        "mission '{}' not found",
+                        mission_id
+                    )));
                 }
                 return Err(StorageError::ReadFailed(e.to_string()));
             }
@@ -1105,7 +1166,8 @@ impl StorageBackend for S3Backend {
             .block_on(output.body.collect())
             .map_err(|e| StorageError::ReadFailed(e.to_string()))?
             .into_bytes();
-        String::from_utf8(bytes.to_vec()).map_err(|e| StorageError::SerializationError(e.to_string()))
+        String::from_utf8(bytes.to_vec())
+            .map_err(|e| StorageError::SerializationError(e.to_string()))
     }
 
     fn store_event(&self, mission_id: &str, event_id: &str, data: &str) -> StorageResult<()> {
@@ -1123,7 +1185,9 @@ impl StorageBackend for S3Backend {
                     .put_object()
                     .bucket(&target.bucket)
                     .key(&key)
-                    .body(aws_sdk_s3::primitives::ByteStream::from(data.as_bytes().to_vec()))
+                    .body(aws_sdk_s3::primitives::ByteStream::from(
+                        data.as_bytes().to_vec(),
+                    ))
                     .content_type("application/json")
                     .send(),
             )
@@ -1157,7 +1221,8 @@ impl StorageBackend for S3Backend {
             .block_on(output.body.collect())
             .map_err(|e| StorageError::ReadFailed(e.to_string()))?
             .into_bytes();
-        String::from_utf8(bytes.to_vec()).map_err(|e| StorageError::SerializationError(e.to_string()))
+        String::from_utf8(bytes.to_vec())
+            .map_err(|e| StorageError::SerializationError(e.to_string()))
     }
 
     fn store_report(&self, mission_id: &str, report: &str) -> StorageResult<()> {
@@ -1175,7 +1240,9 @@ impl StorageBackend for S3Backend {
                     .put_object()
                     .bucket(&target.bucket)
                     .key(&key)
-                    .body(aws_sdk_s3::primitives::ByteStream::from(report.as_bytes().to_vec()))
+                    .body(aws_sdk_s3::primitives::ByteStream::from(
+                        report.as_bytes().to_vec(),
+                    ))
                     .content_type("application/json")
                     .send(),
             )
@@ -1209,7 +1276,8 @@ impl StorageBackend for S3Backend {
             .block_on(output.body.collect())
             .map_err(|e| StorageError::ReadFailed(e.to_string()))?
             .into_bytes();
-        String::from_utf8(bytes.to_vec()).map_err(|e| StorageError::SerializationError(e.to_string()))
+        String::from_utf8(bytes.to_vec())
+            .map_err(|e| StorageError::SerializationError(e.to_string()))
     }
 
     fn list_missions(&self, limit: Option<usize>) -> StorageResult<Vec<String>> {
@@ -1305,7 +1373,10 @@ impl StorageBackend for S3Backend {
         }
 
         if keys.is_empty() {
-            return Err(StorageError::NotFound(format!("mission '{}' not found", mission_id)));
+            return Err(StorageError::NotFound(format!(
+                "mission '{}' not found",
+                mission_id
+            )));
         }
 
         for chunk in keys.chunks(1000) {
@@ -1473,9 +1544,10 @@ mod tests {
 
     #[test]
     fn test_parse_bigquery_connection_string_with_emulator_endpoint() {
-        let target =
-            parse_bigquery_connection_string("bigquery://test-project/test_dataset?endpoint=http://localhost:9050")
-                .unwrap();
+        let target = parse_bigquery_connection_string(
+            "bigquery://test-project/test_dataset?endpoint=http://localhost:9050",
+        )
+        .unwrap();
         assert_eq!(target.project_id, "test-project");
         assert_eq!(target.dataset_id, "test_dataset");
         assert_eq!(target.endpoint.as_deref(), Some("http://localhost:9050"));
@@ -1518,7 +1590,10 @@ mod tests {
                 .unwrap();
         assert_eq!(target.bucket, "my-bucket");
         assert_eq!(target.prefix, "some/prefix");
-        assert_eq!(target.endpoint_url.as_deref(), Some("http://localhost:9000"));
+        assert_eq!(
+            target.endpoint_url.as_deref(),
+            Some("http://localhost:9000")
+        );
         // endpoint override implies path-style addressing.
         assert!(target.force_path_style);
     }
@@ -1538,7 +1613,10 @@ mod tests {
             force_path_style: false,
         };
         assert_eq!(target.mission_key("m1"), "env/missions/m1/mission.json");
-        assert_eq!(target.event_key("m1", "e1"), "env/missions/m1/events/e1.json");
+        assert_eq!(
+            target.event_key("m1", "e1"),
+            "env/missions/m1/events/e1.json"
+        );
         assert_eq!(target.report_key("m1"), "env/missions/m1/report.json");
         assert_eq!(target.missions_prefix(), "env/missions/");
         assert_eq!(target.mission_object_prefix("m1"), "env/missions/m1/");

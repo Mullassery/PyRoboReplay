@@ -37,7 +37,9 @@ pub struct CoordinationDomainAnalyzer {
 
 impl CoordinationDomainAnalyzer {
     pub fn new() -> Self {
-        CoordinationDomainAnalyzer { stall_detector: ControlLoopStallDetector::new() }
+        CoordinationDomainAnalyzer {
+            stall_detector: ControlLoopStallDetector::new(),
+        }
     }
 }
 
@@ -49,7 +51,8 @@ impl Default for CoordinationDomainAnalyzer {
 
 impl GapDetector for CoordinationDomainAnalyzer {
     fn analyze(&self, mission_data: &MissionAnalysisData) -> Vec<RealityGapFinding> {
-        self.stall_detector.analyze(&mission_data.control_messages, mission_data.duration_sec)
+        self.stall_detector
+            .analyze(&mission_data.control_messages, mission_data.duration_sec)
     }
 
     fn domain(&self) -> RealityDomain {

@@ -31,7 +31,13 @@ fn create_complex_mission() -> MissionRecord {
         timestamp: base_time + chrono::Duration::milliseconds(500),
         data: LidarData {
             ranges: (0..360)
-                .map(|i| if (i as i32 - 180).abs() < 30 { 1.5 } else { 5.0 })
+                .map(|i| {
+                    if (i as i32 - 180).abs() < 30 {
+                        1.5
+                    } else {
+                        5.0
+                    }
+                })
                 .collect(),
             intensities: None,
             frame_id: "lidar".to_string(),
@@ -131,7 +137,11 @@ fn main() {
     println!("╚════════════════════════════════════════════════════════════════╝\n");
 
     let mission = create_complex_mission();
-    println!("Mission: {} ({} events)", mission.name, mission.events.len());
+    println!(
+        "Mission: {} ({} events)",
+        mission.name,
+        mission.events.len()
+    );
     println!("Scenario: Robot encounters dynamic obstacle and performs emergency stop\n");
 
     // Build causal graph
@@ -146,7 +156,10 @@ fn main() {
     println!("═══════════════════════════════════════════════════════════════════\n");
 
     let query_stop = graph.query_what_caused(6, &mission.events);
-    println!("📊 Found {} potential causes:\n", query_stop.hypotheses.len());
+    println!(
+        "📊 Found {} potential causes:\n",
+        query_stop.hypotheses.len()
+    );
 
     for (rank, hypothesis) in query_stop.hypotheses.iter().enumerate() {
         println!(
@@ -168,7 +181,10 @@ fn main() {
     println!("═══════════════════════════════════════════════════════════════════\n");
 
     let query_obstacle = graph.query_what_effects(2, &mission.events);
-    println!("📊 Found {} downstream effects:\n", query_obstacle.hypotheses.len());
+    println!(
+        "📊 Found {} downstream effects:\n",
+        query_obstacle.hypotheses.len()
+    );
 
     for (rank, hypothesis) in query_obstacle.hypotheses.iter().enumerate() {
         println!(

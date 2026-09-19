@@ -8,8 +8,7 @@
 /// Usage:
 ///   cargo run --example stats_dashboard_demo -- your_mission.bag
 ///   cargo run --example stats_dashboard_demo -- --help
-
-use pyroboreplay::adapters::{MissionAdapter, ros2::Ros2Adapter};
+use pyroboreplay::adapters::{ros2::Ros2Adapter, MissionAdapter};
 use pyroboreplay::cli::stats_dashboard::{launch_stats_dashboard_window, Platform};
 use std::env;
 use std::thread;
@@ -86,8 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Count by event type
-    let mut type_counts: std::collections::HashMap<&str, usize> =
-        std::collections::HashMap::new();
+    let mut type_counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
     for event in &mission.events {
         *type_counts.entry(event.event_type()).or_insert(0) += 1;
     }

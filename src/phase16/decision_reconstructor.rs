@@ -1,11 +1,9 @@
 /// Decision Reconstruction Engine for Phase 16
 ///
 /// Reconstructs all significant decisions with full context, alternatives, and outcomes
-
 use crate::core::event::MissionEvent;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum DecisionCategory {
@@ -27,11 +25,17 @@ impl DecisionCategory {
 /// Context in which a decision was made
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DecisionContext {
-    pub current_state: HashMap<String, f32>,  // pose, battery, etc.
+    pub current_state: HashMap<String, f32>, // pose, battery, etc.
     pub recent_sensor_inputs: Vec<String>,   // what data was visible?
     pub environment: EnvironmentState,
     pub constraints: Vec<String>,
     pub historical_similar: Vec<String>,
+}
+
+impl Default for DecisionContext {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DecisionContext {
@@ -71,8 +75,8 @@ pub struct Alternative {
     pub id: String,
     pub action: String,
     pub predicted_outcome: String,
-    pub feasibility: f32,    // can this action execute?
-    pub compatibility: f32,  // aligns with constraints?
+    pub feasibility: f32,   // can this action execute?
+    pub compatibility: f32, // aligns with constraints?
 }
 
 impl Alternative {
@@ -118,7 +122,7 @@ pub struct Decision {
     pub context: DecisionContext,
     pub alternatives: Vec<Alternative>,
     pub selected: Option<Alternative>,
-    pub confidence: f32,  // 0.5 = uncertain, 0.95 = certain
+    pub confidence: f32, // 0.5 = uncertain, 0.95 = certain
 
     pub outcome: Option<DecisionOutcome>,
 }
@@ -189,7 +193,11 @@ impl DecisionReconstructor {
     }
 
     /// Reconstruct a single decision with full context
-    fn _reconstruct_single_decision(&self, event_idx: usize, decision_idx: usize) -> Option<Decision> {
+    fn _reconstruct_single_decision(
+        &self,
+        event_idx: usize,
+        decision_idx: usize,
+    ) -> Option<Decision> {
         let event = self.timeline.get(event_idx)?;
         let ts_nanos = event.timestamp().timestamp_nanos_opt().unwrap_or(0);
 
@@ -274,13 +282,28 @@ impl DecisionReconstructor {
 
         match event {
             MissionEvent::ObstacleDetected { .. } => {
-                alternatives.push(Alternative::new("wait".to_string(), "wait 500ms".to_string()));
-                alternatives.push(Alternative::new("replan".to_string(), "replan path".to_string()));
-                alternatives.push(Alternative::new("request_help".to_string(), "request human help".to_string()));
+                alternatives.push(Alternative::new(
+                    "wait".to_string(),
+                    "wait 500ms".to_string(),
+                ));
+                alternatives.push(Alternative::new(
+                    "replan".to_string(),
+                    "replan path".to_string(),
+                ));
+                alternatives.push(Alternative::new(
+                    "request_help".to_string(),
+                    "request human help".to_string(),
+                ));
             }
             MissionEvent::NavigationDecision { decision_type, .. } => {
-                alternatives.push(Alternative::new("forward".to_string(), format!("execute {}", decision_type)));
-                alternatives.push(Alternative::new("abort".to_string(), "abort mission".to_string()));
+                alternatives.push(Alternative::new(
+                    "forward".to_string(),
+                    format!("execute {}", decision_type),
+                ));
+                alternatives.push(Alternative::new(
+                    "abort".to_string(),
+                    "abort mission".to_string(),
+                ));
             }
             _ => {}
         }
@@ -288,7 +311,11 @@ impl DecisionReconstructor {
         alternatives
     }
 
-    fn _determine_selected(&self, _event: &MissionEvent, alternatives: &[Alternative]) -> Option<Alternative> {
+    fn _determine_selected(
+        &self,
+        _event: &MissionEvent,
+        alternatives: &[Alternative],
+    ) -> Option<Alternative> {
         // In real implementation, would match against actual behavior in following events
         alternatives.first().cloned()
     }
@@ -327,7 +354,7 @@ impl DecisionReconstructor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::event::Location;
+
     use chrono::Utc;
 
     #[test]

@@ -74,11 +74,11 @@ pub struct LLMConfig {
 /// Supported inference backends
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum InferenceBackend {
-    LlamaCpp,      // llama.cpp (local inference) - not implemented, falls back
-    Ollama,        // Ollama (local) - real HTTP integration
-    Huggingface,   // Hugging Face Inference API - not implemented, falls back
-    LocalPython,   // Direct Python integration - not implemented, falls back
-    Fallback,      // Template-based (no LLM)
+    LlamaCpp,    // llama.cpp (local inference) - not implemented, falls back
+    Ollama,      // Ollama (local) - real HTTP integration
+    Huggingface, // Hugging Face Inference API - not implemented, falls back
+    LocalPython, // Direct Python integration - not implemented, falls back
+    Fallback,    // Template-based (no LLM)
 }
 
 impl std::fmt::Display for InferenceBackend {
@@ -422,11 +422,7 @@ impl LLMExplainer {
     }
 
     /// Generate recommendation for preventing recurrence
-    pub fn recommend_fix(
-        &mut self,
-        root_cause: &str,
-        failure_mode: &str,
-    ) -> LLMExplanation {
+    pub fn recommend_fix(&mut self, root_cause: &str, failure_mode: &str) -> LLMExplanation {
         let prompt = format!(
             "Given this robot failure:\n\nRoot cause: {}\nFailure mode: {}\n\n\
              What are the top 3 engineering recommendations to prevent recurrence?",
@@ -485,7 +481,7 @@ mod tests {
             "Robot maintained forward trajectory into obstacle",
         );
 
-        assert_eq!(explanation.is_from_llm, false); // Fallback mode
+        assert!(!explanation.is_from_llm); // Fallback mode
         assert!(explanation.text.contains("perception"));
     }
 

@@ -73,10 +73,8 @@ impl LiveDiagnostics {
             Some(alert)
         } else if let Some(alert) = self.detect_obstacle_storm(&events_ref) {
             Some(alert)
-        } else if let Some(alert) = self.detect_sensor_dropout(&events_ref) {
-            Some(alert)
         } else {
-            None
+            self.detect_sensor_dropout(&events_ref)
         };
 
         drop(recent);
@@ -117,17 +115,13 @@ impl LiveDiagnostics {
 
         let nav_decisions: Vec<_> = events
             .iter()
-            .filter(|e| {
-                e.event_type == "navigation_decision" && e.timestamp >= window_start
-            })
+            .filter(|e| e.event_type == "navigation_decision" && e.timestamp >= window_start)
             .collect();
 
         if nav_decisions.len() >= 3 {
             let mut robot_poses: Vec<_> = events
                 .iter()
-                .filter(|e| {
-                    e.event_type == "robot_pose" && e.timestamp >= window_start
-                })
+                .filter(|e| e.event_type == "robot_pose" && e.timestamp >= window_start)
                 .collect();
 
             robot_poses.sort_by_key(|e| e.timestamp);
@@ -162,9 +156,7 @@ impl LiveDiagnostics {
 
         let obstacle_events: Vec<_> = events
             .iter()
-            .filter(|e| {
-                e.event_type == "obstacle_detected" && e.timestamp >= window_start
-            })
+            .filter(|e| e.event_type == "obstacle_detected" && e.timestamp >= window_start)
             .collect();
 
         if obstacle_events.len() >= 5 {
@@ -238,7 +230,9 @@ impl LiveDiagnostics {
                         gap.num_milliseconds()
                     ),
                     timestamp: now,
-                    suggested_action: Some("Investigate sensor performance and network connectivity".to_string()),
+                    suggested_action: Some(
+                        "Investigate sensor performance and network connectivity".to_string(),
+                    ),
                     confidence: 0.80,
                 });
             }

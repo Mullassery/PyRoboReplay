@@ -1,3 +1,4 @@
+use crate::adapters::AdapterError;
 /// Adapter for parsing resource metrics (Layer 3)
 ///
 /// Supports:
@@ -5,9 +6,7 @@
 /// - JSON metrics (DDS telemetry, network stats)
 ///
 /// Normalizes to MissionEvent::ResourceMetric and MissionEvent::NetworkEvent
-
 use crate::core::event::MissionEvent;
-use crate::adapters::AdapterError;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,7 +40,9 @@ impl MetricType {
             s if s.contains("cpu") => Some(MetricType::CpuPercent),
             s if s.contains("memory") || s.contains("mem") => Some(MetricType::MemoryMb),
             s if s.contains("disk") => Some(MetricType::DiskPercent),
-            s if s.contains("thermal") || s.contains("temp") => Some(MetricType::TemperatureCelsius),
+            s if s.contains("thermal") || s.contains("temp") => {
+                Some(MetricType::TemperatureCelsius)
+            }
             s if s.contains("network") && s.contains("rx") => Some(MetricType::NetworkRxBytes),
             s if s.contains("network") && s.contains("tx") => Some(MetricType::NetworkTxBytes),
             _ => None,
@@ -73,7 +74,11 @@ impl MetricsAdapter {
     /// timestamp,value
     /// 2024-07-25T14:22:00Z,45.5
     /// 2024-07-25T14:22:01Z,46.2
-    pub fn parse_csv(&self, content: &str, metric_type: MetricType) -> Result<Vec<MissionEvent>, AdapterError> {
+    pub fn parse_csv(
+        &self,
+        content: &str,
+        metric_type: MetricType,
+    ) -> Result<Vec<MissionEvent>, AdapterError> {
         let mut events = Vec::new();
         let mut line_count = 0;
 
@@ -98,7 +103,8 @@ impl MetricsAdapter {
             let value_str = parts[1];
 
             // Parse timestamp
-            let timestamp = self.parse_iso_timestamp(timestamp_str)
+            let timestamp = self
+                .parse_iso_timestamp(timestamp_str)
                 .or_else(|| self.parse_unix_timestamp(timestamp_str))
                 .unwrap_or_else(Utc::now);
 
@@ -176,7 +182,8 @@ impl MetricsAdapter {
             let timestamp_str = timestamp_val.as_str()?;
             let event_type = event_type_val.as_str()?;
 
-            let timestamp = self.parse_iso_timestamp(timestamp_str)
+            let timestamp = self
+                .parse_iso_timestamp(timestamp_str)
                 .or_else(|| self.parse_unix_timestamp(timestamp_str))
                 .unwrap_or_else(Utc::now);
 
@@ -199,7 +206,8 @@ impl MetricsAdapter {
         // Try to parse as network metric
         if let Some(timestamp_val) = obj.get("timestamp") {
             let timestamp_str = timestamp_val.as_str()?;
-            let timestamp = self.parse_iso_timestamp(timestamp_str)
+            let timestamp = self
+                .parse_iso_timestamp(timestamp_str)
                 .or_else(|| self.parse_unix_timestamp(timestamp_str))
                 .unwrap_or_else(Utc::now);
 
@@ -239,7 +247,7 @@ impl MetricsAdapter {
     fn parse_unix_timestamp(&self, timestamp_str: &str) -> Option<DateTime<Utc>> {
         // Try parsing as seconds
         if let Ok(seconds) = timestamp_str.parse::<i64>() {
-            return Some(DateTime::<Utc>::from_timestamp(seconds, 0)?);
+            return DateTime::<Utc>::from_timestamp(seconds, 0);
         }
 
         // Try parsing as milliseconds
@@ -247,7 +255,7 @@ impl MetricsAdapter {
             if millis > 10_000_000_000 {
                 let seconds = millis / 1000;
                 let nanos = ((millis % 1000) * 1_000_000) as u32;
-                return Some(DateTime::<Utc>::from_timestamp(seconds, nanos)?);
+                return DateTime::<Utc>::from_timestamp(seconds, nanos);
             }
         }
 
@@ -288,7 +296,9 @@ mod tests {
         let adapter = MetricsAdapter::new();
         let csv_content = "timestamp,value\n2024-07-25T14:22:00Z,45.5\n2024-07-25T14:22:01Z,46.2";
 
-        let events = adapter.parse_csv(csv_content, MetricType::CpuPercent).unwrap();
+        let events = adapter
+            .parse_csv(csv_content, MetricType::CpuPercent)
+            .unwrap();
         assert_eq!(events.len(), 2);
 
         // Verify first event
@@ -300,9 +310,18 @@ mod tests {
     #[test]
     fn test_detect_metric_from_filename() {
         let adapter = MetricsAdapter::new();
-        assert_eq!(adapter.detect_metric_type("cpu.csv"), Some(MetricType::CpuPercent));
-        assert_eq!(adapter.detect_metric_type("memory.csv"), Some(MetricType::MemoryMb));
-        assert_eq!(adapter.detect_metric_type("temperature.csv"), Some(MetricType::TemperatureCelsius));
+        assert_eq!(
+            adapter.detect_metric_type("cpu.csv"),
+            Some(MetricType::CpuPercent)
+        );
+        assert_eq!(
+            adapter.detect_metric_type("memory.csv"),
+            Some(MetricType::MemoryMb)
+        );
+        assert_eq!(
+            adapter.detect_metric_type("temperature.csv"),
+            Some(MetricType::TemperatureCelsius)
+        );
     }
 
     #[test]

@@ -2,8 +2,8 @@
 //!
 //! Runs detectors on synthetic test missions and verifies detection accuracy.
 
-use crate::analyzers::{RealityGapDetector, MissionAnalysisData, Severity};
 use super::test_data::TestDataGenerator;
+use crate::analyzers::RealityGapDetector;
 
 /// Test result from running detector on a mission
 #[derive(Debug, Clone)]
@@ -57,7 +57,10 @@ impl ValidationSuite {
 
         let detection_info = findings
             .iter()
-            .find(|f| f.category.contains("Mechanical Degradation") && f.finding_type.contains("Response Time"))
+            .find(|f| {
+                f.category.contains("Mechanical Degradation")
+                    && f.finding_type.contains("Response Time")
+            })
             .map(|f| (f.severity.to_string(), f.confidence));
 
         ValidationResult {
@@ -76,7 +79,8 @@ impl ValidationSuite {
         let findings = detector.analyze_mission(&mission);
 
         let detected = findings.iter().any(|f| {
-            f.category.contains("Optical") && (f.finding_type.contains("Degradation") || f.finding_type.contains("Confidence"))
+            f.category.contains("Optical")
+                && (f.finding_type.contains("Degradation") || f.finding_type.contains("Confidence"))
         });
 
         let detection_info = findings
@@ -99,9 +103,9 @@ impl ValidationSuite {
         let detector = RealityGapDetector::new();
         let findings = detector.analyze_mission(&mission);
 
-        let detected = findings.iter().any(|f| {
-            f.category.contains("Thermal") && f.finding_type.contains("Efficiency")
-        });
+        let detected = findings
+            .iter()
+            .any(|f| f.category.contains("Thermal") && f.finding_type.contains("Efficiency"));
 
         let detection_info = findings
             .iter()
@@ -123,9 +127,9 @@ impl ValidationSuite {
         let detector = RealityGapDetector::new();
         let findings = detector.analyze_mission(&mission);
 
-        let detected = findings.iter().any(|f| {
-            f.category.contains("Temporal") && f.finding_type.contains("Drift")
-        });
+        let detected = findings
+            .iter()
+            .any(|f| f.category.contains("Temporal") && f.finding_type.contains("Drift"));
 
         let detection_info = findings
             .iter()
@@ -147,9 +151,9 @@ impl ValidationSuite {
         let detector = RealityGapDetector::new();
         let findings = detector.analyze_mission(&mission);
 
-        let detected = findings.iter().any(|f| {
-            f.category.contains("Detection") && f.finding_type.contains("Degradation")
-        });
+        let detected = findings
+            .iter()
+            .any(|f| f.category.contains("Detection") && f.finding_type.contains("Degradation"));
 
         let detection_info = findings
             .iter()
@@ -172,7 +176,7 @@ impl ValidationSuite {
         let findings = detector.analyze_mission(&mission);
 
         // Healthy mission should have 0 or very few findings
-        let detected = findings.len() > 0;
+        let detected = !findings.is_empty();
 
         ValidationResult {
             mission_id: mission.mission_id,
@@ -209,7 +213,10 @@ impl ValidationSuite {
                 if result.detected {
                     format!(
                         "{} ({:.0}%)",
-                        result.detection_severity.as_ref().unwrap_or(&"Unknown".to_string()),
+                        result
+                            .detection_severity
+                            .as_ref()
+                            .unwrap_or(&"Unknown".to_string()),
                         result.detection_confidence.unwrap_or(0.0) * 100.0
                     )
                 } else {

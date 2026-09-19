@@ -221,10 +221,7 @@ impl InvisiblePersonDetector {
         ));
 
         if let Some(scenario) = &summary.most_common_scenario {
-            report.push_str(&format!(
-                "Most Common Scenario: {}\n",
-                scenario
-            ));
+            report.push_str(&format!("Most Common Scenario: {}\n", scenario));
         }
 
         report.push_str("\nDETAILED DETECTIONS:\n");

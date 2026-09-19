@@ -1,13 +1,12 @@
 /// Temporal Pattern Discovery - Find patterns across time windows
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum TimeWindow {
-    ShortTerm,    // Seconds (0-60s)
-    MediumTerm,   // Minutes (1-60 min)
-    LongTerm,     // Hours+ (1h+)
+    ShortTerm,  // Seconds (0-60s)
+    MediumTerm, // Minutes (1-60 min)
+    LongTerm,   // Hours+ (1h+)
 }
 
 impl TimeWindow {
@@ -33,10 +32,10 @@ pub struct TemporalPattern {
     pub pattern_id: String,
     pub name: String,
     pub window: TimeWindow,
-    pub events: Vec<String>,           // Sequence of events
+    pub events: Vec<String>, // Sequence of events
     pub frequency_per_day: f32,
     pub average_duration_seconds: u32,
-    pub predictability_score: f32,     // 0-1: how predictable?
+    pub predictability_score: f32, // 0-1: how predictable?
     pub first_observed: u64,
     pub last_observed: u64,
 }
@@ -68,7 +67,7 @@ impl TemporalPattern {
 }
 
 pub struct TemporalPatternMiner {
-    time_series: Vec<(u64, String)>,   // (timestamp, event)
+    time_series: Vec<(u64, String)>, // (timestamp, event)
     patterns: Vec<TemporalPattern>,
     min_sequence_length: usize,
 }
@@ -95,7 +94,11 @@ impl TemporalPatternMiner {
         let mut patterns = Vec::new();
 
         // Mine patterns for each time window
-        for window in &[TimeWindow::ShortTerm, TimeWindow::MediumTerm, TimeWindow::LongTerm] {
+        for window in &[
+            TimeWindow::ShortTerm,
+            TimeWindow::MediumTerm,
+            TimeWindow::LongTerm,
+        ] {
             let window_patterns = self._mine_window_patterns(window);
             patterns.extend(window_patterns);
         }
@@ -151,7 +154,7 @@ impl TemporalPatternMiner {
                 );
 
                 pattern.events = events;
-                pattern.frequency_per_day = (count as f32 / 30.0).min(100.0);  // Estimate daily
+                pattern.frequency_per_day = (count as f32 / 30.0).min(100.0); // Estimate daily
 
                 // Predictability based on consistency
                 pattern.predictability_score = (count as f32 / (count as f32 + 5.0)).min(0.95);
@@ -191,15 +194,25 @@ impl TemporalPatternMiner {
         stats.insert("total_patterns".to_string(), self.patterns.len() as f32);
 
         if !self.patterns.is_empty() {
-            let avg_frequency: f32 = self.patterns.iter().map(|p| p.frequency_per_day).sum::<f32>()
+            let avg_frequency: f32 = self
+                .patterns
+                .iter()
+                .map(|p| p.frequency_per_day)
+                .sum::<f32>()
                 / self.patterns.len() as f32;
-            let avg_predictability: f32 = self.patterns.iter().map(|p| p.predictability_score).sum::<f32>()
+            let avg_predictability: f32 = self
+                .patterns
+                .iter()
+                .map(|p| p.predictability_score)
+                .sum::<f32>()
                 / self.patterns.len() as f32;
 
             stats.insert("avg_frequency_per_day".to_string(), avg_frequency);
             stats.insert("avg_predictability".to_string(), avg_predictability);
 
-            let short_term_count = self.patterns.iter()
+            let short_term_count = self
+                .patterns
+                .iter()
                 .filter(|p| p.window == TimeWindow::ShortTerm)
                 .count();
             stats.insert("short_term_patterns".to_string(), short_term_count as f32);

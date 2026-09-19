@@ -3,9 +3,8 @@
 //! Creates synthetic MissionAnalysisData with controlled gaps for validation.
 
 use crate::analyzers::{
-    MissionAnalysisData, ControlMessage, JointState, OdometryMessage, CameraFrame,
-    LidarScan, IMUMeasurement, EncoderReading, MotorCurrent, ThermalReading,
-    BatteryReading, DetectionResult, PerceptionError, MessageTimestamp,
+    CameraFrame, ControlMessage, DetectionResult, JointState, MessageTimestamp,
+    MissionAnalysisData, MotorCurrent, ThermalReading,
 };
 
 /// Generate synthetic mission data for testing

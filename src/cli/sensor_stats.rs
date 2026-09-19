@@ -1,7 +1,6 @@
 /// Sensor statistics panel for terminal replay
 /// Displays real-time metrics for each sensor type
-
-use crate::core::event::{MissionRecord, MissionEvent};
+use crate::core::event::{MissionEvent, MissionRecord};
 use std::collections::HashMap;
 
 /// Statistics for a single sensor
@@ -14,8 +13,8 @@ pub struct SensorStats {
     pub last_timestamp: Option<String>,
     pub duration_seconds: f64,
     pub avg_fps: f32,
-    pub data_quality: f32, // 0.0-1.0, gaps reduce quality
-    pub encoding: String,  // for camera
+    pub data_quality: f32,              // 0.0-1.0, gaps reduce quality
+    pub encoding: String,               // for camera
     pub resolution: Option<(u32, u32)>, // width, height for camera
 }
 
@@ -69,7 +68,7 @@ impl SensorStats {
 }
 
 /// Sensor metadata panel with real-time statistics
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SensorMetadataPanel {
     stats: HashMap<String, SensorStats>,
     all_sensors: Vec<String>,
@@ -90,28 +89,25 @@ impl SensorMetadataPanel {
             match event {
                 MissionEvent::LidarScan { data, .. } => {
                     let key = format!("Lidar ({})", data.frame_id);
-                    sensor_map.entry(key).or_insert_with(Vec::new).push(idx);
+                    sensor_map.entry(key).or_default().push(idx);
                 }
                 MissionEvent::CameraFrame { data, .. } => {
                     let key = format!("Camera ({})", data.sensor_id);
-                    sensor_map.entry(key).or_insert_with(Vec::new).push(idx);
+                    sensor_map.entry(key).or_default().push(idx);
                 }
                 MissionEvent::IMUData { .. } => {
-                    sensor_map
-                        .entry("IMU".to_string())
-                        .or_insert_with(Vec::new)
-                        .push(idx);
+                    sensor_map.entry("IMU".to_string()).or_default().push(idx);
                 }
                 MissionEvent::OdometryUpdate { .. } => {
                     sensor_map
                         .entry("Odometry".to_string())
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(idx);
                 }
                 MissionEvent::CostmapUpdate { .. } => {
                     sensor_map
                         .entry("Costmap".to_string())
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(idx);
                 }
                 _ => {}
@@ -151,7 +147,8 @@ impl SensorMetadataPanel {
             }
 
             // Calculate duration and FPS
-            if let (Some(first_ts), Some(last_ts)) = (&stats.first_timestamp, &stats.last_timestamp) {
+            if let (Some(first_ts), Some(last_ts)) = (&stats.first_timestamp, &stats.last_timestamp)
+            {
                 if let Ok(first) = chrono::DateTime::parse_from_rfc3339(first_ts) {
                     if let Ok(last) = chrono::DateTime::parse_from_rfc3339(last_ts) {
                         let duration = (last - first).num_milliseconds() as f64 / 1000.0;
@@ -234,10 +231,7 @@ impl SensorMetadataPanel {
 
         // Duration
         if stats.duration_seconds > 0.0 {
-            output.push_str(&format!(
-                "│  Duration: {:.1}s\n",
-                stats.duration_seconds
-            ));
+            output.push_str(&format!("│  Duration: {:.1}s\n", stats.duration_seconds));
         }
 
         // Timestamps
@@ -293,8 +287,8 @@ impl SensorMetadataPanel {
     /// Get summary statistics
     pub fn summary(&self) -> String {
         let total_frames: usize = self.stats.values().map(|s| s.frame_count).sum();
-        let avg_quality =
-            self.stats.values().map(|s| s.data_quality).sum::<f32>() / self.stats.len().max(1) as f32;
+        let avg_quality = self.stats.values().map(|s| s.data_quality).sum::<f32>()
+            / self.stats.len().max(1) as f32;
 
         format!(
             "Total: {} events across {} sensors | Avg Quality: {:.0}%",
@@ -302,15 +296,6 @@ impl SensorMetadataPanel {
             self.stats.len(),
             avg_quality * 100.0
         )
-    }
-}
-
-impl Default for SensorMetadataPanel {
-    fn default() -> Self {
-        Self {
-            stats: HashMap::new(),
-            all_sensors: Vec::new(),
-        }
     }
 }
 
@@ -341,7 +326,9 @@ impl EventTimestamp for MissionEvent {
             | MissionEvent::DDSMetric { timestamp, .. }
             | MissionEvent::NetworkEvent { timestamp, .. }
             | MissionEvent::ConfigurationEvent { timestamp, .. }
-            | MissionEvent::ParameterValidationEvent { timestamp, .. } => Some(timestamp.to_rfc3339()),
+            | MissionEvent::ParameterValidationEvent { timestamp, .. } => {
+                Some(timestamp.to_rfc3339())
+            }
         }
     }
 }
@@ -371,19 +358,19 @@ mod tests {
         let mut stats = SensorStats::new("Test".to_string(), "Test".to_string());
 
         // (quality * 4.0) as usize determines the match
-        stats.data_quality = 1.0;   // 4.0 → 4
+        stats.data_quality = 1.0; // 4.0 → 4
         assert_eq!(stats.quality_emoji(), "✅");
 
-        stats.data_quality = 0.75;  // 3.0 → 3
+        stats.data_quality = 0.75; // 3.0 → 3
         assert_eq!(stats.quality_emoji(), "🟢");
 
-        stats.data_quality = 0.5;   // 2.0 → 2
+        stats.data_quality = 0.5; // 2.0 → 2
         assert_eq!(stats.quality_emoji(), "🟡");
 
-        stats.data_quality = 0.25;  // 1.0 → 1
+        stats.data_quality = 0.25; // 1.0 → 1
         assert_eq!(stats.quality_emoji(), "🟠");
 
-        stats.data_quality = 0.1;   // 0.4 → 0
+        stats.data_quality = 0.1; // 0.4 → 0
         assert_eq!(stats.quality_emoji(), "🔴");
     }
 

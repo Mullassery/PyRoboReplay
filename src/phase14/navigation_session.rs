@@ -3,10 +3,9 @@
 //! NavigationSession integrates all modalities into a single coherent data model
 //! supporting multi-modal queries and cross-modality correlation.
 
-use crate::phase14::timeline_indexing::{Timeline, TimelineEvent, Modality, TimeSliceQuery, TimeSlice};
 use crate::phase14::temporal_sync::TemporalSyncEngine;
-use crate::phase14::modality_adapters::{DataSourceType, DataSource as DataSourceTrait};
-use serde::{Serialize, Deserialize};
+use crate::phase14::timeline_indexing::{Modality, TimeSlice, Timeline, TimelineEvent};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use thiserror::Error;
 
@@ -68,7 +67,7 @@ pub struct NavigationSession {
     pub metadata: SessionMetadata,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SessionMetadata {
     pub start_time: Option<i64>,
     pub end_time: Option<i64>,
@@ -77,20 +76,6 @@ pub struct SessionMetadata {
     pub environment_type: Option<String>,
     pub mission_notes: Option<String>,
     pub custom_fields: HashMap<String, String>,
-}
-
-impl Default for SessionMetadata {
-    fn default() -> Self {
-        SessionMetadata {
-            start_time: None,
-            end_time: None,
-            duration_seconds: None,
-            robot_name: None,
-            environment_type: None,
-            mission_notes: None,
-            custom_fields: HashMap::new(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -167,18 +152,22 @@ impl SessionBuilder {
     }
 
     pub fn build(self) -> SessionResult<NavigationSession> {
-        let available = self.data_sources.keys()
-            .filter(|_| self.data_sources[&self.data_sources.keys().next().unwrap()])
+        let available = self
+            .data_sources
+            .keys()
+            .filter(|_| self.data_sources[self.data_sources.keys().next().unwrap()])
             .copied()
             .collect::<HashSet<_>>();
 
-        let modality_set: HashSet<Modality> = available.iter()
+        let modality_set: HashSet<Modality> = available
+            .iter()
             .map(|ds| datasource_to_modality(*ds))
             .collect();
 
         let data_completeness = modality_set.len() as f32 / 6.0; // 6 possible modalities
 
-        let sync_engine = self.sync_engine
+        let sync_engine = self
+            .sync_engine
             .unwrap_or_else(|| TemporalSyncEngine::new(0));
 
         Ok(NavigationSession {
@@ -195,13 +184,15 @@ impl SessionBuilder {
 impl NavigationSession {
     /// Query state at specific time
     pub fn query_at(&self, time: i64) -> SessionResult<TimeSlice> {
-        self.timeline.query_slice(time, 100_000_000) // ±100ms default window
+        self.timeline
+            .query_slice(time, 100_000_000) // ±100ms default window
             .map_err(|e| SessionError::QueryFailed(e.to_string()))
     }
 
     /// Query state within time range
     pub fn query_range(&self, start: i64, end: i64) -> SessionResult<TimeSlice> {
-        self.timeline.query_range(start, end)
+        self.timeline
+            .query_range(start, end)
             .map_err(|e| SessionError::QueryFailed(e.to_string()))
     }
 
@@ -212,7 +203,8 @@ impl NavigationSession {
         start: i64,
         end: i64,
     ) -> SessionResult<Vec<(i64, TimelineEvent)>> {
-        self.timeline.query_modality(modality, start, end)
+        self.timeline
+            .query_modality(modality, start, end)
             .map_err(|e| SessionError::QueryFailed(e.to_string()))
     }
 
@@ -294,8 +286,7 @@ impl NavigationSession {
 
     /// Get summary statistics
     pub fn summary_stats(&self) -> SummaryStats {
-        let (start, end) = self.timeline.time_range()
-            .unwrap_or((0, 0));
+        let (start, end) = self.timeline.time_range().unwrap_or((0, 0));
 
         let duration_ns = end - start;
         let duration_s = duration_ns as f64 / 1e9;
@@ -333,7 +324,7 @@ fn datasource_to_modality(ds: DataSource) -> Modality {
         DataSource::Annotation => Modality::Annotations,
         DataSource::SensorCalibration => Modality::Sensors,
         DataSource::EnvironmentMap => Modality::RosBag, // Static context
-        DataSource::RobotModel => Modality::RosBag,    // Static context
+        DataSource::RobotModel => Modality::RosBag,     // Static context
     }
 }
 

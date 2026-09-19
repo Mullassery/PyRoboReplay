@@ -97,10 +97,7 @@ impl LongitudinalAnalyzer {
     }
 
     /// Predict expected behavior based on history
-    pub fn predict_based_on_history(
-        historical: &WorldState,
-        entity_id: &str,
-    ) -> Option<String> {
+    pub fn predict_based_on_history(historical: &WorldState, entity_id: &str) -> Option<String> {
         if let Some(entity) = historical.entities.get(entity_id) {
             if entity.observation_count > 3 {
                 // Sufficient history
@@ -134,11 +131,7 @@ mod tests {
             entities: HashMap::new(),
             locations: HashMap::new(),
             temporal_facts: Vec::new(),
-            baseline_observations: vec![
-                Default::default(),
-                Default::default(),
-                Default::default(),
-            ],
+            baseline_observations: vec![Default::default(), Default::default(), Default::default()],
             known_anomalies: vec![Default::default()],
             last_updated_sec: 0.0,
         }

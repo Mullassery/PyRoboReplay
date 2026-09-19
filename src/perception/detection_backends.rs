@@ -7,7 +7,9 @@
 //!
 //! Enables: YOLO for speed, SAM for zero-shot, template for offline
 
-use crate::perception::object_detection::{BoundingBox, DetectedObject, DetectionFrame, ObjectClass};
+#[cfg(test)]
+use crate::perception::object_detection::BoundingBox;
+use crate::perception::object_detection::{DetectedObject, DetectionFrame, ObjectClass};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -71,10 +73,10 @@ impl YOLOBackend {
     pub fn new(config: YOLOConfig) -> Self {
         let mut class_map = HashMap::new();
         // COCO class mapping (simplified for common classes)
-        class_map.insert(0, ObjectClass::Person);     // person
-        class_map.insert(2, ObjectClass::Vehicle);    // car
-        class_map.insert(1, ObjectClass::Bicycle);    // bicycle
-        class_map.insert(16, ObjectClass::Animal);    // dog/cat
+        class_map.insert(0, ObjectClass::Person); // person
+        class_map.insert(2, ObjectClass::Vehicle); // car
+        class_map.insert(1, ObjectClass::Bicycle); // bicycle
+        class_map.insert(16, ObjectClass::Animal); // dog/cat
         class_map.insert(23, ObjectClass::Machinery); // train
         class_map.insert(26, ObjectClass::Machinery); // backpack
 

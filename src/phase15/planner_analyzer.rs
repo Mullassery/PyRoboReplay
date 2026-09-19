@@ -7,7 +7,7 @@
 //! - Narrow corridor navigation failures
 //! - Local minima traps
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PlannerCause {
@@ -58,7 +58,7 @@ pub struct PlannerAnalyzer;
 impl PlannerAnalyzer {
     /// Analyze excessive replanning
     pub fn analyze_excessive_replanning(
-        replanning_frequency: f32,  // Hz
+        replanning_frequency: f32,   // Hz
         time_since_goal_update: f32, // seconds
     ) -> Option<PlannerIssue> {
         if replanning_frequency > 0.5 && time_since_goal_update > 5.0 {
@@ -85,7 +85,7 @@ impl PlannerAnalyzer {
 
     /// Analyze route oscillation
     pub fn analyze_route_oscillation(
-        plan_divergence: f32,  // average distance between consecutive plans
+        plan_divergence: f32,       // average distance between consecutive plans
         oscillation_magnitude: f32, // peak-to-peak in meters
     ) -> Option<PlannerIssue> {
         if plan_divergence > 0.3 && oscillation_magnitude > 0.5 {
@@ -96,7 +96,10 @@ impl PlannerAnalyzer {
                 oscillation_magnitude,
                 evidence: vec![
                     format!("Average plan divergence: {:.2}m", plan_divergence),
-                    format!("Oscillation magnitude: {:.2}m peak-to-peak", oscillation_magnitude),
+                    format!(
+                        "Oscillation magnitude: {:.2}m peak-to-peak",
+                        oscillation_magnitude
+                    ),
                     "Robot tracing back and forth rather than progressing".to_string(),
                 ],
                 recommendations: vec![
@@ -129,8 +132,12 @@ impl PlannerAnalyzer {
                 replanning_frequency: 0.0,
                 oscillation_magnitude: distance_to_goal,
                 evidence: vec![
-                    format!("Failed {}/{} plan attempts ({:.0}%)",
-                            failed_attempts, plan_attempts, failure_rate * 100.0),
+                    format!(
+                        "Failed {}/{} plan attempts ({:.0}%)",
+                        failed_attempts,
+                        plan_attempts,
+                        failure_rate * 100.0
+                    ),
                     format!("Distance to goal: {:.2}m", distance_to_goal),
                 ],
                 recommendations: vec![
@@ -156,12 +163,17 @@ impl PlannerAnalyzer {
             return Some(PlannerIssue {
                 cause: PlannerCause::NarrowCorridorIssue,
                 confidence: 0.80,
-                replanning_frequency: replan_count_in_corridor as f32 / 30.0,  // Assuming 30 seconds
+                replanning_frequency: replan_count_in_corridor as f32 / 30.0, // Assuming 30 seconds
                 oscillation_magnitude: clearance,
                 evidence: vec![
-                    format!("Corridor width: {:.2}m, Robot footprint: {:.2}m, Clearance: {:.2}m",
-                            corridor_width, robot_footprint, clearance),
-                    format!("Replanned {} times while traversing corridor", replan_count_in_corridor),
+                    format!(
+                        "Corridor width: {:.2}m, Robot footprint: {:.2}m, Clearance: {:.2}m",
+                        corridor_width, robot_footprint, clearance
+                    ),
+                    format!(
+                        "Replanned {} times while traversing corridor",
+                        replan_count_in_corridor
+                    ),
                 ],
                 recommendations: vec![
                     "Reduce costmap inflation radius (currently too conservative)".to_string(),
@@ -191,11 +203,17 @@ impl PlannerAnalyzer {
         }
 
         if replanning_frequency > 0.5 {
-            summary.push_str(&format!("   High replanning frequency: {:.2} Hz\n", replanning_frequency));
+            summary.push_str(&format!(
+                "   High replanning frequency: {:.2} Hz\n",
+                replanning_frequency
+            ));
         }
 
         if mean_plan_time_ms > 200.0 {
-            summary.push_str(&format!("   Slow planning: {:.0}ms average\n", mean_plan_time_ms));
+            summary.push_str(&format!(
+                "   Slow planning: {:.0}ms average\n",
+                mean_plan_time_ms
+            ));
         }
 
         summary

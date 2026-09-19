@@ -62,8 +62,7 @@ impl DetectionOrchestrator {
     /// Create orchestrator with SAM primary
     pub fn new_sam_primary() -> Self {
         let sam_config = crate::perception::detection_backends::SAMConfig::default();
-        let sam_backend =
-            crate::perception::detection_backends::SAMBackend::new(sam_config);
+        let sam_backend = crate::perception::detection_backends::SAMBackend::new(sam_config);
 
         DetectionOrchestrator {
             primary: Some(DetectionBackendType::SAM(sam_backend)),
@@ -120,34 +119,19 @@ impl DetectionOrchestrator {
         let start = Instant::now();
 
         let result = match self.strategy {
-            DetectionStrategy::YOLOPrimary => self.try_yolo_then_fallback(
-                image_data,
-                width,
-                height,
-                timestamp_sec,
-                frame_index,
-            ),
-            DetectionStrategy::SAMPrimary => self.try_sam_then_fallback(
-                image_data,
-                width,
-                height,
-                timestamp_sec,
-                frame_index,
-            ),
-            DetectionStrategy::TemplateOnly => self.fallback.detect(
-                image_data,
-                width,
-                height,
-                timestamp_sec,
-                frame_index,
-            ),
-            DetectionStrategy::Cascade => self.try_cascade(
-                image_data,
-                width,
-                height,
-                timestamp_sec,
-                frame_index,
-            ),
+            DetectionStrategy::YOLOPrimary => {
+                self.try_yolo_then_fallback(image_data, width, height, timestamp_sec, frame_index)
+            }
+            DetectionStrategy::SAMPrimary => {
+                self.try_sam_then_fallback(image_data, width, height, timestamp_sec, frame_index)
+            }
+            DetectionStrategy::TemplateOnly => {
+                self.fallback
+                    .detect(image_data, width, height, timestamp_sec, frame_index)
+            }
+            DetectionStrategy::Cascade => {
+                self.try_cascade(image_data, width, height, timestamp_sec, frame_index)
+            }
         };
 
         let elapsed = start.elapsed().as_secs_f32() * 1000.0;
@@ -171,25 +155,28 @@ impl DetectionOrchestrator {
         frame_index: usize,
     ) -> DetectionFrame {
         if let Some(backend) = &self.primary {
-            let frame = backend
-                .as_backend()
-                .detect(image_data, width, height, timestamp_sec, frame_index);
+            let frame =
+                backend
+                    .as_backend()
+                    .detect(image_data, width, height, timestamp_sec, frame_index);
             if !frame.objects.is_empty() {
                 return frame;
             }
         }
 
         if let Some(backend) = &self.secondary {
-            let frame = backend
-                .as_backend()
-                .detect(image_data, width, height, timestamp_sec, frame_index);
+            let frame =
+                backend
+                    .as_backend()
+                    .detect(image_data, width, height, timestamp_sec, frame_index);
             if !frame.objects.is_empty() {
                 return frame;
             }
         }
 
         // Fall back to template
-        self.fallback.detect(image_data, width, height, timestamp_sec, frame_index)
+        self.fallback
+            .detect(image_data, width, height, timestamp_sec, frame_index)
     }
 
     fn try_sam_then_fallback(
@@ -201,9 +188,10 @@ impl DetectionOrchestrator {
         frame_index: usize,
     ) -> DetectionFrame {
         if let Some(backend) = &self.primary {
-            let frame = backend
-                .as_backend()
-                .detect(image_data, width, height, timestamp_sec, frame_index);
+            let frame =
+                backend
+                    .as_backend()
+                    .detect(image_data, width, height, timestamp_sec, frame_index);
             if !frame.objects.is_empty() {
                 return frame;
             }
@@ -211,16 +199,18 @@ impl DetectionOrchestrator {
 
         // SAM primary should fall back to YOLO/template
         if let Some(backend) = &self.secondary {
-            let frame = backend
-                .as_backend()
-                .detect(image_data, width, height, timestamp_sec, frame_index);
+            let frame =
+                backend
+                    .as_backend()
+                    .detect(image_data, width, height, timestamp_sec, frame_index);
             if !frame.objects.is_empty() {
                 return frame;
             }
         }
 
         // Fall back to template
-        self.fallback.detect(image_data, width, height, timestamp_sec, frame_index)
+        self.fallback
+            .detect(image_data, width, height, timestamp_sec, frame_index)
     }
 
     fn try_cascade(
@@ -233,9 +223,10 @@ impl DetectionOrchestrator {
     ) -> DetectionFrame {
         // Try primary
         if let Some(backend) = &self.primary {
-            let frame = backend
-                .as_backend()
-                .detect(image_data, width, height, timestamp_sec, frame_index);
+            let frame =
+                backend
+                    .as_backend()
+                    .detect(image_data, width, height, timestamp_sec, frame_index);
             if !frame.objects.is_empty() {
                 return frame;
             }
@@ -243,16 +234,18 @@ impl DetectionOrchestrator {
 
         // Try secondary
         if let Some(backend) = &self.secondary {
-            let frame = backend
-                .as_backend()
-                .detect(image_data, width, height, timestamp_sec, frame_index);
+            let frame =
+                backend
+                    .as_backend()
+                    .detect(image_data, width, height, timestamp_sec, frame_index);
             if !frame.objects.is_empty() {
                 return frame;
             }
         }
 
         // Fall back to template
-        self.fallback.detect(image_data, width, height, timestamp_sec, frame_index)
+        self.fallback
+            .detect(image_data, width, height, timestamp_sec, frame_index)
     }
 
     /// Get detection statistics
@@ -349,13 +342,7 @@ mod tests {
         let image_data = vec![0u8; 1920 * 1080 * 3];
 
         for i in 0..5 {
-            orchestrator.detect_with_fallback(
-                &image_data,
-                1920,
-                1080,
-                100.0 + (i as f32),
-                i,
-            );
+            orchestrator.detect_with_fallback(&image_data, 1920, 1080, 100.0 + (i as f32), i);
         }
 
         let stats = orchestrator.get_stats();

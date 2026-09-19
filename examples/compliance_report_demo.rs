@@ -1,8 +1,8 @@
-use pyroboreplay::core::{
-    ComplianceEvent, ComplianceReportGenerator, ComplianceConfig, ProximityZoneEvent,
-    ProximityZoneType, EmergencyStopEvent, SpeedComplianceEvent, OperatorPresenceEvent,
-};
 use chrono::Utc;
+use pyroboreplay::core::{
+    ComplianceConfig, ComplianceEvent, ComplianceReportGenerator, EmergencyStopEvent,
+    OperatorPresenceEvent, ProximityZoneEvent, ProximityZoneType, SpeedComplianceEvent,
+};
 
 fn main() {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
@@ -123,7 +123,10 @@ fn main() {
 
     let absence_report = generator.generate_report("mission_warehouse_003", &absence_events);
 
-    println!("Operator Absence Violations: {}", absence_report.violations.len());
+    println!(
+        "Operator Absence Violations: {}",
+        absence_report.violations.len()
+    );
     if !absence_report.violations.is_empty() {
         let v = &absence_report.violations[0];
         println!("  Violation: {:?}", v.violation_type);
@@ -144,24 +147,23 @@ fn main() {
 
     let strict_generator = ComplianceReportGenerator::new(strict_config);
 
-    let strict_test_events = vec![
-        ComplianceEvent::ProximityZone(ProximityZoneEvent {
-            robot_id: "warehouse_bot_4".to_string(),
-            timestamp: now,
-            zone_id: "zone_c1".to_string(),
-            zone_type: ProximityZoneType::WarningZone,
-            distance_m: 0.8,
-            action_taken: "Alert".to_string(),
-        }),
-    ];
+    let strict_test_events = vec![ComplianceEvent::ProximityZone(ProximityZoneEvent {
+        robot_id: "warehouse_bot_4".to_string(),
+        timestamp: now,
+        zone_id: "zone_c1".to_string(),
+        zone_type: ProximityZoneType::WarningZone,
+        distance_m: 0.8,
+        action_taken: "Alert".to_string(),
+    })];
 
-    let strict_report = strict_generator.generate_report("mission_warehouse_004", &strict_test_events);
+    let strict_report =
+        strict_generator.generate_report("mission_warehouse_004", &strict_test_events);
 
     println!("Default Config: min_proximity_distance_m = 0.5m");
     println!("Strict Config: min_proximity_distance_m = 1.0m");
     println!("  Event distance: 0.8m");
     println!("  Strict Config Result:");
-    println!("    Compliant: {}",strict_report.overall_compliant);
+    println!("    Compliant: {}", strict_report.overall_compliant);
     println!("    Violations: {}\n", strict_report.violations.len());
 
     println!("═══════════════════════════════════════════════════════════════════");

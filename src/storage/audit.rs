@@ -43,12 +43,7 @@ pub struct AuditEvent {
 
 impl AuditEvent {
     /// Create new audit event
-    pub fn new(
-        event_type: AuditEventType,
-        mission_id: &str,
-        actor: &str,
-        action: &str,
-    ) -> Self {
+    pub fn new(event_type: AuditEventType, mission_id: &str, actor: &str, action: &str) -> Self {
         AuditEvent {
             timestamp: Utc::now(),
             event_type,
@@ -75,9 +70,7 @@ pub struct AuditTrail {
 impl AuditTrail {
     /// Create new audit trail
     pub fn new() -> Self {
-        AuditTrail {
-            events: Vec::new(),
-        }
+        AuditTrail { events: Vec::new() }
     }
 
     /// Record an audit event
@@ -100,7 +93,10 @@ impl AuditTrail {
 
     /// Get events by type
     pub fn events_by_type(&self, event_type: AuditEventType) -> Vec<&AuditEvent> {
-        self.events.iter().filter(|e| e.event_type == event_type).collect()
+        self.events
+            .iter()
+            .filter(|e| e.event_type == event_type)
+            .collect()
     }
 
     /// Get event count

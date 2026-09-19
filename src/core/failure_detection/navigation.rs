@@ -6,7 +6,6 @@
 /// - Recovery loop (excessive recovery behavior triggers)
 /// - Goal failure
 /// - Path deviation
-
 use super::{DetectedFailure, FailureDetector, FailureDomain, FailureSeverity};
 use crate::core::event::MissionEvent;
 use crate::core::timeline_correlation::NormalizedEvent;
@@ -39,7 +38,11 @@ impl NavigationFailureDetector {
                         .rev()
                         .find_map(|(_, req_time)| {
                             let dur = (*timestamp - *req_time).num_milliseconds();
-                            if dur > 0 { Some(dur) } else { None }
+                            if dur > 0 {
+                                Some(dur)
+                            } else {
+                                None
+                            }
                         })
                         .unwrap_or(5000);
 
@@ -68,7 +71,10 @@ impl NavigationFailureDetector {
         let mut poses = Vec::new();
 
         for event in events {
-            if let MissionEvent::RobotPose { timestamp, pose, .. } = &event.event {
+            if let MissionEvent::RobotPose {
+                timestamp, pose, ..
+            } = &event.event
+            {
                 poses.push((event.id.clone(), *timestamp, pose.x, pose.y));
             }
         }
@@ -113,7 +119,9 @@ impl NavigationFailureDetector {
                                     max_distance, duration
                                 ),
                             )
-                            .with_event_ids(window.iter().map(|(id, _, _, _)| id.clone()).collect()),
+                            .with_event_ids(
+                                window.iter().map(|(id, _, _, _)| id.clone()).collect(),
+                            ),
                         );
                         break;
                     }
@@ -170,7 +178,10 @@ impl NavigationFailureDetector {
                         ),
                     )
                     .with_event_ids(
-                        recoveries_in_window.iter().map(|(id, _)| id.clone()).collect(),
+                        recoveries_in_window
+                            .iter()
+                            .map(|(id, _)| id.clone())
+                            .collect(),
                     ),
                 );
                 break;
@@ -270,7 +281,6 @@ impl FailureDetector for NavigationFailureDetector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::Utc;
 
     #[test]
     fn test_detector_creation() {

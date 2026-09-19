@@ -3,9 +3,9 @@
 //! Manages analyzer metadata, data requirements, modality preferences,
 //! and dynamic enablement based on available data sources.
 
-use crate::phase14::timeline_indexing::Modality;
 use crate::phase14::modality_adapters::DataSourceType;
-use serde::{Serialize, Deserialize};
+use crate::phase14::timeline_indexing::Modality;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -152,13 +152,15 @@ impl AnalyzerCapabilitiesV2 {
 
     /// Check if analyzer can run with available sources
     pub fn can_run_with(&self, available_sources: &[DataSourceType]) -> bool {
-        self.required_sources.iter()
+        self.required_sources
+            .iter()
             .all(|req| available_sources.contains(req))
     }
 
     /// Get list of missing required sources
     pub fn missing_sources(&self, available_sources: &[DataSourceType]) -> Vec<DataSourceType> {
-        self.required_sources.iter()
+        self.required_sources
+            .iter()
             .filter(|req| !available_sources.contains(req))
             .copied()
             .collect()
@@ -170,11 +172,14 @@ impl AnalyzerCapabilitiesV2 {
 
         for optional in &self.optional_sources {
             if !available_sources.contains(optional) {
-                let boost = self.confidence_boosts.get(&format!("{:?}", optional))
+                let boost = self
+                    .confidence_boosts
+                    .get(&format!("{:?}", optional))
                     .unwrap_or(&0.1);
                 suggestions.push(format!(
                     "Provide {:?} for +{:.0}% confidence improvement",
-                    optional, boost * 100.0
+                    optional,
+                    boost * 100.0
                 ));
             }
         }
@@ -200,8 +205,12 @@ impl AnalyzerRegistry {
     }
 
     /// Get analyzers enabled for given sources
-    pub fn enabled_for(&self, available_sources: &[DataSourceType]) -> Vec<&AnalyzerCapabilitiesV2> {
-        self.analyzers.values()
+    pub fn enabled_for(
+        &self,
+        available_sources: &[DataSourceType],
+    ) -> Vec<&AnalyzerCapabilitiesV2> {
+        self.analyzers
+            .values()
             .filter(|cap| cap.can_run_with(available_sources))
             .collect()
     }
@@ -221,7 +230,8 @@ impl AnalyzerRegistry {
         &self,
         available_sources: &[DataSourceType],
     ) -> Vec<(&AnalyzerCapabilitiesV2, f32)> {
-        let mut analyzers: Vec<_> = self.enabled_for(available_sources)
+        let mut analyzers: Vec<_> = self
+            .enabled_for(available_sources)
             .into_iter()
             .map(|cap| {
                 let conf = cap.compute_confidence(available_sources);
@@ -247,7 +257,9 @@ impl AnalysisCapability {
     /// Localization analyzer: AMCL divergence, odometry drift, sensor degradation
     pub fn localization() -> AnalyzerCapabilitiesV2 {
         AnalyzerCapabilitiesV2::new("Localization".to_string())
-            .with_description("Detects AMCL divergence, odometry drift, sensor degradation".to_string())
+            .with_description(
+                "Detects AMCL divergence, odometry drift, sensor degradation".to_string(),
+            )
             .with_required_source(DataSourceType::RosBag)
             .with_optional_source(DataSourceType::LinuxLogs)
             .with_optional_source(DataSourceType::Video)
@@ -262,7 +274,9 @@ impl AnalysisCapability {
     /// Planner analyzer: oscillation, deadlock, replanning frequency
     pub fn planner() -> AnalyzerCapabilitiesV2 {
         AnalyzerCapabilitiesV2::new("Planner".to_string())
-            .with_description("Detects planner oscillation, deadlock, excessive replanning".to_string())
+            .with_description(
+                "Detects planner oscillation, deadlock, excessive replanning".to_string(),
+            )
             .with_required_source(DataSourceType::RosBag)
             .with_optional_source(DataSourceType::Nav2Export)
             .with_required_modality(Modality::RosBag)
@@ -285,7 +299,9 @@ impl AnalysisCapability {
     /// Dynamic obstacle analyzer: human/obstacle prediction gaps
     pub fn dynamic_obstacles() -> AnalyzerCapabilitiesV2 {
         AnalyzerCapabilitiesV2::new("DynamicObstacles".to_string())
-            .with_description("Detects dynamic obstacle conflicts and prediction failures".to_string())
+            .with_description(
+                "Detects dynamic obstacle conflicts and prediction failures".to_string(),
+            )
             .with_required_source(DataSourceType::RosBag)
             .with_optional_source(DataSourceType::Video)
             .with_optional_source(DataSourceType::PointCloud)
@@ -299,7 +315,9 @@ impl AnalysisCapability {
     /// Semantic gap analyzer: where occupancy grids fail
     pub fn semantic_gaps() -> AnalyzerCapabilitiesV2 {
         AnalyzerCapabilitiesV2::new("SemanticGaps".to_string())
-            .with_description("Identifies semantic navigation limitations of occupancy grids".to_string())
+            .with_description(
+                "Identifies semantic navigation limitations of occupancy grids".to_string(),
+            )
             .with_required_source(DataSourceType::RosBag)
             .with_required_source(DataSourceType::Video)
             .with_optional_source(DataSourceType::Annotation)
@@ -350,10 +368,7 @@ mod tests {
             .with_optional_source(DataSourceType::Video)
             .add_confidence_boost("Video".to_string(), 0.20);
 
-        let with_video = vec![
-            DataSourceType::RosBag,
-            DataSourceType::Video,
-        ];
+        let with_video = vec![DataSourceType::RosBag, DataSourceType::Video];
 
         let conf = cap.compute_confidence(&with_video);
         assert!(conf > 0.70);
@@ -402,7 +417,7 @@ mod tests {
         let sources = vec![DataSourceType::RosBag];
         let enabled = registry.enabled_for(&sources);
 
-        assert_eq!(enabled.len(), 1);  // Only localization runs with just ROS bag
+        assert_eq!(enabled.len(), 1); // Only localization runs with just ROS bag
     }
 
     #[test]

@@ -1,7 +1,6 @@
 /// Demonstration of keyboard shortcuts and help system
 /// Shows all available shortcuts and help panels
-
-use pyroboreplay::cli::keyboard::{KeyboardShortcuts, HelpPanel, ShortcutCategory};
+use pyroboreplay::cli::keyboard::{HelpPanel, KeyboardShortcuts};
 
 fn main() {
     println!("╔════════════════════════════════════════════════════════════════╗");

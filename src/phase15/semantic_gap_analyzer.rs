@@ -1,6 +1,6 @@
 //! Semantic navigation gap detection
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SemanticGap {

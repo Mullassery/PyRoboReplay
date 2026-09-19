@@ -1,7 +1,5 @@
 use chrono::Utc;
-use pyroboreplay::core::{
-    CoverageEvolutionAnalyzer, SpatialContext,
-};
+use pyroboreplay::core::{CoverageEvolutionAnalyzer, SpatialContext};
 
 fn main() {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
@@ -34,7 +32,10 @@ fn main() {
             .with_terrain("open".to_string());
         analyzer.add_spatial_context(i as usize, context);
 
-        println!("  Event {}: Position ({:.1}, 0.0) | Coverage: {:.0}%", i, position.0, coverage);
+        println!(
+            "  Event {}: Position ({:.1}, 0.0) | Coverage: {:.0}%",
+            i, position.0, coverage
+        );
     }
 
     // Phase 2: Expansion (30-60 seconds)
@@ -53,9 +54,7 @@ fn main() {
 
         println!(
             "  Event {}: Position (10.0, {:.1}) | Coverage: {:.0}%",
-            i,
-            position.1,
-            coverage
+            i, position.1, coverage
         );
     }
 
@@ -75,9 +74,7 @@ fn main() {
 
         println!(
             "  Event {}: Position ({:.1}, 5.0) | Coverage: {:.0}%",
-            i,
-            position.0,
-            coverage
+            i, position.0, coverage
         );
     }
 
@@ -88,7 +85,10 @@ fn main() {
     // Get coverage timeline
     let timeline = analyzer.coverage_timeline();
     println!("Coverage Timeline:");
-    println!("  Start: {:.0}%", timeline.first().map(|t| t.1).unwrap_or(0.0));
+    println!(
+        "  Start: {:.0}%",
+        timeline.first().map(|t| t.1).unwrap_or(0.0)
+    );
     println!("  End: {:.0}%", timeline.last().map(|t| t.1).unwrap_or(0.0));
     println!("  Growth rate: {:.2}%/s", analyzer.growth_rate());
 
@@ -118,11 +118,7 @@ fn main() {
     if !query.hotspots.is_empty() {
         println!("Coverage Activity Hotspots:");
         for (idx, hotspot) in query.hotspots.iter().enumerate() {
-            println!(
-                "\n  Hotspot {}: {}",
-                idx,
-                hotspot.id
-            );
+            println!("\n  Hotspot {}: {}", idx, hotspot.id);
             println!(
                 "    Location: ({:.1}, {:.1}, {:.1})",
                 hotspot.center.0, hotspot.center.1, hotspot.center.2
@@ -174,15 +170,19 @@ fn main() {
     ];
 
     for (name, start_idx, end_idx) in phases {
-        if let (Some(start_snap), Some(end_snap)) =
-            (timeline.get(start_idx), timeline.get(end_idx.saturating_sub(1)))
-        {
+        if let (Some(start_snap), Some(end_snap)) = (
+            timeline.get(start_idx),
+            timeline.get(end_idx.saturating_sub(1)),
+        ) {
             let phase_gain = end_snap.1 - start_snap.1;
             println!("{} Phase:", name);
             println!("  Coverage gain: {:.0}%", phase_gain);
             println!("  Events: {}", end_idx - start_idx);
             if end_idx > start_idx {
-                println!("  Avg gain per event: {:.2}%", phase_gain / (end_idx - start_idx) as f32);
+                println!(
+                    "  Avg gain per event: {:.2}%",
+                    phase_gain / (end_idx - start_idx) as f32
+                );
             }
         }
     }

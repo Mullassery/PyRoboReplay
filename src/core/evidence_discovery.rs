@@ -1,9 +1,11 @@
 use crate::core::incident_bundle::{
-    IncidentBundle, LayerFileInventory,
-    Layer1Files, Layer2Files, Layer3Files, Layer4Files, BundleError, TimeRange,
+    BundleError, IncidentBundle, Layer1Files, Layer2Files, Layer3Files, Layer4Files,
+    LayerFileInventory, TimeRange,
 };
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(test)]
+use std::path::PathBuf;
 
 /// Auto-discovers evidence in an incident bundle
 pub struct EvidenceDiscovery;
@@ -69,8 +71,8 @@ impl EvidenceDiscovery {
         let layer_dir = bundle_path.join("layer1");
 
         if layer_dir.exists() {
-            for entry in fs::read_dir(&layer_dir)
-                .map_err(|e| BundleError::IoError(e.to_string()))?
+            for entry in
+                fs::read_dir(&layer_dir).map_err(|e| BundleError::IoError(e.to_string()))?
             {
                 let entry = entry.map_err(|e| BundleError::IoError(e.to_string()))?;
                 let path = entry.path();
@@ -79,13 +81,15 @@ impl EvidenceDiscovery {
                     match ext.to_str().unwrap_or("") {
                         "bag" | "db3" => layer1.ros_bags.push(path),
                         "log" => {
-                            if path.file_name()
+                            if path
+                                .file_name()
                                 .and_then(|n| n.to_str())
                                 .map(|s| s.contains("tf_frames"))
                                 .unwrap_or(false)
                             {
                                 layer1.tf_frames_log = Some(path);
-                            } else if path.file_name()
+                            } else if path
+                                .file_name()
                                 .and_then(|n| n.to_str())
                                 .map(|s| s.contains("node") || s.contains("robot"))
                                 .unwrap_or(false)
@@ -110,8 +114,8 @@ impl EvidenceDiscovery {
         let layer_dir = bundle_path.join("layer2");
 
         if layer_dir.exists() {
-            for entry in fs::read_dir(&layer_dir)
-                .map_err(|e| BundleError::IoError(e.to_string()))?
+            for entry in
+                fs::read_dir(&layer_dir).map_err(|e| BundleError::IoError(e.to_string()))?
             {
                 let entry = entry.map_err(|e| BundleError::IoError(e.to_string()))?;
                 let path = entry.path();
@@ -138,20 +142,32 @@ impl EvidenceDiscovery {
         let layer_dir = bundle_path.join("layer3");
 
         if layer_dir.exists() {
-            for entry in fs::read_dir(&layer_dir)
-                .map_err(|e| BundleError::IoError(e.to_string()))?
+            for entry in
+                fs::read_dir(&layer_dir).map_err(|e| BundleError::IoError(e.to_string()))?
             {
                 let entry = entry.map_err(|e| BundleError::IoError(e.to_string()))?;
                 let path = entry.path();
 
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                     match name {
-                        "cpu_metrics.csv" | "cpu.csv" | "cpu_percent.csv" => layer3.cpu_metrics = Some(path),
-                        "memory_metrics.csv" | "memory.csv" | "memory_mb.csv" => layer3.memory_metrics = Some(path),
-                        "disk_metrics.csv" | "disk.csv" | "disk_percent.csv" => layer3.disk_metrics = Some(path),
-                        "thermal_metrics.csv" | "thermal.csv" | "temperature.csv" | "temp.csv" => layer3.thermal_metrics = Some(path),
-                        "network_metrics.csv" | "network.csv" | "network_io.csv" => layer3.network_metrics = Some(path),
-                        "dds_metrics.json" | "dds_telemetry.json" => layer3.dds_telemetry = Some(path),
+                        "cpu_metrics.csv" | "cpu.csv" | "cpu_percent.csv" => {
+                            layer3.cpu_metrics = Some(path)
+                        }
+                        "memory_metrics.csv" | "memory.csv" | "memory_mb.csv" => {
+                            layer3.memory_metrics = Some(path)
+                        }
+                        "disk_metrics.csv" | "disk.csv" | "disk_percent.csv" => {
+                            layer3.disk_metrics = Some(path)
+                        }
+                        "thermal_metrics.csv" | "thermal.csv" | "temperature.csv" | "temp.csv" => {
+                            layer3.thermal_metrics = Some(path)
+                        }
+                        "network_metrics.csv" | "network.csv" | "network_io.csv" => {
+                            layer3.network_metrics = Some(path)
+                        }
+                        "dds_metrics.json" | "dds_telemetry.json" => {
+                            layer3.dds_telemetry = Some(path)
+                        }
                         _ if name.ends_with(".csv") || name.ends_with(".json") => {
                             layer3.other_metrics.push(path);
                         }
@@ -170,17 +186,28 @@ impl EvidenceDiscovery {
         let layer_dir = bundle_path.join("layer4");
 
         if layer_dir.exists() {
-            for entry in fs::read_dir(&layer_dir)
-                .map_err(|e| BundleError::IoError(e.to_string()))?
+            for entry in
+                fs::read_dir(&layer_dir).map_err(|e| BundleError::IoError(e.to_string()))?
             {
                 let entry = entry.map_err(|e| BundleError::IoError(e.to_string()))?;
                 let path = entry.path();
 
-                if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map(|s| s == "launch_files").unwrap_or(false) {
+                if path.is_dir()
+                    && path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .map(|s| s == "launch_files")
+                        .unwrap_or(false)
+                {
                     if let Ok(launches) = fs::read_dir(&path) {
                         for launch_entry in launches.flatten() {
                             let launch_path = launch_entry.path();
-                            if launch_path.extension().and_then(|e| e.to_str()).map(|e| e == "py" || e == "xml").unwrap_or(false) {
+                            if launch_path
+                                .extension()
+                                .and_then(|e| e.to_str())
+                                .map(|e| e == "py" || e == "xml")
+                                .unwrap_or(false)
+                            {
                                 layer4.launch_files.push(launch_path);
                             }
                         }
@@ -192,7 +219,9 @@ impl EvidenceDiscovery {
                     match name {
                         "nav2_params.yaml" | "nav2.yaml" => layer4.nav2_yaml = Some(path),
                         "slam_params.yaml" | "slam.yaml" => layer4.slam_yaml = Some(path),
-                        "hardware_config.yaml" | "hardware.yaml" => layer4.hardware_config = Some(path),
+                        "hardware_config.yaml" | "hardware.yaml" => {
+                            layer4.hardware_config = Some(path)
+                        }
                         _ if name.ends_with(".yaml") || name.ends_with(".yml") => {
                             layer4.other_configs.push(path);
                         }
@@ -242,19 +271,19 @@ impl EvidenceDiscovery {
         let mut issues = Vec::new();
 
         // Check Layer 2 for known failure patterns
-        if bundle.manifest.layers_available.layer2_linux_logs {
-            if bundle.manifest.file_inventory.layer2.dmesg_log.is_some() {
-                // Would parse dmesg for OOM, kernel panic, etc.
-                issues.push("kernel_log_present".to_string());
-            }
+        if bundle.manifest.layers_available.layer2_linux_logs
+            && bundle.manifest.file_inventory.layer2.dmesg_log.is_some()
+        {
+            // Would parse dmesg for OOM, kernel panic, etc.
+            issues.push("kernel_log_present".to_string());
         }
 
         // Check Layer 3 for resource anomalies
-        if bundle.manifest.layers_available.layer3_metrics {
-            if bundle.manifest.file_inventory.layer3.cpu_metrics.is_some() {
-                // Would scan CPU metrics for spikes
-                issues.push("cpu_metrics_available".to_string());
-            }
+        if bundle.manifest.layers_available.layer3_metrics
+            && bundle.manifest.file_inventory.layer3.cpu_metrics.is_some()
+        {
+            // Would scan CPU metrics for spikes
+            issues.push("cpu_metrics_available".to_string());
         }
 
         Ok(issues)
@@ -277,9 +306,17 @@ mod tests {
         // Resolve the fixture relative to the crate manifest dir (not the
         // process CWD) so this test doesn't depend on where `cargo test` is
         // invoked from.
-        let fixture = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/test.zip"));
+        let fixture = Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/test.zip"
+        ));
         let mut bundle = IncidentBundle::from_zip(fixture).unwrap();
-        bundle.manifest.file_inventory.layer1.ros_bags.push(PathBuf::from("robot1_mission.bag"));
+        bundle
+            .manifest
+            .file_inventory
+            .layer1
+            .ros_bags
+            .push(PathBuf::from("robot1_mission.bag"));
 
         let robot_ids = EvidenceDiscovery::extract_robot_ids(&bundle).unwrap();
         assert!(!robot_ids.is_empty());

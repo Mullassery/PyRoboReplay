@@ -3,7 +3,6 @@
 //! Formats aggregated findings with detector agreement visualization.
 
 use crate::analyzers::aggregation::ConsolidatedFinding;
-use std::collections::HashMap;
 
 /// Format consolidated findings with evidence from multiple detectors
 pub struct ConsolidatedFormatter {
@@ -45,8 +44,11 @@ impl ConsolidatedFormatter {
         let findings_json: Vec<_> = consolidated
             .iter()
             .map(|c| {
-                let component_names: Vec<String> =
-                    c.component_findings.iter().map(|f| f.category.clone()).collect();
+                let component_names: Vec<String> = c
+                    .component_findings
+                    .iter()
+                    .map(|f| f.category.clone())
+                    .collect();
 
                 serde_json::json!({
                     "root_cause": c.root_cause,
@@ -199,7 +201,7 @@ impl ConsolidatedFormatter {
 <body>
     <div class="header">
         <h1>🔍 Consolidated Reality Gap Analysis</h1>
-        <p>PyRoboReplay v2.0 - Multi-Detector Evidence Fusion</p>"#
+        <p>PyRoboReplay v2.0 - Multi-Detector Evidence Fusion</p>"#,
         );
 
         html.push_str(&format!("        <p><code>{}</code></p>\n", mission_id));
@@ -301,10 +303,7 @@ impl ConsolidatedFormatter {
             number, consolidated.root_cause
         );
 
-        output.push_str(&format!(
-            "   Explanation: {}\n",
-            consolidated.explanation
-        ));
+        output.push_str(&format!("   Explanation: {}\n", consolidated.explanation));
 
         let detectors: Vec<&str> = consolidated
             .component_findings
@@ -320,7 +319,11 @@ impl ConsolidatedFormatter {
         output.push_str(&format!(
             "   Consolidated Confidence: {:.0}% (boosted from avg {:.0}%)\n",
             consolidated.consolidated_confidence * 100.0,
-            consolidated.component_findings.iter().map(|f| f.confidence).sum::<f32>()
+            consolidated
+                .component_findings
+                .iter()
+                .map(|f| f.confidence)
+                .sum::<f32>()
                 / consolidated.component_findings.len() as f32
                 * 100.0
         ));
@@ -343,7 +346,7 @@ impl ConsolidatedFormatter {
             ));
         }
 
-        output.push_str("\n");
+        output.push('\n');
         output
     }
 
@@ -351,7 +354,10 @@ impl ConsolidatedFormatter {
         if consolidated.is_empty() {
             return 1.0;
         }
-        consolidated.iter().map(|c| c.detector_count as f32).sum::<f32>()
+        consolidated
+            .iter()
+            .map(|c| c.detector_count as f32)
+            .sum::<f32>()
             / consolidated.len() as f32
     }
 

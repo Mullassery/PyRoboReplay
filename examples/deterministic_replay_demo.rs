@@ -1,5 +1,5 @@
-use pyroboreplay::core::{DeterministicReplay, EventHasher, MissionRecord, MissionEvent, Pose};
 use chrono::Utc;
+use pyroboreplay::core::{DeterministicReplay, EventHasher, MissionEvent, MissionRecord, Pose};
 
 fn main() {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
@@ -47,7 +47,10 @@ fn main() {
     println!("  Replay ID: {}", manifest.replay_id);
     println!("  Original Mission ID: {}", manifest.original_mission_id);
     println!("  Event Count: {}", manifest.event_count);
-    println!("  Chain Hash (first 16 chars): {}...", &manifest.chain_hash[..16]);
+    println!(
+        "  Chain Hash (first 16 chars): {}...",
+        &manifest.chain_hash[..16]
+    );
     println!("  Event Hashes Sample:");
     for (i, hash) in manifest.event_hashes.iter().take(3).enumerate() {
         println!("    Event {}: {}...", i, &hash[..16]);
@@ -82,8 +85,14 @@ fn main() {
     match replay2.assert_identical_to(&replay3) {
         Ok(_) => {
             println!("✓ Two independent replays are identical");
-            println!("  Chain hash 1: {}...", &replay2.manifest().chain_hash[..16]);
-            println!("  Chain hash 2: {}...", &replay3.manifest().chain_hash[..16]);
+            println!(
+                "  Chain hash 1: {}...",
+                &replay2.manifest().chain_hash[..16]
+            );
+            println!(
+                "  Chain hash 2: {}...",
+                &replay3.manifest().chain_hash[..16]
+            );
             println!("  ✓ Hashes match\n");
         }
         Err(e) => {

@@ -1,5 +1,4 @@
 /// Fleet Learning - Generate fleet-wide recommendations and leaderboards
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -8,7 +7,7 @@ pub struct OptimizationTip {
     pub tip_id: String,
     pub title: String,
     pub description: String,
-    pub potential_improvement: f32,  // % improvement expected (0-100)
+    pub potential_improvement: f32, // % improvement expected (0-100)
     pub affected_robots: Vec<String>,
     pub priority: OptimizationPriority,
     pub category: String,
@@ -54,8 +53,8 @@ pub struct LeaderboardEntry {
     pub success_rate: f32,
     pub avg_mission_time_ms: u32,
     pub total_missions: usize,
-    pub efficiency_score: f32,  // 0-100
-    pub learning_curve_slope: f32,  // How fast is it improving?
+    pub efficiency_score: f32,     // 0-100
+    pub learning_curve_slope: f32, // How fast is it improving?
 }
 
 impl LeaderboardEntry {
@@ -73,7 +72,10 @@ impl LeaderboardEntry {
 
     pub fn overall_score(&self) -> f32 {
         // Composite: success_rate (50%) + efficiency (30%) + learning_curve (20%)
-        (self.success_rate * 50.0 + self.efficiency_score * 30.0 + (self.learning_curve_slope.max(0.0) * 100.0).min(100.0) * 20.0) / 100.0
+        (self.success_rate * 50.0
+            + self.efficiency_score * 30.0
+            + (self.learning_curve_slope.max(0.0) * 100.0).min(100.0) * 20.0)
+            / 100.0
     }
 }
 
@@ -96,6 +98,12 @@ struct MissionResult {
     succeeded: bool,
     time_ms: u32,
     timestamp: u64,
+}
+
+impl Default for FleetLearner {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl FleetLearner {
@@ -143,30 +151,38 @@ impl FleetLearner {
 
     /// Generate leaderboard
     pub fn generate_leaderboard(&self) -> Vec<LeaderboardEntry> {
-        let mut entries: Vec<LeaderboardEntry> = self.robots.iter().map(|r| {
-            let mut entry = LeaderboardEntry::new(r.robot_id.clone());
-            entry.success_rate = r.success_rate;
-            entry.avg_mission_time_ms = r.avg_time_ms;
-            entry.total_missions = r.missions.len();
+        let mut entries: Vec<LeaderboardEntry> = self
+            .robots
+            .iter()
+            .map(|r| {
+                let mut entry = LeaderboardEntry::new(r.robot_id.clone());
+                entry.success_rate = r.success_rate;
+                entry.avg_mission_time_ms = r.avg_time_ms;
+                entry.total_missions = r.missions.len();
 
-            // Efficiency: inverse of time (faster is better)
-            entry.efficiency_score = (1.0 - (r.avg_time_ms as f32 / 5000.0)).max(0.0) * 100.0;
+                // Efficiency: inverse of time (faster is better)
+                entry.efficiency_score = (1.0 - (r.avg_time_ms as f32 / 5000.0)).max(0.0) * 100.0;
 
-            // Learning curve: improvement over time
-            if r.missions.len() > 1 {
-                let first_half = r.missions.len() / 2;
-                let early_success = r.missions[..first_half].iter()
-                    .filter(|m| m.succeeded)
-                    .count() as f32 / first_half as f32;
-                let late_success = r.missions[first_half..].iter()
-                    .filter(|m| m.succeeded)
-                    .count() as f32 / (r.missions.len() - first_half) as f32;
+                // Learning curve: improvement over time
+                if r.missions.len() > 1 {
+                    let first_half = r.missions.len() / 2;
+                    let early_success = r.missions[..first_half]
+                        .iter()
+                        .filter(|m| m.succeeded)
+                        .count() as f32
+                        / first_half as f32;
+                    let late_success = r.missions[first_half..]
+                        .iter()
+                        .filter(|m| m.succeeded)
+                        .count() as f32
+                        / (r.missions.len() - first_half) as f32;
 
-                entry.learning_curve_slope = late_success - early_success;
-            }
+                    entry.learning_curve_slope = late_success - early_success;
+                }
 
-            entry
-        }).collect();
+                entry
+            })
+            .collect();
 
         // Rank by overall score
         entries.sort_by(|a, b| b.overall_score().partial_cmp(&a.overall_score()).unwrap());
@@ -178,15 +194,17 @@ impl FleetLearner {
     }
 
     /// Generate optimization tips for the fleet
-    pub fn generate_optimization_tips(&self, leaderboard: &[LeaderboardEntry]) -> Vec<OptimizationTip> {
+    pub fn generate_optimization_tips(
+        &self,
+        leaderboard: &[LeaderboardEntry],
+    ) -> Vec<OptimizationTip> {
         let mut tips = Vec::new();
 
         // Tip 1: Low success rate
         for entry in leaderboard {
             if entry.success_rate < 0.75 {
-                let mut tip = OptimizationTip::new(
-                    format!("Improve success rate for {}", entry.robot_id)
-                );
+                let mut tip =
+                    OptimizationTip::new(format!("Improve success rate for {}", entry.robot_id));
                 tip.description = format!(
                     "Current success rate: {:.1}%. Target: 90%+",
                     entry.success_rate * 100.0
@@ -205,19 +223,23 @@ impl FleetLearner {
         }
 
         // Tip 2: Slow execution
-        if let Some(entry) = leaderboard.first() {
-            let avg_time = leaderboard.iter().map(|e| e.avg_mission_time_ms).sum::<u32>() / leaderboard.len() as u32;
+        if let Some(_entry) = leaderboard.first() {
+            let avg_time = leaderboard
+                .iter()
+                .map(|e| e.avg_mission_time_ms)
+                .sum::<u32>()
+                / leaderboard.len() as u32;
 
             for entry in leaderboard.iter().skip(1) {
                 if entry.avg_mission_time_ms > avg_time * 2 {
-                    let mut tip = OptimizationTip::new(
-                        "Optimize mission execution time".to_string()
-                    );
+                    let mut tip =
+                        OptimizationTip::new("Optimize mission execution time".to_string());
                     tip.description = format!(
                         "{}: {:.1}ms (fleet avg: {:.1}ms)",
                         entry.robot_id, entry.avg_mission_time_ms, avg_time
                     );
-                    tip.potential_improvement = ((entry.avg_mission_time_ms as f32 / avg_time as f32) - 1.0).min(50.0);
+                    tip.potential_improvement =
+                        ((entry.avg_mission_time_ms as f32 / avg_time as f32) - 1.0).min(50.0);
                     tip.affected_robots = vec![entry.robot_id.clone()];
                     tip.priority = OptimizationPriority::High;
                     tip.category = "Performance".to_string();
@@ -228,7 +250,8 @@ impl FleetLearner {
         }
 
         // Tip 3: Fleet-wide learning
-        let non_learners = leaderboard.iter()
+        let non_learners = leaderboard
+            .iter()
             .filter(|e| e.learning_curve_slope < 0.01)
             .collect::<Vec<_>>();
 
@@ -259,13 +282,24 @@ impl FleetLearner {
         stats.insert("num_robots".to_string(), self.robots.len() as f32);
 
         if !self.robots.is_empty() {
-            let avg_success = self.robots.iter().map(|r| r.success_rate).sum::<f32>() / self.robots.len() as f32;
-            let avg_time = self.robots.iter().map(|r| r.avg_time_ms as f32).sum::<f32>() / self.robots.len() as f32;
+            let avg_success =
+                self.robots.iter().map(|r| r.success_rate).sum::<f32>() / self.robots.len() as f32;
+            let avg_time = self
+                .robots
+                .iter()
+                .map(|r| r.avg_time_ms as f32)
+                .sum::<f32>()
+                / self.robots.len() as f32;
 
             stats.insert("fleet_avg_success_rate".to_string(), avg_success);
             stats.insert("fleet_avg_mission_time_ms".to_string(), avg_time);
-            stats.insert("total_missions".to_string(),
-                self.robots.iter().map(|r| r.missions.len() as f32).sum::<f32>());
+            stats.insert(
+                "total_missions".to_string(),
+                self.robots
+                    .iter()
+                    .map(|r| r.missions.len() as f32)
+                    .sum::<f32>(),
+            );
         }
 
         stats

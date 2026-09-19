@@ -7,7 +7,6 @@
 //!
 //! Enables cross-robot learning and terrain consensus.
 
-use crate::knowledge::terrain_integration::TerrainZone;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -110,8 +109,7 @@ impl FleetTerrainModel {
 
     /// Register robot in fleet
     pub fn register_robot(&mut self, robot: RobotProfile) {
-        self.robot_profiles
-            .insert(robot.robot_id.clone(), robot);
+        self.robot_profiles.insert(robot.robot_id.clone(), robot);
     }
 
     /// Record robot's zone traversability observation
@@ -119,7 +117,7 @@ impl FleetTerrainModel {
         // Store observation
         self.observations
             .entry(observation.zone_id.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(observation.clone());
 
         // Recompute consensus for this zone

@@ -8,9 +8,9 @@
 //! - Annotations: operator event timeline
 //! - Sensors: device-specific clocks
 
-use serde::{Serialize, Deserialize};
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use chrono::{DateTime, Utc, Duration};
 use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -99,19 +99,19 @@ pub type SyncResult<T> = Result<T, SyncError>;
 /// Report on temporal synchronization process
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SyncReport {
-    pub reference_epoch: i64,  // ROS time in ns
+    pub reference_epoch: i64, // ROS time in ns
     pub global_start_time: i64,
     pub global_end_time: i64,
     pub source_offsets: BTreeMap<String, ClockOffset>,
     pub detected_ntp_issues: Vec<NtpIssue>,
-    pub sync_quality: f32,  // 0-1, overall confidence
+    pub sync_quality: f32, // 0-1, overall confidence
     pub issues: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NtpIssue {
     pub timestamp: i64,
-    pub drift_rate: f32,  // ns/s
+    pub drift_rate: f32, // ns/s
     pub severity: IssueSeverity,
     pub description: String,
 }
@@ -150,9 +150,7 @@ impl TimeModelDetector {
 
         // If timestamps are small integers (sequence), likely operator sequence
         if sample_timestamps.len() > 1 {
-            let diffs: Vec<_> = sample_timestamps.windows(2)
-                .map(|w| w[1] - w[0])
-                .collect();
+            let diffs: Vec<_> = sample_timestamps.windows(2).map(|w| w[1] - w[0]).collect();
 
             if diffs.iter().all(|&d| d > 0 && d < 1000) {
                 return Ok(TimeModel::OperatorSequence);
@@ -194,34 +192,26 @@ impl OffsetComputer {
     }
 
     /// Compute offset from syslog timestamp to ROS time
-    pub fn from_syslog(
-        ros_timestamp_ns: i64,
-        syslog_timestamp: DateTime<Utc>,
-    ) -> ClockOffset {
-        let syslog_ns = syslog_timestamp.timestamp_nanos_opt()
-            .unwrap_or(0);
+    pub fn from_syslog(ros_timestamp_ns: i64, syslog_timestamp: DateTime<Utc>) -> ClockOffset {
+        let syslog_ns = syslog_timestamp.timestamp_nanos_opt().unwrap_or(0);
 
         let offset_ns = ros_timestamp_ns - syslog_ns;
 
         ClockOffset {
             offset_ns,
-            confidence: 0.85,  // syslog timestamps are reliable but may have clock skew
+            confidence: 0.85, // syslog timestamps are reliable but may have clock skew
             method: OffsetMethod::SyslogCorrelation,
         }
     }
 
     /// Compute offset from frame number and FPS
-    pub fn from_frame_number(
-        ros_timestamp_ns: i64,
-        frame_number: u32,
-        fps: f32,
-    ) -> ClockOffset {
+    pub fn from_frame_number(ros_timestamp_ns: i64, frame_number: u32, fps: f32) -> ClockOffset {
         let frame_time_ns = (frame_number as f64 / fps as f64 * 1e9) as i64;
         let offset_ns = ros_timestamp_ns - frame_time_ns;
 
         ClockOffset {
             offset_ns,
-            confidence: 0.75,  // Video frame rates can drift
+            confidence: 0.75, // Video frame rates can drift
             method: OffsetMethod::VideoSyncPoint,
         }
     }
@@ -245,7 +235,7 @@ impl OffsetComputer {
                 if *t2 < *t1 {
                     issues.push(NtpIssue {
                         timestamp: t1.timestamp_nanos_opt().unwrap_or(0),
-                        drift_rate: -1000.0,  // Negative drift
+                        drift_rate: -1000.0, // Negative drift
                         severity: IssueSeverity::Severe,
                         description: "Clock went backwards (NTP adjustment?)".to_string(),
                     });
@@ -290,29 +280,25 @@ impl TemporalSyncEngine {
 
     /// Convert local timestamp to unified timeline
     pub fn to_unified_time(&self, source_name: &str, local_time: i64) -> SyncResult<i64> {
-        let offset = self.offsets.get(source_name)
-            .ok_or_else(|| SyncError::OffsetComputationFailed(
-                format!("Unknown source: {}", source_name),
-            ))?;
+        let offset = self.offsets.get(source_name).ok_or_else(|| {
+            SyncError::OffsetComputationFailed(format!("Unknown source: {}", source_name))
+        })?;
 
         Ok(local_time + offset.offset_ns)
     }
 
     /// Convert unified time back to source-local time
     pub fn from_unified_time(&self, source_name: &str, unified_time: i64) -> SyncResult<i64> {
-        let offset = self.offsets.get(source_name)
-            .ok_or_else(|| SyncError::OffsetComputationFailed(
-                format!("Unknown source: {}", source_name),
-            ))?;
+        let offset = self.offsets.get(source_name).ok_or_else(|| {
+            SyncError::OffsetComputationFailed(format!("Unknown source: {}", source_name))
+        })?;
 
         Ok(unified_time - offset.offset_ns)
     }
 
     /// Generate synchronization report
     pub fn report(&mut self, start_time: i64, end_time: i64) -> SyncReport {
-        let confidence_scores: Vec<f32> = self.offsets.values()
-            .map(|o| o.confidence)
-            .collect();
+        let confidence_scores: Vec<f32> = self.offsets.values().map(|o| o.confidence).collect();
 
         let sync_quality = if confidence_scores.is_empty() {
             0.0
@@ -327,7 +313,9 @@ impl TemporalSyncEngine {
             if offset.confidence < 0.7 {
                 issues.push(format!(
                     "{}: Low confidence ({:.0}%) - {}",
-                    source, offset.confidence * 100.0, offset.method
+                    source,
+                    offset.confidence * 100.0,
+                    offset.method
                 ));
             }
         }
@@ -350,10 +338,11 @@ impl TemporalSyncEngine {
     pub fn alignment_stats(&self) -> AlignmentStats {
         AlignmentStats {
             num_sources: self.offsets.len(),
-            average_confidence: self.offsets.values()
-                .map(|o| o.confidence)
-                .sum::<f32>() / self.offsets.len().max(1) as f32,
-            offset_range: self.offsets.values()
+            average_confidence: self.offsets.values().map(|o| o.confidence).sum::<f32>()
+                / self.offsets.len().max(1) as f32,
+            offset_range: self
+                .offsets
+                .values()
                 .map(|o| o.offset_ns)
                 .fold((i64::MAX, i64::MIN), |(min, max), val| {
                     (min.min(val), max.max(val))
@@ -376,7 +365,11 @@ mod tests {
     #[test]
     fn test_time_model_detection_ros_nanoseconds() {
         // ROS timestamps are nanoseconds since epoch (typically 1.6e18 for 2021+)
-        let samples = vec![1600000000000000000i64, 1600000000000000100, 1600000000000000200];
+        let samples = vec![
+            1600000000000000000i64,
+            1600000000000000100,
+            1600000000000000200,
+        ];
         let model = TimeModelDetector::detect(&samples).unwrap();
         assert_eq!(model, TimeModel::RosNanoseconds);
     }

@@ -1,8 +1,8 @@
 use crate::core::confidence_scoring::ConfidenceScoringEngine;
 use crate::core::event::MissionEvent;
-use crate::core::failure_detection::{FailureDetectionEngine, DetectedFailure, FailureSeverity};
+use crate::core::failure_detection::{DetectedFailure, FailureSeverity};
 use crate::core::incident_bundle::IncidentBundle;
-use crate::core::recommendations_engine::{MLRIASRecommendationsEngine, MLRIASRecommendation};
+use crate::core::recommendations_engine::{MLRIASRecommendation, MLRIASRecommendationsEngine};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -87,10 +87,8 @@ impl IncidentAnalysisOrchestrator {
         let confidence_chains = scoring_engine.score_failures(&self.failures);
 
         // Phase 6: Recommendations
-        let mut rec_engine = MLRIASRecommendationsEngine::new(
-            self.failures.clone(),
-            confidence_chains.clone(),
-        );
+        let rec_engine =
+            MLRIASRecommendationsEngine::new(self.failures.clone(), confidence_chains.clone());
         self.recommendations = rec_engine.generate_recommendations();
 
         // Build analysis report
@@ -111,11 +109,13 @@ impl IncidentAnalysisOrchestrator {
         }
 
         // Calculate statistics
-        let critical_count = self.failures
+        let critical_count = self
+            .failures
             .iter()
             .filter(|f| f.severity == FailureSeverity::Critical)
             .count();
-        let high_count = self.failures
+        let high_count = self
+            .failures
             .iter()
             .filter(|f| f.severity == FailureSeverity::High)
             .count();
@@ -126,7 +126,8 @@ impl IncidentAnalysisOrchestrator {
         };
 
         // Convert failures to reports
-        let failure_reports: Vec<FailureReport> = self.failures
+        let failure_reports: Vec<FailureReport> = self
+            .failures
             .iter()
             .map(|f| FailureReport {
                 failure_id: f.id.clone(),
@@ -135,14 +136,18 @@ impl IncidentAnalysisOrchestrator {
                 timestamp: f.timestamp,
                 severity: format!("{:?}", f.severity),
                 confidence: f.confidence,
-                confidence_tier: format!("{:?}", crate::core::confidence_scoring::ConfidenceTier::classify(f.confidence)),
+                confidence_tier: format!(
+                    "{:?}",
+                    crate::core::confidence_scoring::ConfidenceTier::classify(f.confidence)
+                ),
                 description: f.description.clone(),
                 evidence_count: f.event_ids.len(),
             })
             .collect();
 
         // Convert recommendations to reports
-        let recommendation_reports: Vec<RecommendationReport> = self.recommendations
+        let recommendation_reports: Vec<RecommendationReport> = self
+            .recommendations
             .iter()
             .map(|r| RecommendationReport {
                 recommendation_id: r.id.clone(),
@@ -165,17 +170,22 @@ impl IncidentAnalysisOrchestrator {
             critical_failures: critical_count,
             high_severity_failures: high_count,
             average_failure_confidence: avg_confidence,
-            highest_roi_recommendation: self.recommendations
+            highest_roi_recommendation: self
+                .recommendations
                 .iter()
                 .map(|r| r.roi_score)
                 .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)),
         };
 
         // Get time range from events
-        let time_range_start = self.events.first()
+        let time_range_start = self
+            .events
+            .first()
             .map(|e| e.timestamp())
             .unwrap_or_else(Utc::now);
-        let time_range_end = self.events.last()
+        let time_range_end = self
+            .events
+            .last()
             .map(|e| e.timestamp())
             .unwrap_or_else(Utc::now);
 
@@ -224,16 +234,37 @@ impl AnalysisResult {
         println!("  End:   {}", self.report.time_range_end);
         println!();
 
-        println!("Robots Involved: {}", self.report.robots_involved.join(", "));
+        println!(
+            "Robots Involved: {}",
+            self.report.robots_involved.join(", ")
+        );
         println!();
 
         println!("Summary Statistics:");
-        println!("  Events Analyzed: {}", self.report.analysis_summary.total_events_analyzed);
-        println!("  Failures Detected: {}", self.report.analysis_summary.total_failures_detected);
-        println!("    - Critical: {}", self.report.analysis_summary.critical_failures);
-        println!("    - High: {}", self.report.analysis_summary.high_severity_failures);
-        println!("  Recommendations: {}", self.report.analysis_summary.total_recommendations);
-        println!("  Avg Failure Confidence: {:.0}%", self.report.analysis_summary.average_failure_confidence * 100.0);
+        println!(
+            "  Events Analyzed: {}",
+            self.report.analysis_summary.total_events_analyzed
+        );
+        println!(
+            "  Failures Detected: {}",
+            self.report.analysis_summary.total_failures_detected
+        );
+        println!(
+            "    - Critical: {}",
+            self.report.analysis_summary.critical_failures
+        );
+        println!(
+            "    - High: {}",
+            self.report.analysis_summary.high_severity_failures
+        );
+        println!(
+            "  Recommendations: {}",
+            self.report.analysis_summary.total_recommendations
+        );
+        println!(
+            "  Avg Failure Confidence: {:.0}%",
+            self.report.analysis_summary.average_failure_confidence * 100.0
+        );
         if let Some(roi) = self.report.analysis_summary.highest_roi_recommendation {
             println!("  Best ROI Score: {:.1}", roi);
         }
@@ -257,7 +288,8 @@ impl AnalysisResult {
             println!("Top Recommendations (by ROI):");
             let mut sorted_recs = self.report.recommendations.clone();
             sorted_recs.sort_by(|a, b| {
-                b.roi_score.partial_cmp(&a.roi_score)
+                b.roi_score
+                    .partial_cmp(&a.roi_score)
                     .unwrap_or(std::cmp::Ordering::Equal)
             });
             for (i, rec) in sorted_recs.iter().take(5).enumerate() {

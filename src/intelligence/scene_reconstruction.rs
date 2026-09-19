@@ -250,7 +250,10 @@ impl SceneReconstructionEngine {
         entities: &[DetectedEntity],
         _camera_analysis: &CameraFrameAnalysis,
     ) -> SceneContext {
-        let pedestrian_count = entities.iter().filter(|e| e.entity_type == "pedestrian").count();
+        let pedestrian_count = entities
+            .iter()
+            .filter(|e| e.entity_type == "pedestrian")
+            .count();
         let dynamic_obstacles = entities.iter().filter(|e| e.is_moving).count();
 
         let location_type = if pedestrian_count > 3 {
@@ -299,31 +302,37 @@ impl SceneReconstructionEngine {
         }
 
         if context.pedestrian_count > 0 {
-            narrative.push_str(&format!("{} pedestrians present. ", context.pedestrian_count));
+            narrative.push_str(&format!(
+                "{} pedestrians present. ",
+                context.pedestrian_count
+            ));
         }
 
-        narrative.push_str(&format!("Robot behavior: {}. ", robot_perception.robot_behavior));
+        narrative.push_str(&format!(
+            "Robot behavior: {}. ",
+            robot_perception.robot_behavior
+        ));
 
         narrative
     }
 
     /// Compute overall confidence in reconstruction
-    fn compute_confidence(entities: &[DetectedEntity], _camera_analysis: &CameraFrameAnalysis) -> f32 {
+    fn compute_confidence(
+        entities: &[DetectedEntity],
+        _camera_analysis: &CameraFrameAnalysis,
+    ) -> f32 {
         if entities.is_empty() {
             return 0.7; // No detections = lower confidence
         }
 
-        let avg_confidence: f32 = entities.iter().map(|e| e.confidence).sum::<f32>()
-            / entities.len() as f32;
+        let avg_confidence: f32 =
+            entities.iter().map(|e| e.confidence).sum::<f32>() / entities.len() as f32;
 
         (avg_confidence * 0.8 + 0.2).min(1.0) // Weight by detection confidence
     }
 
     /// Build timeline from sequence of scenes
-    pub fn build_timeline(
-        mission_id: &str,
-        scenes: Vec<RetrospectiveScene>,
-    ) -> SceneTimeline {
+    pub fn build_timeline(mission_id: &str, scenes: Vec<RetrospectiveScene>) -> SceneTimeline {
         let mut key_moments = Vec::new();
 
         for i in 1..scenes.len() {
@@ -337,15 +346,23 @@ impl SceneReconstructionEngine {
             if curr_count > prev_count {
                 key_moments.push(TimeMoment {
                     timestamp_sec: curr.timestamp_sec,
-                    description: format!("New object detected"),
+                    description: "New object detected".to_string(),
                     significance: "new_entity".to_string(),
                     confidence: curr.reconstruction_confidence,
                 });
             }
 
             // Detect dangerous situations
-            let has_pedestrian = curr.detected_objects.iter().any(|e| e.entity_type == "pedestrian");
-            if has_pedestrian && curr.detected_objects.iter().any(|e| e.distance_m.map_or(false, |d| d < 2.0)) {
+            let has_pedestrian = curr
+                .detected_objects
+                .iter()
+                .any(|e| e.entity_type == "pedestrian");
+            if has_pedestrian
+                && curr
+                    .detected_objects
+                    .iter()
+                    .any(|e| e.distance_m.is_some_and(|d| d < 2.0))
+            {
                 key_moments.push(TimeMoment {
                     timestamp_sec: curr.timestamp_sec,
                     description: "Pedestrian in close proximity".to_string(),
@@ -452,30 +469,28 @@ mod tests {
 
     #[test]
     fn test_timeline_building() {
-        let scenes = vec![
-            RetrospectiveScene {
-                timestamp_sec: 0.0,
-                frame_index: 0,
-                detected_objects: vec![],
-                scene_context: SceneContext {
-                    location_type: "empty".to_string(),
-                    complexity: 0.0,
-                    pedestrian_count: 0,
-                    dynamic_obstacle_count: 0,
-                    is_hazardous: false,
-                    lighting: "normal".to_string(),
-                },
-                environment: EnvironmentalState {
-                    lighting_quality: 0.8,
-                    visibility: 0.9,
-                    occlusion: 0.0,
-                    weather: vec![],
-                    time_of_day: None,
-                },
-                narrative: "Empty scene".to_string(),
-                reconstruction_confidence: 0.8,
+        let scenes = vec![RetrospectiveScene {
+            timestamp_sec: 0.0,
+            frame_index: 0,
+            detected_objects: vec![],
+            scene_context: SceneContext {
+                location_type: "empty".to_string(),
+                complexity: 0.0,
+                pedestrian_count: 0,
+                dynamic_obstacle_count: 0,
+                is_hazardous: false,
+                lighting: "normal".to_string(),
             },
-        ];
+            environment: EnvironmentalState {
+                lighting_quality: 0.8,
+                visibility: 0.9,
+                occlusion: 0.0,
+                weather: vec![],
+                time_of_day: None,
+            },
+            narrative: "Empty scene".to_string(),
+            reconstruction_confidence: 0.8,
+        }];
 
         let timeline = SceneReconstructionEngine::build_timeline("mission_1", scenes);
 

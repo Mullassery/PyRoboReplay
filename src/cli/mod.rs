@@ -1,23 +1,23 @@
 pub mod args;
-pub mod replay_ui;
-pub mod json_output;
-pub mod lidar_viz;
 pub mod camera_export;
-pub mod imu_viz;
-pub mod sensor_stats;
-pub mod keyboard;
 pub mod causal_viz;
-pub mod gap_analysis;
 pub mod consolidated_output;
+pub mod gap_analysis;
+pub mod imu_viz;
+pub mod json_output;
+pub mod keyboard;
+pub mod lidar_viz;
+pub mod replay_ui;
+pub mod sensor_stats;
 pub mod stats_dashboard;
 mod tests_consolidation_integration;
 
+use crate::adapters::{ros2::Ros2Adapter, MissionAdapter};
 use args::{Cli, Commands};
-use clap::Parser;
-use crate::adapters::{MissionAdapter, ros2::Ros2Adapter};
-use replay_ui::ReplayState;
-use json_output::{JsonResponse, MissionAnalysisJson};
 use camera_export::export_camera_to_html;
+use clap::Parser;
+use json_output::{JsonResponse, MissionAnalysisJson};
+use replay_ui::ReplayState;
 use stats_dashboard::launch_stats_dashboard_window;
 use std::error::Error;
 use tracing_subscriber;
@@ -52,7 +52,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             // Launch stats dashboard in separate window if requested
             if launch_dashboard {
                 match launch_stats_dashboard_window(&mission, "PyRoboReplay Stats Dashboard") {
-                    Ok(mut child) => {
+                    Ok(child) => {
                         println!("✅ Stats dashboard launched in a separate terminal");
                         println!("📊 To close: press Ctrl+C in the dashboard window");
                         // Don't wait for the child; let it run independently
@@ -107,7 +107,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             format: output_format,
             output: output_file,
             detail,
-            json: output_json
+            json: output_json,
         } => {
             tracing::info!("Analyzing: {}", bag_file);
             let adapter = Ros2Adapter::new();
@@ -115,12 +115,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
             // Handle gap detection if requested
             if detect_gaps {
-                use crate::analyzers::{
-                    MissionAnalysisData, RealityGapDetector, ControlMessage, JointState,
-                    OdometryMessage, CameraFrame, LidarScan, IMUMeasurement, EncoderReading,
-                    MotorCurrent, ThermalReading, BatteryReading, DetectionResult, PerceptionError,
-                    MessageTimestamp
-                };
+                use crate::analyzers::{MissionAnalysisData, RealityGapDetector};
                 use gap_analysis::GapFormatter;
 
                 tracing::info!("Detecting reality gaps...");
@@ -128,7 +123,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 // Convert mission to analysis data (simplified - normally would populate all fields)
                 let analysis_data = MissionAnalysisData {
                     mission_id: mission.id.to_string(),
-                    duration_sec: mission.duration().map(|d| d.num_seconds() as f32).unwrap_or(0.0),
+                    duration_sec: mission
+                        .duration()
+                        .map(|d| d.num_seconds() as f32)
+                        .unwrap_or(0.0),
                     robot_type: "unknown".to_string(),
                     control_messages: Vec::new(),
                     joint_states: Vec::new(),
@@ -192,7 +190,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
         }
 
-        Commands::List { bag_file, json: output_json } => {
+        Commands::List {
+            bag_file,
+            json: output_json,
+        } => {
             tracing::info!("Listing topics in: {}", bag_file);
             let adapter = Ros2Adapter::new();
             let mission = adapter.read(&bag_file)?;
@@ -212,7 +213,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                         let count = mission
                             .events
                             .iter()
-                            .filter(|e| e.sensor_type().map_or(false, |s| s == *sensor))
+                            .filter(|e| e.sensor_type() == Some(*sensor))
                             .count();
                         serde_json::json!({
                             "sensor": sensor,
@@ -221,13 +222,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     })
                     .collect();
 
-                let response = JsonResponse::success(
-                    serde_json::json!({
-                        "mission_id": mission.id.to_string(),
-                        "mission_name": mission.name,
-                        "sensors": sensor_data
-                    })
-                );
+                let response = JsonResponse::success(serde_json::json!({
+                    "mission_id": mission.id.to_string(),
+                    "mission_name": mission.name,
+                    "sensors": sensor_data
+                }));
                 println!("{}", serde_json::to_string_pretty(&response)?);
             } else {
                 // Print human-readable format
@@ -236,7 +235,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     let count = mission
                         .events
                         .iter()
-                        .filter(|e| e.sensor_type().map_or(false, |s| s == sensor))
+                        .filter(|e| e.sensor_type() == Some(sensor))
                         .count();
                     println!("  {} ({} frames)", sensor, count);
                 }

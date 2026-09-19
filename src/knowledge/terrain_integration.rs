@@ -13,8 +13,8 @@
 //! - "Will this happen again? Zone traversability declining"
 //! - "What changed? New obstacle in high-traffic area"
 
-use crate::knowledge::world_model::{Entity, EntityState};
 use crate::knowledge::spatial_grounding::SpatialCoordinates;
+use crate::knowledge::world_model::EntityState;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -57,8 +57,8 @@ impl TerrainZone {
         match entity_state {
             EntityState::Fixed => self.traversability > 0.5, // Static objects need moderate space
             EntityState::Mobile => self.traversability > 0.7, // Mobile objects need good space
-            EntityState::Active => self.traversability > 0.6,  // Active objects need decent space
-            EntityState::Blocked => true,                      // Already blocked, state known
+            EntityState::Active => self.traversability > 0.6, // Active objects need decent space
+            EntityState::Blocked => true,                    // Already blocked, state known
             _ => false,
         }
     }
@@ -162,10 +162,7 @@ impl TerrainIntegrationEngine {
     /// Register terrain zone from PyTerrainMap
     pub fn register_zone(&mut self, zone: TerrainZone) {
         // Track history
-        let history = self
-            .zone_history
-            .entry(zone.zone_id.clone())
-            .or_insert_with(Vec::new);
+        let history = self.zone_history.entry(zone.zone_id.clone()).or_default();
         history.push((zone.last_updated_sec, zone.traversability));
 
         self.zones.insert(zone.zone_id.clone(), zone);
@@ -241,8 +238,7 @@ impl TerrainIntegrationEngine {
             recommendations,
         };
 
-        self.entity_contexts
-            .insert(entity_id.to_string(), context);
+        self.entity_contexts.insert(entity_id.to_string(), context);
     }
 
     /// Detect zone traversability changes
@@ -446,7 +442,8 @@ mod tests {
         let zone = create_test_zone();
         engine.register_zone(zone);
 
-        let mission_ctx = engine.create_mission_context("mission_001", vec!["test_zone".to_string()]);
+        let mission_ctx =
+            engine.create_mission_context("mission_001", vec!["test_zone".to_string()]);
         assert_eq!(mission_ctx.mission_id, "mission_001");
         assert!((mission_ctx.avg_traversability - 0.9).abs() < 0.01);
     }

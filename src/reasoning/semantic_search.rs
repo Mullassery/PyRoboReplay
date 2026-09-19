@@ -43,7 +43,7 @@ pub struct SemanticQuery {
 }
 
 /// Query filters
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct QueryFilters {
     /// Filter by mission outcome
     pub outcome: Option<String>, // "collision", "success", "failure"
@@ -59,18 +59,6 @@ pub struct QueryFilters {
 
     /// Objects involved
     pub objects: Vec<String>, // "pedestrian", "vehicle", etc.
-}
-
-impl Default for QueryFilters {
-    fn default() -> Self {
-        QueryFilters {
-            outcome: None,
-            robot_type: None,
-            time_range: None,
-            min_severity: None,
-            objects: Vec::new(),
-        }
-    }
 }
 
 /// Semantic search engine
@@ -266,10 +254,7 @@ impl SemanticSearchEngine {
         }
 
         if let Some(min_severity) = filters.min_severity {
-            let has_high_severity_event = mission
-                .events
-                .iter()
-                .any(|e| e.severity >= min_severity);
+            let has_high_severity_event = mission.events.iter().any(|e| e.severity >= min_severity);
             if !has_high_severity_event {
                 return false;
             }
@@ -343,7 +328,9 @@ mod tests {
         engine.index_mission(&mission);
 
         assert_eq!(engine.indexed_missions.len(), 1);
-        assert!(engine.indexed_missions[0].keywords.contains(&"collision".to_string()));
+        assert!(engine.indexed_missions[0]
+            .keywords
+            .contains(&"collision".to_string()));
     }
 
     #[test]

@@ -1,11 +1,12 @@
 /// Causal Graph Builder V2 with 5 edge detectors for Phase 16
 ///
 /// Detectors: Temporal Proximity, Magnitude Change, Decision Trigger, Multi-Modal Alignment, Historical Validation
-
 use crate::core::event::MissionEvent;
+#[cfg(test)]
+use chrono::Duration;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use chrono::{DateTime, Utc, Duration};
 
 /// Vertex in the causal graph
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -46,7 +47,13 @@ pub struct Edge {
 }
 
 impl Edge {
-    pub fn new(source_id: String, target_id: String, edge_type: String, confidence: f32, time_gap_ms: i32) -> Self {
+    pub fn new(
+        source_id: String,
+        target_id: String,
+        edge_type: String,
+        confidence: f32,
+        time_gap_ms: i32,
+    ) -> Self {
         Edge {
             source_id,
             target_id,
@@ -71,6 +78,12 @@ pub struct CausalGraphV2 {
     pub timestamp_ns: i64,
 }
 
+impl Default for CausalGraphV2 {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CausalGraphV2 {
     pub fn new() -> Self {
         CausalGraphV2 {
@@ -86,7 +99,7 @@ impl CausalGraphV2 {
         let mut adj: HashMap<String, Vec<String>> = HashMap::new();
         for edge in &self.edges {
             adj.entry(edge.source_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(edge.target_id.clone());
         }
 
@@ -95,10 +108,10 @@ impl CausalGraphV2 {
         let mut rec_stack = std::collections::HashSet::new();
 
         for vertex in &self.vertices {
-            if !visited.contains(&vertex.id) {
-                if self._has_cycle_dfs(&vertex.id, &adj, &mut visited, &mut rec_stack) {
-                    return false;
-                }
+            if !visited.contains(&vertex.id)
+                && self._has_cycle_dfs(&vertex.id, &adj, &mut visited, &mut rec_stack)
+            {
+                return false;
             }
         }
         true
@@ -184,7 +197,7 @@ impl EdgeDetector for TemporalProximityDetector {
                             confidence,
                             time_gap as i32,
                         )
-                        .with_evidence(vec![format!("time_gap={}ms", time_gap)])
+                        .with_evidence(vec![format!("time_gap={}ms", time_gap)]),
                     );
                 }
             }
@@ -214,11 +227,19 @@ impl EdgeDetector for DecisionTriggerDetector {
         for (i, source_event) in timeline.iter().enumerate() {
             for (j, target_event) in timeline.iter().enumerate().skip(i + 1) {
                 if let (
-                    MissionEvent::ObstacleDetected { robot_id: src_robot, .. },
-                    MissionEvent::NavigationDecision { robot_id: tgt_robot, .. },
-                ) = (source_event, target_event) {
+                    MissionEvent::ObstacleDetected {
+                        robot_id: src_robot,
+                        ..
+                    },
+                    MissionEvent::NavigationDecision {
+                        robot_id: tgt_robot,
+                        ..
+                    },
+                ) = (source_event, target_event)
+                {
                     if src_robot == tgt_robot {
-                        let time_gap = (target_event.timestamp() - source_event.timestamp()).num_milliseconds();
+                        let time_gap = (target_event.timestamp() - source_event.timestamp())
+                            .num_milliseconds();
                         edges.push(
                             Edge::new(
                                 format!("event_{}", i),
@@ -227,7 +248,7 @@ impl EdgeDetector for DecisionTriggerDetector {
                                 0.85,
                                 time_gap as i32,
                             )
-                            .with_evidence(vec!["obstacle_decision_causality".to_string()])
+                            .with_evidence(vec!["obstacle_decision_causality".to_string()]),
                         );
                     }
                 }
@@ -302,7 +323,9 @@ impl CausalGraphBuilderV2 {
         }
 
         // Prune low-confidence edges and enforce DAG
-        graph.edges.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
+        graph
+            .edges
+            .sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
         self._enforce_dag(&mut graph);
 
         graph
@@ -314,7 +337,10 @@ impl CausalGraphBuilderV2 {
         for (idx, event) in self.timeline.iter().enumerate() {
             let ts_ns = event.timestamp().timestamp_nanos_opt().unwrap_or(0);
             let confidence = match event {
-                MissionEvent::ObstacleDetected { confidence: Some(c), .. } => *c,
+                MissionEvent::ObstacleDetected {
+                    confidence: Some(c),
+                    ..
+                } => *c,
                 _ => 0.8,
             };
 
@@ -334,8 +360,10 @@ impl CausalGraphBuilderV2 {
     fn _enforce_dag(&self, graph: &mut CausalGraphV2) {
         while !graph.is_dag() {
             // Find lowest-confidence edge creating cycle, remove it
-            graph.edges.sort_by(|a, b| a.confidence.partial_cmp(&b.confidence).unwrap());
-            if let Some(edge) = graph.edges.first() {
+            graph
+                .edges
+                .sort_by(|a, b| a.confidence.partial_cmp(&b.confidence).unwrap());
+            if let Some(_edge) = graph.edges.first() {
                 graph.edges.remove(0);
             } else {
                 break;
@@ -371,9 +399,22 @@ mod tests {
     #[test]
     fn test_graph_is_dag() {
         let mut graph = CausalGraphV2::new();
-        graph.vertices.push(Vertex::new("v1".to_string(), "sensor".to_string(), 0, 0.8));
-        graph.vertices.push(Vertex::new("v2".to_string(), "sensor".to_string(), 100, 0.8));
-        graph.edges.push(Edge::new("v1".to_string(), "v2".to_string(), "causal".to_string(), 0.8, 100));
+        graph
+            .vertices
+            .push(Vertex::new("v1".to_string(), "sensor".to_string(), 0, 0.8));
+        graph.vertices.push(Vertex::new(
+            "v2".to_string(),
+            "sensor".to_string(),
+            100,
+            0.8,
+        ));
+        graph.edges.push(Edge::new(
+            "v1".to_string(),
+            "v2".to_string(),
+            "causal".to_string(),
+            0.8,
+            100,
+        ));
 
         assert!(graph.is_dag());
     }

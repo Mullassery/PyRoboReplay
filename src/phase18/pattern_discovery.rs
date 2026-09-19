@@ -1,19 +1,18 @@
 /// Failure Pattern Discovery - Mine patterns from fleet missions
-
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, BTreeMap};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct FailurePattern {
     pub pattern_id: String,
     pub name: String,
     pub description: String,
-    pub causal_chain: Vec<String>,  // A → B → C → Failure
-    pub frequency: usize,            // How many missions exhibit this?
-    pub success_rate_without: f32,   // Success rate if this pattern is prevented
+    pub causal_chain: Vec<String>, // A → B → C → Failure
+    pub frequency: usize,          // How many missions exhibit this?
+    pub success_rate_without: f32, // Success rate if this pattern is prevented
     pub avg_recovery_time_ms: u32,
     pub affected_subsystems: Vec<String>,
-    pub confidence: f32,             // How certain? (0-1)
+    pub confidence: f32, // How certain? (0-1)
 }
 
 impl FailurePattern {
@@ -41,9 +40,9 @@ impl FailurePattern {
 pub struct PatternCluster {
     pub cluster_id: String,
     pub patterns: Vec<FailurePattern>,
-    pub cluster_center: Vec<f32>,    // Vector representation
+    pub cluster_center: Vec<f32>, // Vector representation
     pub size: usize,
-    pub silhouette_score: f32,       // Clustering quality (0-1)
+    pub silhouette_score: f32, // Clustering quality (0-1)
 }
 
 impl PatternCluster {
@@ -100,7 +99,7 @@ impl PatternMiner {
             if mission.failure_occurred {
                 pattern_map
                     .entry(mission.causal_chain.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(mission);
             }
         }
@@ -110,19 +109,24 @@ impl PatternMiner {
 
         for (causal_chain, missions) in pattern_map {
             if missions.len() >= self.min_pattern_frequency {
-                let mut pattern = FailurePattern::new(format!("Pattern: {}", causal_chain.join(" → ")));
+                let mut pattern =
+                    FailurePattern::new(format!("Pattern: {}", causal_chain.join(" → ")));
                 pattern.causal_chain = causal_chain.clone();
                 pattern.frequency = missions.len();
 
                 // Calculate success rate without this pattern
                 let total_missions = self.missions.len();
                 let failures_with_pattern = missions.len();
-                let success_rate_prevention = 1.0 - (failures_with_pattern as f32 / total_missions as f32);
+                let success_rate_prevention =
+                    1.0 - (failures_with_pattern as f32 / total_missions as f32);
                 pattern.success_rate_without = success_rate_prevention;
 
                 // Average recovery time
-                pattern.avg_recovery_time_ms =
-                    (missions.iter().map(|m| m.recovery_time_ms as u64).sum::<u64>() / missions.len() as u64) as u32;
+                pattern.avg_recovery_time_ms = (missions
+                    .iter()
+                    .map(|m| m.recovery_time_ms as u64)
+                    .sum::<u64>()
+                    / missions.len() as u64) as u32;
 
                 // Affected subsystems
                 let mut subsystem_counts: HashMap<String, usize> = HashMap::new();
@@ -134,7 +138,8 @@ impl PatternMiner {
                 pattern.affected_subsystems = subsystem_counts.keys().cloned().collect();
 
                 // Confidence based on consistency
-                pattern.confidence = (failures_with_pattern as f32 / (failures_with_pattern + 10) as f32).min(0.95);
+                pattern.confidence =
+                    (failures_with_pattern as f32 / (failures_with_pattern + 10) as f32).min(0.95);
 
                 patterns.push(pattern);
             }
@@ -165,10 +170,14 @@ impl PatternMiner {
             failed_missions as f32 / total_missions as f32,
         );
         stats.insert("total_missions".to_string(), total_missions as f32);
-        stats.insert("unique_failure_patterns".to_string(), failed_missions as f32);
+        stats.insert(
+            "unique_failure_patterns".to_string(),
+            failed_missions as f32,
+        );
 
         if failed_missions > 0 {
-            let avg_recovery: f32 = self.missions
+            let avg_recovery: f32 = self
+                .missions
                 .iter()
                 .filter(|m| m.failure_occurred)
                 .map(|m| m.recovery_time_ms as f32)
@@ -222,7 +231,7 @@ mod tests {
         for i in 0..3 {
             let mission = MissionData {
                 mission_id: format!("m_{}", i),
-                failure_occurred: i < 2,  // 2 failures
+                failure_occurred: i < 2, // 2 failures
                 causal_chain: vec!["sensor_drift".to_string(), "localization_error".to_string()],
                 recovery_time_ms: 500 * (i as u32 + 1),
                 affected_subsystems: vec!["navigation".to_string()],

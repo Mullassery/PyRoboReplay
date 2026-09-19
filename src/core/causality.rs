@@ -1,5 +1,5 @@
 use crate::core::event::MissionEvent;
-use chrono::{Duration};
+use chrono::Duration;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -75,12 +75,12 @@ impl CausalGraph {
 
         self.forward_edges
             .entry(link.source_event_idx)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(link_idx);
 
         self.backward_edges
             .entry(link.target_event_idx)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(link_idx);
 
         self.links.push(link);
@@ -90,12 +90,7 @@ impl CausalGraph {
     pub fn get_direct_causes(&self, event_idx: usize) -> Vec<&CausalLink> {
         self.backward_edges
             .get(&event_idx)
-            .map(|indices| {
-                indices
-                    .iter()
-                    .map(|&idx| &self.links[idx])
-                    .collect()
-            })
+            .map(|indices| indices.iter().map(|&idx| &self.links[idx]).collect())
             .unwrap_or_default()
     }
 
@@ -103,12 +98,7 @@ impl CausalGraph {
     pub fn get_direct_effects(&self, event_idx: usize) -> Vec<&CausalLink> {
         self.forward_edges
             .get(&event_idx)
-            .map(|indices| {
-                indices
-                    .iter()
-                    .map(|&idx| &self.links[idx])
-                    .collect()
-            })
+            .map(|indices| indices.iter().map(|&idx| &self.links[idx]).collect())
             .unwrap_or_default()
     }
 
@@ -170,9 +160,10 @@ impl CausalGraph {
             let cause_chain = self.trace_causes(cause_link.source_event_idx, 10);
 
             for chain in cause_chain {
-                let total_time_gap = if let (Some(first_event), Some(last_event)) =
-                    (events.get(chain.event_chain[0]), events.get(*chain.event_chain.last().unwrap()))
-                {
+                let total_time_gap = if let (Some(first_event), Some(last_event)) = (
+                    events.get(chain.event_chain[0]),
+                    events.get(*chain.event_chain.last().unwrap()),
+                ) {
                     (last_event.timestamp() - first_event.timestamp()).num_milliseconds()
                 } else {
                     cause_link.time_gap_ms
@@ -220,9 +211,10 @@ impl CausalGraph {
             let effect_chain = self.trace_causes(effect_link.target_event_idx, 10);
 
             for chain in effect_chain {
-                let total_time_gap = if let (Some(first_event), Some(last_event)) =
-                    (events.get(source_event_idx), events.get(*chain.event_chain.last().unwrap()))
-                {
+                let total_time_gap = if let (Some(first_event), Some(last_event)) = (
+                    events.get(source_event_idx),
+                    events.get(*chain.event_chain.last().unwrap()),
+                ) {
                     (last_event.timestamp() - first_event.timestamp()).num_milliseconds()
                 } else {
                     effect_link.time_gap_ms
@@ -280,7 +272,10 @@ impl CausalGraph {
 
         match relationship_type {
             "obstacle_triggered_nav" => {
-                format!("Obstacle detection triggered navigation: {}{}", chain_desc, suffix)
+                format!(
+                    "Obstacle detection triggered navigation: {}{}",
+                    chain_desc, suffix
+                )
             }
             "lidar_detected_obstacle" => {
                 format!(
@@ -295,10 +290,16 @@ impl CausalGraph {
                 )
             }
             "imu_caused_motion" => {
-                format!("IMU acceleration caused motion change: {}{}", chain_desc, suffix)
+                format!(
+                    "IMU acceleration caused motion change: {}{}",
+                    chain_desc, suffix
+                )
             }
             _ => {
-                format!("Causal relationship ({}): {}{}", relationship_type, chain_desc, suffix)
+                format!(
+                    "Causal relationship ({}): {}{}",
+                    relationship_type, chain_desc, suffix
+                )
             }
         }
     }
@@ -467,8 +468,18 @@ impl CausalGraphBuilder {
 
         match (source_event, target_event) {
             // Obstacle detected → Navigation decision
-            (MissionEvent::ObstacleDetected { robot_id: src_robot, location: _, confidence: src_conf, .. },
-             MissionEvent::NavigationDecision { robot_id: tgt_robot, .. }) => {
+            (
+                MissionEvent::ObstacleDetected {
+                    robot_id: src_robot,
+                    location: _,
+                    confidence: src_conf,
+                    ..
+                },
+                MissionEvent::NavigationDecision {
+                    robot_id: tgt_robot,
+                    ..
+                },
+            ) => {
                 if src_robot == tgt_robot {
                     return Some(CausalLink::new(
                         source_idx,
@@ -480,8 +491,17 @@ impl CausalGraphBuilder {
                 }
             }
             // Lidar spike (high range variation) → Obstacle detection
-            (MissionEvent::LidarScan { robot_id: src_robot, .. },
-             MissionEvent::ObstacleDetected { robot_id: tgt_robot, confidence: tgt_conf, .. }) => {
+            (
+                MissionEvent::LidarScan {
+                    robot_id: src_robot,
+                    ..
+                },
+                MissionEvent::ObstacleDetected {
+                    robot_id: tgt_robot,
+                    confidence: tgt_conf,
+                    ..
+                },
+            ) => {
                 if src_robot == tgt_robot {
                     return Some(CausalLink::new(
                         source_idx,
@@ -493,8 +513,16 @@ impl CausalGraphBuilder {
                 }
             }
             // Costmap update → Navigation decision
-            (MissionEvent::CostmapUpdate { robot_id: src_robot, .. },
-             MissionEvent::NavigationDecision { robot_id: tgt_robot, .. }) => {
+            (
+                MissionEvent::CostmapUpdate {
+                    robot_id: src_robot,
+                    ..
+                },
+                MissionEvent::NavigationDecision {
+                    robot_id: tgt_robot,
+                    ..
+                },
+            ) => {
                 if src_robot == tgt_robot {
                     return Some(CausalLink::new(
                         source_idx,
@@ -506,26 +534,32 @@ impl CausalGraphBuilder {
                 }
             }
             // IMU spike → Odometry change
-            (MissionEvent::IMUData { robot_id: src_robot, data: imu_data, .. },
-             MissionEvent::OdometryUpdate { robot_id: tgt_robot, .. }) => {
-                if src_robot == tgt_robot {
-                    let accel_magnitude =
-                        (imu_data.linear_acceleration[0].powi(2)
-                            + imu_data.linear_acceleration[1].powi(2)
-                            + imu_data.linear_acceleration[2].powi(2))
-                        .sqrt();
+            (
+                MissionEvent::IMUData {
+                    robot_id: src_robot,
+                    data: imu_data,
+                    ..
+                },
+                MissionEvent::OdometryUpdate {
+                    robot_id: tgt_robot,
+                    ..
+                },
+            ) if src_robot == tgt_robot => {
+                let accel_magnitude = (imu_data.linear_acceleration[0].powi(2)
+                    + imu_data.linear_acceleration[1].powi(2)
+                    + imu_data.linear_acceleration[2].powi(2))
+                .sqrt();
 
-                    // Higher confidence if IMU showed significant acceleration
-                    let confidence = if accel_magnitude > 2.0 { 0.9 } else { 0.5 };
+                // Higher confidence if IMU showed significant acceleration
+                let confidence = if accel_magnitude > 2.0 { 0.9 } else { 0.5 };
 
-                    return Some(CausalLink::new(
-                        source_idx,
-                        target_idx,
-                        "imu_caused_motion".to_string(),
-                        confidence,
-                        time_gap_ms,
-                    ));
-                }
+                return Some(CausalLink::new(
+                    source_idx,
+                    target_idx,
+                    "imu_caused_motion".to_string(),
+                    confidence,
+                    time_gap_ms,
+                ));
             }
             _ => {}
         }
@@ -596,7 +630,7 @@ mod tests {
         graph.add_link(link);
 
         let chains = graph.trace_causes(0, 3);
-        assert!(chains.len() > 0);
+        assert!(!chains.is_empty());
     }
 
     #[test]
@@ -645,7 +679,7 @@ mod tests {
         let query = graph.query_what_caused(1, &events);
         assert_eq!(query.target_event_idx, 1);
         assert_eq!(query.total_links_found, 1);
-        assert!(query.hypotheses.len() > 0);
+        assert!(!query.hypotheses.is_empty());
     }
 
     #[test]
@@ -680,12 +714,12 @@ mod tests {
         let query = graph.query_what_effects(0, &events);
         assert_eq!(query.target_event_idx, 0);
         assert_eq!(query.total_links_found, 1);
-        assert!(query.hypotheses.len() > 0);
+        assert!(!query.hypotheses.is_empty());
     }
 
     #[test]
     fn test_hypothesis_ranking() {
-        let mut hypotheses = vec![
+        let mut hypotheses = [
             CausalHypothesis {
                 chain: CausalChain::new(vec![0], 0.5),
                 confidence: 0.5,

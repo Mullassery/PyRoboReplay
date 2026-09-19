@@ -6,10 +6,10 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ConfidenceTier {
-    Fact,        // 1.0 - directly observed/logged
+    Fact,          // 1.0 - directly observed/logged
     HighInference, // 0.6-0.8 - strong pattern match
-    Hypothesis,  // 0.4-0.6 - reasonable inference
-    Speculative, // <0.4 - possible but weak evidence
+    Hypothesis,    // 0.4-0.6 - reasonable inference
+    Speculative,   // <0.4 - possible but weak evidence
 }
 
 impl ConfidenceTier {
@@ -120,7 +120,9 @@ impl ConfidenceScoringEngine {
         // Apply corroboration boost based on severity and multiple evidence sources
         let corroboration_boost = self.calculate_corroboration_boost(&failure.event_ids, &chain);
         if !corroboration_boost.is_empty() {
-            chain.corroborating_factors.extend(corroboration_boost.clone());
+            chain
+                .corroborating_factors
+                .extend(corroboration_boost.clone());
             chain.adjusted_confidence = (chain.base_confidence + 0.05).min(1.0);
         }
 
@@ -163,7 +165,7 @@ impl ConfidenceScoringEngine {
 
         // Weighted average: prioritize high-confidence failures
         let weighted_sum: f32 = scores.iter().map(|&s| s * s).sum();
-        let weight_sum: f32 = scores.iter().map(|&s| s).sum();
+        let weight_sum: f32 = scores.iter().copied().sum();
 
         if weight_sum > 0.0 {
             weighted_sum / weight_sum
@@ -180,12 +182,19 @@ impl ConfidenceScoringEngine {
         self.failure_scores.values().collect()
     }
 
-    fn calculate_corroboration_boost(&self, event_ids: &[String], _chain: &ConfidenceChain) -> Vec<String> {
+    fn calculate_corroboration_boost(
+        &self,
+        event_ids: &[String],
+        _chain: &ConfidenceChain,
+    ) -> Vec<String> {
         let mut factors = Vec::new();
 
         // Multiple event sources corroborate the diagnosis
         if event_ids.len() > 1 {
-            factors.push(format!("Multiple evidence sources ({} events)", event_ids.len()));
+            factors.push(format!(
+                "Multiple evidence sources ({} events)",
+                event_ids.len()
+            ));
         }
 
         // Cross-layer corroboration (events from different layers)
@@ -208,7 +217,10 @@ impl ConfidenceScoringEngine {
             .collect();
 
         if layer_types.len() > 1 {
-            factors.push(format!("Cross-layer confirmation ({} layers)", layer_types.len()));
+            factors.push(format!(
+                "Cross-layer confirmation ({} layers)",
+                layer_types.len()
+            ));
         }
 
         factors
@@ -224,8 +236,7 @@ impl ConfidenceScoringEngine {
 
         // If many events suggest the failure but detection confidence is low
         if failure.event_ids.len() > 3 && failure.confidence < 0.60 {
-            contradictions
-                .push("Multiple evidence sources but low confidence score".to_string());
+            contradictions.push("Multiple evidence sources but low confidence score".to_string());
         }
 
         contradictions
@@ -235,30 +246,17 @@ impl ConfidenceScoringEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::Utc;
 
     #[test]
     fn test_confidence_tier_classification() {
-        assert_eq!(
-            ConfidenceTier::classify(1.0),
-            ConfidenceTier::Fact
-        );
-        assert_eq!(
-            ConfidenceTier::classify(0.95),
-            ConfidenceTier::Fact
-        );
+        assert_eq!(ConfidenceTier::classify(1.0), ConfidenceTier::Fact);
+        assert_eq!(ConfidenceTier::classify(0.95), ConfidenceTier::Fact);
         assert_eq!(
             ConfidenceTier::classify(0.75),
             ConfidenceTier::HighInference
         );
-        assert_eq!(
-            ConfidenceTier::classify(0.50),
-            ConfidenceTier::Hypothesis
-        );
-        assert_eq!(
-            ConfidenceTier::classify(0.30),
-            ConfidenceTier::Speculative
-        );
+        assert_eq!(ConfidenceTier::classify(0.50), ConfidenceTier::Hypothesis);
+        assert_eq!(ConfidenceTier::classify(0.30), ConfidenceTier::Speculative);
     }
 
     #[test]
@@ -268,8 +266,8 @@ mod tests {
         assert_eq!(max, 1.0);
 
         let (min, max) = ConfidenceTier::HighInference.range();
-        assert!(min >= 0.6 && min <= 0.8);
-        assert!(max >= 0.6 && max <= 0.8);
+        assert!((0.6..=0.8).contains(&min));
+        assert!((0.6..=0.8).contains(&max));
     }
 
     #[test]

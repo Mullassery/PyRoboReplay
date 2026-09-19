@@ -3,7 +3,6 @@
 //! Handles output formatting for gap detection results.
 
 use crate::analyzers::{RealityGapFinding, Severity};
-use std::collections::HashMap;
 
 /// Format gap findings for display
 pub struct GapFormatter {
@@ -25,10 +24,22 @@ impl GapFormatter {
         }
 
         // Summary
-        let critical = findings.iter().filter(|f| f.severity == Severity::Critical).count();
-        let high = findings.iter().filter(|f| f.severity == Severity::High).count();
-        let medium = findings.iter().filter(|f| f.severity == Severity::Medium).count();
-        let low = findings.iter().filter(|f| f.severity == Severity::Low).count();
+        let critical = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
+        let high = findings
+            .iter()
+            .filter(|f| f.severity == Severity::High)
+            .count();
+        let medium = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Medium)
+            .count();
+        let low = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Low)
+            .count();
 
         output.push_str("\n🔍 Reality Gap Analysis Summary\n");
         output.push_str("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
@@ -192,7 +203,7 @@ impl GapFormatter {
 <body>
     <div class="header">
         <h1>🔍 Reality Gap Analysis Report</h1>
-        <p>PyRoboReplay v2.0 - Sim-to-Real Diagnostics</p>"#
+        <p>PyRoboReplay v2.0 - Sim-to-Real Diagnostics</p>"#,
         );
 
         html.push_str(&format!("        <p><code>{}</code></p>\n", mission_id));
@@ -200,10 +211,22 @@ impl GapFormatter {
 
         // Summary cards
         html.push_str("    <div class=\"summary\">\n");
-        let critical = findings.iter().filter(|f| f.severity == Severity::Critical).count();
-        let high = findings.iter().filter(|f| f.severity == Severity::High).count();
-        let medium = findings.iter().filter(|f| f.severity == Severity::Medium).count();
-        let low = findings.iter().filter(|f| f.severity == Severity::Low).count();
+        let critical = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Critical)
+            .count();
+        let high = findings
+            .iter()
+            .filter(|f| f.severity == Severity::High)
+            .count();
+        let medium = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Medium)
+            .count();
+        let low = findings
+            .iter()
+            .filter(|f| f.severity == Severity::Low)
+            .count();
 
         html.push_str(&format!(
             r#"        <div class="summary-card severity-critical">
@@ -311,7 +334,9 @@ impl GapFormatter {
                 for ev in &finding.evidence {
                     output.push_str(&format!(
                         "     - {}: {} (confidence: {:.0}%)\n",
-                        ev.signal, ev.value, ev.confidence * 100.0
+                        ev.signal,
+                        ev.value,
+                        ev.confidence * 100.0
                     ));
                 }
             }
@@ -327,10 +352,7 @@ impl GapFormatter {
                 "   Sim Recreation: {}\n",
                 finding.sim_recreation_suggestion
             ));
-            output.push_str(&format!(
-                "   Remediation: {}\n",
-                finding.remediation
-            ));
+            output.push_str(&format!("   Remediation: {}\n", finding.remediation));
         }
 
         output.push('\n');

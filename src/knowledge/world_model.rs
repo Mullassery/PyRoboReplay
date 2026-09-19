@@ -77,11 +77,11 @@ pub struct Entity {
 /// State of an entity
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum EntityState {
-    Fixed,           // Doesn't move (wall, door, charging station)
-    Mobile,          // Can move (person, other robot, obstacle)
-    Active,          // In use or relevant
-    Inactive,        // Not in use
-    Blocked,         // Inaccessible
+    Fixed,    // Doesn't move (wall, door, charging station)
+    Mobile,   // Can move (person, other robot, obstacle)
+    Active,   // In use or relevant
+    Inactive, // Not in use
+    Blocked,  // Inaccessible
     Unknown,
 }
 
@@ -253,8 +253,9 @@ impl WorldModelManager {
 
     /// Get or create world state for environment
     pub fn get_or_create_environment(&mut self, env_id: &str) -> &mut WorldState {
-        self.states.entry(env_id.to_string()).or_insert_with(|| {
-            WorldState {
+        self.states
+            .entry(env_id.to_string())
+            .or_insert_with(|| WorldState {
                 environment_id: env_id.to_string(),
                 entities: HashMap::new(),
                 locations: HashMap::new(),
@@ -262,8 +263,7 @@ impl WorldModelManager {
                 baseline_observations: Vec::new(),
                 known_anomalies: Vec::new(),
                 last_updated_sec: 0.0,
-            }
-        });
+            });
 
         self.states.get_mut(env_id).unwrap()
     }
@@ -276,7 +276,7 @@ impl WorldModelManager {
         entity_type: &str,
         location_id: &str,
         timestamp_sec: f32,
-        mission_id: &str,
+        _mission_id: &str,
         confidence: f32,
     ) {
         let world = self.get_or_create_environment(env_id);

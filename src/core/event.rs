@@ -163,15 +163,15 @@ pub enum MissionEvent {
     },
     LinuxLogEvent {
         timestamp: DateTime<Utc>,
-        log_source: String, // journalctl, syslog, kern.log
-        log_level: String,  // INFO, WARNING, ERROR, CRITICAL
+        log_source: String,   // journalctl, syslog, kern.log
+        log_level: String,    // INFO, WARNING, ERROR, CRITICAL
         unit: Option<String>, // systemd unit name
         message: String,
         metadata: Option<serde_json::Value>,
     },
     HardwareEvent {
         timestamp: DateTime<Utc>,
-        event_type: String, // usb_connect, usb_disconnect, thermal_throttle
+        event_type: String,  // usb_connect, usb_disconnect, thermal_throttle
         hardware_id: String, // USB device ID, sensor name
         severity: String,    // critical, high, medium, low
         description: String,

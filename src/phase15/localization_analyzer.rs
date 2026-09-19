@@ -7,7 +7,7 @@
 //! - TF tree corruption or latency
 //! - Feature-sparse environments
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LocalizationCause {
@@ -64,8 +64,10 @@ impl LocalizationAnalyzer {
                 cause: LocalizationCause::ParticleDivergence,
                 confidence: 0.88,
                 evidence: vec![
-                    format!("Particle spread increased from {:.2}m to {:.2}m",
-                            particle_spread_before, particle_spread_after),
+                    format!(
+                        "Particle spread increased from {:.2}m to {:.2}m",
+                        particle_spread_before, particle_spread_after
+                    ),
                     "Particles no longer concentrated around true pose".to_string(),
                 ],
                 recommendations: vec![
@@ -80,9 +82,9 @@ impl LocalizationAnalyzer {
 
     /// Analyze odometry drift
     pub fn analyze_odometry_drift(
-        odometry_error_rate: f32,  // meters per meter traveled
+        odometry_error_rate: f32, // meters per meter traveled
         distance_traveled: f32,
-        timestamp: i64,
+        _timestamp: i64,
     ) -> Option<LocalizationIssue> {
         if odometry_error_rate > 0.01 && distance_traveled > 10.0 {
             let estimated_total_error = distance_traveled * odometry_error_rate;
@@ -90,9 +92,14 @@ impl LocalizationAnalyzer {
                 cause: LocalizationCause::OdometryDrift,
                 confidence: 0.82,
                 evidence: vec![
-                    format!("Odometry error rate: {:.2}% per meter", odometry_error_rate * 100.0),
-                    format!("Total estimated error after {:.1}m: {:.2}m",
-                            distance_traveled, estimated_total_error),
+                    format!(
+                        "Odometry error rate: {:.2}% per meter",
+                        odometry_error_rate * 100.0
+                    ),
+                    format!(
+                        "Total estimated error after {:.1}m: {:.2}m",
+                        distance_traveled, estimated_total_error
+                    ),
                 ],
                 recommendations: vec![
                     "Calibrate wheel encoders (systematic offset)".to_string(),
@@ -116,8 +123,10 @@ impl LocalizationAnalyzer {
                 cause: LocalizationCause::FeatureStarvation,
                 confidence: 0.80,
                 evidence: vec![
-                    format!("Only {} features detected (threshold: {})",
-                            detected_features, features_threshold),
+                    format!(
+                        "Only {} features detected (threshold: {})",
+                        detected_features, features_threshold
+                    ),
                     lighting_conditions
                         .map(|c| format!("Lighting: {}", c))
                         .unwrap_or_else(|| "Unknown lighting conditions".to_string()),
@@ -148,10 +157,15 @@ impl LocalizationAnalyzer {
                 cause: LocalizationCause::SensorDegradation,
                 confidence: 0.85,
                 evidence: vec![
-                    format!("Sensor noise increased by {:.0}%",
-                            (noise_increase / noise_before) * 100.0),
-                    format!("Outlier rate increased from {:.2}% to {:.2}%",
-                            outlier_rate_before * 100.0, outlier_rate_after * 100.0),
+                    format!(
+                        "Sensor noise increased by {:.0}%",
+                        (noise_increase / noise_before) * 100.0
+                    ),
+                    format!(
+                        "Outlier rate increased from {:.2}% to {:.2}%",
+                        outlier_rate_before * 100.0,
+                        outlier_rate_after * 100.0
+                    ),
                 ],
                 recommendations: vec![
                     "Inspect camera/LiDAR optics (rain, dirt, dust)".to_string(),
@@ -181,9 +195,15 @@ impl LocalizationAnalyzer {
         }
 
         if estimated_error > 0.5 {
-            summary.push_str(&format!("   Estimated error: {:.2}m (high)\n", estimated_error));
+            summary.push_str(&format!(
+                "   Estimated error: {:.2}m (high)\n",
+                estimated_error
+            ));
         } else {
-            summary.push_str(&format!("   Estimated error: {:.2}m (acceptable)\n", estimated_error));
+            summary.push_str(&format!(
+                "   Estimated error: {:.2}m (acceptable)\n",
+                estimated_error
+            ));
         }
 
         if map_matches_per_scan < 10 {
@@ -215,7 +235,8 @@ mod tests {
 
     #[test]
     fn test_feature_starvation_detection() {
-        let issue = LocalizationAnalyzer::analyze_feature_starvation(3, 50, Some("low light (0.15 lux)"));
+        let issue =
+            LocalizationAnalyzer::analyze_feature_starvation(3, 50, Some("low light (0.15 lux)"));
         assert!(issue.is_some());
         let i = issue.unwrap();
         assert_eq!(i.cause, LocalizationCause::FeatureStarvation);

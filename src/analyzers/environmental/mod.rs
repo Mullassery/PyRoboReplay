@@ -45,7 +45,10 @@ impl GapDetector for EnvironmentalDomainAnalyzer {
     fn analyze(&self, mission_data: &MissionAnalysisData) -> Vec<RealityGapFinding> {
         let mut findings = Vec::new();
         findings.extend(self.lighting_detector.analyze(&mission_data.camera_frames));
-        findings.extend(self.thermal_detector.analyze(&mission_data.thermal_readings));
+        findings.extend(
+            self.thermal_detector
+                .analyze(&mission_data.thermal_readings),
+        );
         findings
     }
 

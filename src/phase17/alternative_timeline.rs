@@ -1,14 +1,12 @@
 /// Alternative Timeline Generation - Compare actual vs. counterfactual timelines
-
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AlternativeTimeline {
     pub timeline_id: String,
     pub scenario_name: String,
-    pub divergence_point: usize,     // Index where timeline diverges
-    pub divergence_reason: String,   // What changed at divergence point
+    pub divergence_point: usize,   // Index where timeline diverges
+    pub divergence_reason: String, // What changed at divergence point
     pub events: Vec<TimelineEvent>,
     pub final_outcome: String,
     pub duration_ms: i32,
@@ -20,7 +18,7 @@ pub struct TimelineEvent {
     pub event_index: usize,
     pub event_type: String,
     pub timestamp_ms: i32,
-    pub is_divergent: bool,  // True if different from actual timeline
+    pub is_divergent: bool, // True if different from actual timeline
     pub confidence: f32,
 }
 
@@ -30,7 +28,7 @@ pub struct TimelineComparison {
     pub alternative_timeline: AlternativeTimeline,
     pub divergence_points: Vec<usize>,
     pub total_divergent_events: usize,
-    pub outcome_similarity: f32,  // 0-1, where 1 = identical outcomes
+    pub outcome_similarity: f32, // 0-1, where 1 = identical outcomes
     pub insights: Vec<String>,
 }
 
@@ -66,10 +64,14 @@ impl AlternativeTimelineGenerator {
         }
 
         // Cascade changes after divergence point
-        let divergent_count = self._cascade_changes(&mut alt_events, divergence_point);
+        let _divergent_count = self._cascade_changes(&mut alt_events, divergence_point);
 
         AlternativeTimeline {
-            timeline_id: format!("alt_{}_{}", divergence_point, modification.replace(" ", "_")),
+            timeline_id: format!(
+                "alt_{}_{}",
+                divergence_point,
+                modification.replace(" ", "_")
+            ),
             scenario_name: format!("Alternative: {}", modification),
             divergence_point,
             divergence_reason: modification.to_string(),
@@ -90,7 +92,9 @@ impl AlternativeTimelineGenerator {
 
         let outcome_similarity = if actual.final_outcome == alternative.final_outcome {
             1.0
-        } else if actual.final_outcome.contains("success") && alternative.final_outcome.contains("failure") {
+        } else if actual.final_outcome.contains("success")
+            && alternative.final_outcome.contains("failure")
+        {
             0.0
         } else {
             0.5
@@ -124,7 +128,8 @@ impl AlternativeTimelineGenerator {
 
         // Duration impact
         if actual.duration_ms != alternative.duration_ms {
-            let diff = (alternative.duration_ms - actual.duration_ms) as f32 / actual.duration_ms as f32;
+            let diff =
+                (alternative.duration_ms - actual.duration_ms) as f32 / actual.duration_ms as f32;
             insights.push(format!(
                 "Duration impact: {:.1}% {}",
                 diff.abs() * 100.0,
@@ -183,7 +188,7 @@ impl AlternativeTimelineGenerator {
     fn _estimate_success_rate(&self, divergence_point: usize) -> f32 {
         // Early divergence = more time to recover = higher success
         let recovery_factor = 1.0 - (divergence_point as f32 / 100.0).min(1.0);
-        0.5 + (recovery_factor * 0.4)  // Range 0.5 to 0.9
+        0.5 + (recovery_factor * 0.4) // Range 0.5 to 0.9
     }
 }
 
@@ -223,9 +228,10 @@ mod tests {
             confidence: 1.0,
         });
 
-        let alt = generator.generate_alternative(0, "Different planner", "partial_success".to_string());
+        let alt =
+            generator.generate_alternative(0, "Different planner", "partial_success".to_string());
         assert_eq!(alt.scenario_name, "Alternative: Different planner");
-        assert!(alt.events.len() > 0);
+        assert!(!alt.events.is_empty());
     }
 
     #[test]
@@ -255,7 +261,7 @@ mod tests {
         let generator = AlternativeTimelineGenerator::new("success".to_string());
         let comparison = generator.compare_timelines(actual, alternative);
 
-        assert!(comparison.insights.len() > 0);
-        assert_eq!(comparison.outcome_similarity, 0.0);  // Different outcomes
+        assert!(!comparison.insights.is_empty());
+        assert_eq!(comparison.outcome_similarity, 0.0); // Different outcomes
     }
 }

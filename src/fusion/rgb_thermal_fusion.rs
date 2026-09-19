@@ -6,7 +6,6 @@
 use crate::fusion::thermal_model::{ThermalFrame, ThermalSource};
 use crate::perception::object_detection::{BoundingBox, DetectedObject, ObjectClass};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// RGB detection with thermal corroboration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,13 +121,12 @@ impl RGBThermalFusionEngine {
                 rgb_det.bbox.height as u32,
             );
 
-            let thermal_confidence =
-                thermal.estimate_human_likelihood(
-                    rgb_det.bbox.x as u32,
-                    rgb_det.bbox.y as u32,
-                    rgb_det.bbox.width as u32,
-                    rgb_det.bbox.height as u32,
-                );
+            let thermal_confidence = thermal.estimate_human_likelihood(
+                rgb_det.bbox.x as u32,
+                rgb_det.bbox.y as u32,
+                rgb_det.bbox.width as u32,
+                rgb_det.bbox.height as u32,
+            );
 
             let thermal_present = thermal_evidence > 280.0; // Above ambient
 
@@ -274,18 +272,33 @@ impl RGBThermalFusionEngine {
         report.push_str("================================\n\n");
 
         report.push_str(&format!("RGB Detections: {}\n", stats.rgb_detections));
-        report.push_str(&format!("Thermal-Only Detections: {}\n", stats.thermal_only_detections));
+        report.push_str(&format!(
+            "Thermal-Only Detections: {}\n",
+            stats.thermal_only_detections
+        ));
         report.push_str(&format!("Total Detections: {}\n", stats.total_detections));
-        report.push_str(&format!("RGB Miss Rate: {:.1}%\n\n", stats.rgb_miss_rate * 100.0));
+        report.push_str(&format!(
+            "RGB Miss Rate: {:.1}%\n\n",
+            stats.rgb_miss_rate * 100.0
+        ));
 
-        report.push_str(&format!("Average RGB Confidence: {:.0}%\n", stats.avg_rgb_confidence * 100.0));
-        report.push_str(&format!("Average Fused Confidence: {:.0}%\n", stats.avg_fused_confidence * 100.0));
+        report.push_str(&format!(
+            "Average RGB Confidence: {:.0}%\n",
+            stats.avg_rgb_confidence * 100.0
+        ));
+        report.push_str(&format!(
+            "Average Fused Confidence: {:.0}%\n",
+            stats.avg_fused_confidence * 100.0
+        ));
         report.push_str(&format!(
             "Confidence Improvement: +{:.1}%\n\n",
             stats.confidence_improvement * 100.0
         ));
 
-        report.push_str(&format!("Average Sensor Agreement: {:.0}%\n", stats.avg_sensor_agreement * 100.0));
+        report.push_str(&format!(
+            "Average Sensor Agreement: {:.0}%\n",
+            stats.avg_sensor_agreement * 100.0
+        ));
 
         if !self.thermal_only.is_empty() {
             report.push_str("\nTHERMAL-ONLY DETECTIONS (RGB MISSED):\n");

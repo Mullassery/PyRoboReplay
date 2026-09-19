@@ -1,6 +1,6 @@
 //! Dynamic obstacle failure analysis
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ObstacleCause {
@@ -28,9 +28,7 @@ impl DynamicObstacleAnalyzer {
             return Some(ObstacleIssue {
                 cause: ObstacleCause::HumanInterference,
                 confidence: 0.90,
-                evidence: vec![
-                    format!("Human detected at {:.2}m", distance_to_human),
-                ],
+                evidence: vec![format!("Human detected at {:.2}m", distance_to_human)],
             });
         }
         None

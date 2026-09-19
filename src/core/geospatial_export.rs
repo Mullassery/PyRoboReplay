@@ -73,7 +73,10 @@ impl GeospatialExporter {
             properties.insert("id".to_string(), idx.to_string());
             properties.insert("failure_type".to_string(), failure.failure_type.clone());
             properties.insert("severity".to_string(), failure.severity.clone());
-            properties.insert("timestamp".to_string(), failure.timestamp_seconds.to_string());
+            properties.insert(
+                "timestamp".to_string(),
+                failure.timestamp_seconds.to_string(),
+            );
             properties.insert(
                 "confidence".to_string(),
                 format!("{:.2}", failure.confidence),
@@ -89,7 +92,7 @@ impl GeospatialExporter {
                 r#type: "Feature".to_string(),
                 geometry: GeoJsonGeometry {
                     r#type: "Point".to_string(),
-                    coordinates: vec![0.0, 0.0],  // Would be populated from mission data
+                    coordinates: vec![0.0, 0.0], // Would be populated from mission data
                 },
                 properties,
             };
@@ -107,10 +110,13 @@ impl GeospatialExporter {
     pub fn hotspots_to_geojson(hotspots: &[GeoHotspot]) -> GeoJsonExport {
         let mut features = Vec::new();
 
-        for (idx, hotspot) in hotspots.iter().enumerate() {
+        for hotspot in hotspots.iter() {
             let mut properties = HashMap::new();
             properties.insert("zone_id".to_string(), hotspot.zone_id.clone());
-            properties.insert("failure_count".to_string(), hotspot.failure_count.to_string());
+            properties.insert(
+                "failure_count".to_string(),
+                hotspot.failure_count.to_string(),
+            );
             properties.insert(
                 "dominant_failure".to_string(),
                 hotspot.dominant_failure_type.clone(),
@@ -181,7 +187,11 @@ CRS: {}
 Data type: UInt8 (0-255)
 Bands: 1 (Coverage)
 "#,
-            raster.width, raster.height, raster.resolution, raster.origin_x, raster.origin_y,
+            raster.width,
+            raster.height,
+            raster.resolution,
+            raster.origin_x,
+            raster.origin_y,
             raster.crs
         )
     }

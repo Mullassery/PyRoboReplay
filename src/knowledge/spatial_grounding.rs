@@ -91,22 +91,16 @@ impl GroundedEntity {
     }
 
     /// Update entity position and compute movement
-    pub fn update_position(
-        &mut self,
-        new_coords: SpatialCoordinates,
-        confidence: f32,
-    ) {
-        let distance = if let Some(prev) = &self.coordinates {
-            Some(prev.distance_to(&new_coords))
-        } else {
-            None
-        };
+    pub fn update_position(&mut self, new_coords: SpatialCoordinates, confidence: f32) {
+        let distance = self
+            .coordinates
+            .as_ref()
+            .map(|prev| prev.distance_to(&new_coords));
 
-        let bearing = if let Some(prev) = &self.coordinates {
-            Some(prev.bearing_to(&new_coords))
-        } else {
-            None
-        };
+        let bearing = self
+            .coordinates
+            .as_ref()
+            .map(|prev| prev.bearing_to(&new_coords));
 
         // Store previous before updating
         self.previous_coordinates = self.coordinates.clone();
@@ -120,9 +114,7 @@ impl GroundedEntity {
     /// Generate human-readable movement description
     pub fn movement_description(&self) -> Option<String> {
         match (&self.distance_moved, &self.direction_name) {
-            (Some(dist), Some(dir)) if *dist > 0.01 => {
-                Some(format!("moved {:.2}m {}", dist, dir))
-            }
+            (Some(dist), Some(dir)) if *dist > 0.01 => Some(format!("moved {:.2}m {}", dist, dir)),
             (Some(dist), Some(dir)) if *dist > 0.001 => {
                 Some(format!("shifted {:.3}m {}", dist, dir))
             }
@@ -148,10 +140,7 @@ pub struct SpatialTemporalTrend {
 
 impl SpatialTemporalTrend {
     /// Analyze spatial-temporal trend from trajectory
-    pub fn from_trajectory(
-        entity_id: &str,
-        trajectory: Vec<(f32, SpatialCoordinates)>,
-    ) -> Self {
+    pub fn from_trajectory(entity_id: &str, trajectory: Vec<(f32, SpatialCoordinates)>) -> Self {
         let mut trend = "stationary".to_string();
         let mut avg_velocity = 0.0;
         let mut max_distance = 0.0;
@@ -301,10 +290,8 @@ impl SpatialGroundingEngine {
         if let Some(trend) = self.trends.get_mut(entity_id) {
             trend.trajectory.push((timestamp, coordinates));
         } else {
-            let trend = SpatialTemporalTrend::from_trajectory(
-                entity_id,
-                vec![(timestamp, coordinates)],
-            );
+            let trend =
+                SpatialTemporalTrend::from_trajectory(entity_id, vec![(timestamp, coordinates)]);
             self.trends.insert(entity_id.to_string(), trend);
         }
     }
@@ -456,9 +443,30 @@ mod tests {
     #[test]
     fn test_spatial_temporal_trend() {
         let trajectory = vec![
-            (0.0, SpatialCoordinates { x: 0.0, y: 0.0, z: 0.0 }),
-            (1.0, SpatialCoordinates { x: 1.0, y: 0.0, z: 0.0 }),
-            (2.0, SpatialCoordinates { x: 2.0, y: 0.0, z: 0.0 }),
+            (
+                0.0,
+                SpatialCoordinates {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+            ),
+            (
+                1.0,
+                SpatialCoordinates {
+                    x: 1.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+            ),
+            (
+                2.0,
+                SpatialCoordinates {
+                    x: 2.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+            ),
         ];
 
         let trend = SpatialTemporalTrend::from_trajectory("entity_1", trajectory);

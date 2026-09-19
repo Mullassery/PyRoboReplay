@@ -1,5 +1,4 @@
-use crate::core::event::MissionEvent;
-use crate::core::causality::{CausalChain, CausalLink};
+use crate::core::causality::CausalLink;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -145,10 +144,7 @@ impl SpatialCausalityAnalyzer {
     }
 
     /// Analyze spatial impact of a causal link
-    pub fn analyze_spatial_causality(
-        &self,
-        causal_link: &CausalLink,
-    ) -> Option<SpatialCausalLink> {
+    pub fn analyze_spatial_causality(&self, causal_link: &CausalLink) -> Option<SpatialCausalLink> {
         let context_a = self.spatial_data.get(&causal_link.source_event_idx)?;
         let context_b = self.spatial_data.get(&causal_link.target_event_idx)?;
 
@@ -177,13 +173,11 @@ impl SpatialCausalityAnalyzer {
         }
 
         // Factor 2: Low traversability increases impact
-        impact += (1.0 - context_a.traversability as f32) * 0.2;
+        impact += (1.0 - context_a.traversability) * 0.2;
 
         // Factor 3: Rapid position change indicates navigation impact
-        let position_delta = (
-            (context_b.robot_position.0 - context_a.robot_position.0).powi(2)
-                + (context_b.robot_position.1 - context_a.robot_position.1).powi(2)
-        )
+        let position_delta = ((context_b.robot_position.0 - context_a.robot_position.0).powi(2)
+            + (context_b.robot_position.1 - context_a.robot_position.1).powi(2))
         .sqrt();
 
         if position_delta > 0.5 {
@@ -197,7 +191,10 @@ impl SpatialCausalityAnalyzer {
     }
 
     /// Query: "Which obstacles affected this causal event?"
-    pub fn query_obstacles_in_causality(&self, causal_link: &CausalLink) -> Option<Vec<SpatialContext>> {
+    pub fn query_obstacles_in_causality(
+        &self,
+        causal_link: &CausalLink,
+    ) -> Option<Vec<SpatialContext>> {
         let context_b = self.spatial_data.get(&causal_link.target_event_idx)?;
 
         // Find all spatial contexts with nearby obstacles in temporal window
@@ -236,10 +233,15 @@ impl SpatialCausalityAnalyzer {
             .iter()
             .filter(|l| l.context_a.near_obstacle() || l.context_b.near_obstacle())
             .count();
-        let avg_traversability =
-            (links.iter().map(|l| l.context_a.traversability as f32).sum::<f32>()
-                + links.iter().map(|l| l.context_b.traversability as f32).sum::<f32>())
-                / (links.len() as f32 * 2.0);
+        let avg_traversability = (links
+            .iter()
+            .map(|l| l.context_a.traversability)
+            .sum::<f32>()
+            + links
+                .iter()
+                .map(|l| l.context_b.traversability)
+                .sum::<f32>())
+            / (links.len() as f32 * 2.0);
 
         SpatialCausalStats {
             total_links: links.len(),
@@ -257,19 +259,23 @@ impl SpatialCausalityAnalyzer {
         }
 
         // Calculate centroid
-        let (sum_x, sum_y, sum_z, count) = self
-            .spatial_data
-            .values()
-            .fold((0.0, 0.0, 0.0, 0), |(sx, sy, sz, c), ctx| {
-                (
-                    sx + ctx.robot_position.0,
-                    sy + ctx.robot_position.1,
-                    sz + ctx.robot_position.2,
-                    c + 1,
-                )
-            });
+        let (sum_x, sum_y, sum_z, count) =
+            self.spatial_data
+                .values()
+                .fold((0.0, 0.0, 0.0, 0), |(sx, sy, sz, c), ctx| {
+                    (
+                        sx + ctx.robot_position.0,
+                        sy + ctx.robot_position.1,
+                        sz + ctx.robot_position.2,
+                        c + 1,
+                    )
+                });
 
-        let center = (sum_x / count as f64, sum_y / count as f64, sum_z / count as f64);
+        let center = (
+            sum_x / count as f64,
+            sum_y / count as f64,
+            sum_z / count as f64,
+        );
 
         // Calculate average distance from centroid (radius)
         let avg_dist: f64 = self
@@ -331,7 +337,8 @@ mod tests {
     #[test]
     fn test_analyzer_creation() {
         let analyzer = SpatialCausalityAnalyzer::new();
-        assert!(!analyzer.spatial_data.is_empty() || analyzer.spatial_data.is_empty()); // Tautology check
+        assert!(!analyzer.spatial_data.is_empty() || analyzer.spatial_data.is_empty());
+        // Tautology check
     }
 
     #[test]

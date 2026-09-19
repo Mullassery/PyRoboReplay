@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::mpsc::{sync_channel, SyncSender, Receiver};
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,7 +42,7 @@ impl EventStreamProducer {
 
         let mut errors = Vec::new();
         for sender in &self.senders {
-            if let Err(_) = sender.try_send(event.clone()) {
+            if sender.try_send(event.clone()).is_err() {
                 errors.push("Channel full - backpressure triggered".to_string());
             }
         }
@@ -79,11 +79,15 @@ pub struct EventStreamConsumer {
 
 impl EventStreamConsumer {
     pub fn recv(&self) -> Result<StreamEvent, String> {
-        self.receiver.recv().map_err(|_| "Channel closed".to_string())
+        self.receiver
+            .recv()
+            .map_err(|_| "Channel closed".to_string())
     }
 
     pub fn try_recv(&self) -> Result<StreamEvent, String> {
-        self.receiver.try_recv().map_err(|_| "No event available".to_string())
+        self.receiver
+            .try_recv()
+            .map_err(|_| "No event available".to_string())
     }
 
     pub fn recv_timeout(&self, timeout: std::time::Duration) -> Result<StreamEvent, String> {

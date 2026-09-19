@@ -18,12 +18,12 @@
 //! `timeline_indexing::Timeline`/`TimelineEvent` — that end-to-end wiring is
 //! a separate piece of work left for a future pass.
 
+use chrono::{DateTime, Datelike, TimeZone, Utc};
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
-use chrono::{DateTime, Utc, TimeZone, Datelike};
-use regex::Regex;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -115,8 +115,8 @@ pub trait DataSource: Send + Sync {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeSeriesPoint {
-    pub timestamp: i64,  // ROS time in nanoseconds (unified)
-    pub value: Vec<u8>,  // Serialized message
+    pub timestamp: i64, // ROS time in nanoseconds (unified)
+    pub value: Vec<u8>, // Serialized message
     pub topic: String,
 }
 
@@ -145,7 +145,9 @@ pub struct RosBagAdapter {
 
 impl RosBagAdapter {
     pub fn new() -> Self {
-        RosBagAdapter { path: Mutex::new(None) }
+        RosBagAdapter {
+            path: Mutex::new(None),
+        }
     }
 }
 
@@ -171,7 +173,11 @@ impl std::fmt::Display for RosBagFormat {
 }
 
 fn detect_rosbag_format(path: &Path) -> AdapterResult<RosBagFormat> {
-    match path.extension().and_then(|e| e.to_str()).map(|s| s.to_ascii_lowercase()) {
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|s| s.to_ascii_lowercase())
+    {
         Some(ext) if ext == "mcap" => Ok(RosBagFormat::Mcap),
         Some(ext) if ext == "db3" => Ok(RosBagFormat::Sqlite),
         other => Err(AdapterError::InvalidFormat(format!(
@@ -198,16 +204,19 @@ fn parse_mcap_bag(path: &Path) -> AdapterResult<ParsedRosBag> {
     let mut end: Option<u64> = None;
 
     for message in stream {
-        let message = message.map_err(|e| AdapterError::ParseError(format!("MCAP read error: {e}")))?;
-        let entry = counts.entry(message.channel.topic.clone()).or_insert_with(|| {
-            let msg_type = message
-                .channel
-                .schema
-                .as_ref()
-                .map(|s| s.name.clone())
-                .unwrap_or_else(|| message.channel.message_encoding.clone());
-            (0, msg_type)
-        });
+        let message =
+            message.map_err(|e| AdapterError::ParseError(format!("MCAP read error: {e}")))?;
+        let entry = counts
+            .entry(message.channel.topic.clone())
+            .or_insert_with(|| {
+                let msg_type = message
+                    .channel
+                    .schema
+                    .as_ref()
+                    .map(|s| s.name.clone())
+                    .unwrap_or_else(|| message.channel.message_encoding.clone());
+                (0, msg_type)
+            });
         entry.0 += 1;
         start = Some(start.map_or(message.log_time, |s| s.min(message.log_time)));
         end = Some(end.map_or(message.log_time, |e2| e2.max(message.log_time)));
@@ -215,7 +224,11 @@ fn parse_mcap_bag(path: &Path) -> AdapterResult<ParsedRosBag> {
 
     let topics = counts
         .into_iter()
-        .map(|(name, (message_count, msg_type))| Topic { name, msg_type, message_count })
+        .map(|(name, (message_count, msg_type))| Topic {
+            name,
+            msg_type,
+            message_count,
+        })
         .collect();
 
     Ok(ParsedRosBag {
@@ -232,7 +245,8 @@ fn extract_mcap_stream(path: &Path, topic: &str) -> AdapterResult<Vec<TimeSeries
 
     let mut points = Vec::new();
     for message in stream {
-        let message = message.map_err(|e| AdapterError::ParseError(format!("MCAP read error: {e}")))?;
+        let message =
+            message.map_err(|e| AdapterError::ParseError(format!("MCAP read error: {e}")))?;
         if message.channel.topic == topic {
             points.push(TimeSeriesPoint {
                 timestamp: message.log_time as i64,
@@ -245,8 +259,9 @@ fn extract_mcap_stream(path: &Path, topic: &str) -> AdapterResult<Vec<TimeSeries
 }
 
 fn open_rosbag2_sqlite(path: &Path) -> AdapterResult<rusqlite::Connection> {
-    rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)
-        .map_err(|e| AdapterError::ParseError(format!("failed to open rosbag2 sqlite db {:?}: {e}", path)))
+    rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).map_err(
+        |e| AdapterError::ParseError(format!("failed to open rosbag2 sqlite db {:?}: {e}", path)),
+    )
 }
 
 fn parse_sqlite_bag(path: &Path) -> AdapterResult<ParsedRosBag> {
@@ -262,7 +277,11 @@ fn parse_sqlite_bag(path: &Path) -> AdapterResult<ParsedRosBag> {
         })?;
     let topic_rows = topic_stmt
         .query_map([], |row| {
-            Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+            ))
         })
         .map_err(|e| AdapterError::ParseError(e.to_string()))?;
 
@@ -290,22 +309,33 @@ fn parse_sqlite_bag(path: &Path) -> AdapterResult<ParsedRosBag> {
     let mut start: Option<i64> = None;
     let mut end: Option<i64> = None;
     for row in rows {
-        let (topic_id, count, min_ts, max_ts) = row.map_err(|e| AdapterError::ParseError(e.to_string()))?;
+        let (topic_id, count, min_ts, max_ts) =
+            row.map_err(|e| AdapterError::ParseError(e.to_string()))?;
         if let Some((name, msg_type)) = id_to_name_type.get(&topic_id) {
-            topics.push(Topic { name: name.clone(), msg_type: msg_type.clone(), message_count: count as u32 });
+            topics.push(Topic {
+                name: name.clone(),
+                msg_type: msg_type.clone(),
+                message_count: count as u32,
+            });
         }
         start = Some(start.map_or(min_ts, |s: i64| s.min(min_ts)));
         end = Some(end.map_or(max_ts, |e2: i64| e2.max(max_ts)));
     }
 
-    Ok(ParsedRosBag { topics, start_time_ns: start, end_time_ns: end })
+    Ok(ParsedRosBag {
+        topics,
+        start_time_ns: start,
+        end_time_ns: end,
+    })
 }
 
 fn extract_sqlite_stream(path: &Path, topic: &str) -> AdapterResult<Vec<TimeSeriesPoint>> {
     let conn = open_rosbag2_sqlite(path)?;
 
     let topic_id: Option<i64> = conn
-        .query_row("SELECT id FROM topics WHERE name = ?1", [topic], |row| row.get(0))
+        .query_row("SELECT id FROM topics WHERE name = ?1", [topic], |row| {
+            row.get(0)
+        })
         .ok();
     let Some(topic_id) = topic_id else {
         return Ok(Vec::new());
@@ -315,13 +345,19 @@ fn extract_sqlite_stream(path: &Path, topic: &str) -> AdapterResult<Vec<TimeSeri
         .prepare("SELECT timestamp, data FROM messages WHERE topic_id = ?1 ORDER BY timestamp")
         .map_err(|e| AdapterError::ParseError(e.to_string()))?;
     let rows = stmt
-        .query_map([topic_id], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, Vec<u8>>(1)?)))
+        .query_map([topic_id], |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, Vec<u8>>(1)?))
+        })
         .map_err(|e| AdapterError::ParseError(e.to_string()))?;
 
     let mut points = Vec::new();
     for row in rows {
         let (timestamp, data) = row.map_err(|e| AdapterError::ParseError(e.to_string()))?;
-        points.push(TimeSeriesPoint { timestamp, value: data, topic: topic.to_string() });
+        points.push(TimeSeriesPoint {
+            timestamp,
+            value: data,
+            topic: topic.to_string(),
+        });
     }
     Ok(points)
 }
@@ -368,18 +404,18 @@ impl DataSource for RosBagAdapter {
 
     fn available_topics(&self) -> AdapterResult<Vec<Topic>> {
         let path_guard = self.path.lock().unwrap();
-        let path = path_guard
-            .as_ref()
-            .ok_or_else(|| AdapterError::MissingData("call load() before available_topics()".to_string()))?;
+        let path = path_guard.as_ref().ok_or_else(|| {
+            AdapterError::MissingData("call load() before available_topics()".to_string())
+        })?;
         let (_, parsed) = parse_rosbag(path)?;
         Ok(parsed.topics)
     }
 
     fn extract_stream(&self, topic: &str) -> AdapterResult<Vec<TimeSeriesPoint>> {
         let path_guard = self.path.lock().unwrap();
-        let path = path_guard
-            .as_ref()
-            .ok_or_else(|| AdapterError::MissingData("call load() before extract_stream()".to_string()))?;
+        let path = path_guard.as_ref().ok_or_else(|| {
+            AdapterError::MissingData("call load() before extract_stream()".to_string())
+        })?;
         match detect_rosbag_format(path)? {
             RosBagFormat::Mcap => extract_mcap_stream(path, topic),
             RosBagFormat::Sqlite => extract_sqlite_stream(path, topic),
@@ -427,7 +463,10 @@ pub enum LogType {
 
 impl LinuxLogsAdapter {
     pub fn new(log_type: LogType) -> Self {
-        LinuxLogsAdapter { log_type, path: Mutex::new(None) }
+        LinuxLogsAdapter {
+            log_type,
+            path: Mutex::new(None),
+        }
     }
 }
 
@@ -463,8 +502,9 @@ fn severity_name(pri: Option<u32>) -> String {
 }
 
 fn month_name_to_number(name: &str) -> Option<u32> {
-    const MONTHS: [&str; 12] =
-        ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const MONTHS: [&str; 12] = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ];
     MONTHS.iter().position(|m| *m == name).map(|i| i as u32 + 1)
 }
 
@@ -490,7 +530,9 @@ fn rfc3164_regex() -> &'static Regex {
 
 fn dmesg_bracket_regex() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^(?:<(?P<pri>\d+)>)?\[(?P<ts>[^\]]+)\]\s?(?P<msg>.*)$").expect("static regex"))
+    RE.get_or_init(|| {
+        Regex::new(r"^(?:<(?P<pri>\d+)>)?\[(?P<ts>[^\]]+)\]\s?(?P<msg>.*)$").expect("static regex")
+    })
 }
 
 fn parse_syslog_line(line: &str) -> LogRecord {
@@ -500,15 +542,24 @@ fn parse_syslog_line(line: &str) -> LogRecord {
         let timestamp_ns = ts
             .and_then(|t| DateTime::parse_from_rfc3339(t).ok())
             .and_then(|dt| dt.timestamp_nanos_opt());
-        let host = caps.name("host").map(|m| m.as_str().to_string()).filter(|s| s != "-");
-        let app = caps.name("app").map(|m| m.as_str().to_string()).filter(|s| s != "-");
+        let host = caps
+            .name("host")
+            .map(|m| m.as_str().to_string())
+            .filter(|s| s != "-");
+        let app = caps
+            .name("app")
+            .map(|m| m.as_str().to_string())
+            .filter(|s| s != "-");
         return LogRecord {
             timestamp_ns,
             boot_relative: false,
             severity: severity_name(pri),
             host,
             process: app,
-            message: caps.name("msg").map(|m| m.as_str().to_string()).unwrap_or_default(),
+            message: caps
+                .name("msg")
+                .map(|m| m.as_str().to_string())
+                .unwrap_or_default(),
         };
     }
 
@@ -536,7 +587,10 @@ fn parse_syslog_line(line: &str) -> LogRecord {
             severity: severity_name(pri),
             host: caps.name("host").map(|m| m.as_str().to_string()),
             process: caps.name("proc").map(|m| m.as_str().trim().to_string()),
-            message: caps.name("msg").map(|m| m.as_str().to_string()).unwrap_or_default(),
+            message: caps
+                .name("msg")
+                .map(|m| m.as_str().to_string())
+                .unwrap_or_default(),
         };
     }
 
@@ -564,7 +618,10 @@ fn parse_dmesg_line(line: &str) -> LogRecord {
 
     let pri: Option<u32> = caps.name("pri").and_then(|m| m.as_str().parse().ok());
     let inner = caps.name("ts").unwrap().as_str();
-    let msg = caps.name("msg").map(|m| m.as_str().to_string()).unwrap_or_default();
+    let msg = caps
+        .name("msg")
+        .map(|m| m.as_str().to_string())
+        .unwrap_or_default();
 
     // `dmesg -T` / `--ctime` wall-clock form, e.g. "Wed Aug 12 09:23:01 2026".
     if let Ok(naive) = chrono::NaiveDateTime::parse_from_str(inner, "%a %b %e %H:%M:%S %Y") {
@@ -619,8 +676,16 @@ fn parse_log_lines(content: &str, log_type: LogType) -> Vec<LogRecord> {
         .collect()
 }
 
-const SEVERITIES: [&str; 8] =
-    ["emergency", "alert", "critical", "error", "warning", "notice", "info", "debug"];
+const SEVERITIES: [&str; 8] = [
+    "emergency",
+    "alert",
+    "critical",
+    "error",
+    "warning",
+    "notice",
+    "info",
+    "debug",
+];
 
 impl DataSource for LinuxLogsAdapter {
     fn load(&self, path: &Path) -> AdapterResult<SourceData> {
@@ -674,9 +739,9 @@ impl DataSource for LinuxLogsAdapter {
 
     fn available_topics(&self) -> AdapterResult<Vec<Topic>> {
         let path_guard = self.path.lock().unwrap();
-        let path = path_guard
-            .as_ref()
-            .ok_or_else(|| AdapterError::MissingData("call load() before available_topics()".to_string()))?;
+        let path = path_guard.as_ref().ok_or_else(|| {
+            AdapterError::MissingData("call load() before available_topics()".to_string())
+        })?;
         let content = std::fs::read_to_string(path)?;
         let records = parse_log_lines(&content, self.log_type);
         Ok(vec![Topic {
@@ -688,9 +753,9 @@ impl DataSource for LinuxLogsAdapter {
 
     fn extract_stream(&self, _topic: &str) -> AdapterResult<Vec<TimeSeriesPoint>> {
         let path_guard = self.path.lock().unwrap();
-        let path = path_guard
-            .as_ref()
-            .ok_or_else(|| AdapterError::MissingData("call load() before extract_stream()".to_string()))?;
+        let path = path_guard.as_ref().ok_or_else(|| {
+            AdapterError::MissingData("call load() before extract_stream()".to_string())
+        })?;
         let content = std::fs::read_to_string(path)?;
         let records = parse_log_lines(&content, self.log_type);
         let topic_name = format!("{:?}", self.log_type);
@@ -699,7 +764,11 @@ impl DataSource for LinuxLogsAdapter {
             .filter_map(|r| {
                 let ts = r.timestamp_ns?;
                 let value = serde_json::to_vec(&r).ok()?;
-                Some(TimeSeriesPoint { timestamp: ts, value, topic: topic_name.clone() })
+                Some(TimeSeriesPoint {
+                    timestamp: ts,
+                    value,
+                    topic: topic_name.clone(),
+                })
             })
             .collect())
     }
@@ -737,7 +806,9 @@ pub struct Nav2ExportAdapter {
 
 impl Nav2ExportAdapter {
     pub fn new() -> Self {
-        Nav2ExportAdapter { dir: Mutex::new(None) }
+        Nav2ExportAdapter {
+            dir: Mutex::new(None),
+        }
     }
 }
 
@@ -810,7 +881,10 @@ fn read_pgm_dimensions(path: &Path) -> AdapterResult<(u32, u32)> {
     }
 
     if tokens.len() < 3 || (tokens[0] != "P5" && tokens[0] != "P2") {
-        return Err(AdapterError::ParseError(format!("not a valid PGM file: {:?}", path)));
+        return Err(AdapterError::ParseError(format!(
+            "not a valid PGM file: {:?}",
+            path
+        )));
     }
     let width: u32 = tokens[1]
         .parse()
@@ -822,7 +896,12 @@ fn read_pgm_dimensions(path: &Path) -> AdapterResult<(u32, u32)> {
 }
 
 fn image_dimensions_any(path: &Path) -> Option<(u32, u32)> {
-    if path.extension().and_then(|e| e.to_str()).map(|s| s.eq_ignore_ascii_case("pgm")) == Some(true) {
+    if path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|s| s.eq_ignore_ascii_case("pgm"))
+        == Some(true)
+    {
         read_pgm_dimensions(path).ok()
     } else {
         image::image_dimensions(path).ok()
@@ -850,16 +929,36 @@ fn parse_nav2_export_dir(dir: &Path) -> AdapterResult<ParsedNav2Export> {
         if !path.is_file() {
             continue;
         }
-        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
-        let stem = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        let ext = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        let stem = path
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
 
         match ext.as_str() {
             "yaml" | "yml" => {
-                let Ok(content) = std::fs::read_to_string(&path) else { continue };
-                let Ok(value) = serde_norway::from_str::<serde_norway::Value>(&content) else { continue };
-                let Some(map) = value.as_mapping() else { continue };
-                let get = |key: &str| map.iter().find(|(k, _)| k.as_str() == Some(key)).map(|(_, v)| v.clone());
-                let (Some(image_val), Some(resolution_val)) = (get("image"), get("resolution")) else { continue };
+                let Ok(content) = std::fs::read_to_string(&path) else {
+                    continue;
+                };
+                let Ok(value) = serde_norway::from_str::<serde_norway::Value>(&content) else {
+                    continue;
+                };
+                let Some(map) = value.as_mapping() else {
+                    continue;
+                };
+                let get = |key: &str| {
+                    map.iter()
+                        .find(|(k, _)| k.as_str() == Some(key))
+                        .map(|(_, v)| v.clone())
+                };
+                let (Some(image_val), Some(resolution_val)) = (get("image"), get("resolution"))
+                else {
+                    continue;
+                };
 
                 costmap_count += 1;
                 let mtime_ns = std::fs::metadata(&path)
@@ -872,7 +971,10 @@ fn parse_nav2_export_dir(dir: &Path) -> AdapterResult<ParsedNav2Export> {
                 record.insert("source_yaml".to_string(), path.display().to_string());
                 if let Some(resolution) = resolution_val.as_f64() {
                     record.insert("resolution".to_string(), resolution.to_string());
-                    metadata.insert(format!("costmap.{}.resolution", stem), resolution.to_string());
+                    metadata.insert(
+                        format!("costmap.{}.resolution", stem),
+                        resolution.to_string(),
+                    );
                 }
                 if let Some(image_name) = image_val.as_str() {
                     let image_path = dir.join(image_name);
@@ -898,7 +1000,9 @@ fn parse_nav2_export_dir(dir: &Path) -> AdapterResult<ParsedNav2Export> {
                 }
             }
             "jsonl" | "ndjson" => {
-                let Ok(content) = std::fs::read_to_string(&path) else { continue };
+                let Ok(content) = std::fs::read_to_string(&path) else {
+                    continue;
+                };
                 for line in content.lines() {
                     let line = line.trim();
                     if line.is_empty() {
@@ -921,8 +1025,12 @@ fn parse_nav2_export_dir(dir: &Path) -> AdapterResult<ParsedNav2Export> {
                 }
             }
             "json" => {
-                let Ok(content) = std::fs::read_to_string(&path) else { continue };
-                let messages: Vec<DiagnosticArrayMsg> = if let Ok(arr) = serde_json::from_str(&content) {
+                let Ok(content) = std::fs::read_to_string(&path) else {
+                    continue;
+                };
+                let messages: Vec<DiagnosticArrayMsg> = if let Ok(arr) =
+                    serde_json::from_str(&content)
+                {
                     arr
                 } else if let Ok(single) = serde_json::from_str::<DiagnosticArrayMsg>(&content) {
                     vec![single]
@@ -935,7 +1043,12 @@ fn parse_nav2_export_dir(dir: &Path) -> AdapterResult<ParsedNav2Export> {
                         start = Some(start.map_or(ns, |s: i64| s.min(ns)));
                         end = Some(end.map_or(ns, |e2: i64| e2.max(ns)));
                     }
-                    if let Ok(value) = serde_json::to_vec(&msg.status.iter().map(|s| (s.name.clone(), s.message.clone())).collect::<Vec<_>>()) {
+                    if let Ok(value) = serde_json::to_vec(
+                        &msg.status
+                            .iter()
+                            .map(|s| (s.name.clone(), s.message.clone()))
+                            .collect::<Vec<_>>(),
+                    ) {
                         points.push(TimeSeriesPoint {
                             timestamp: ts.unwrap_or(0),
                             value,
@@ -956,7 +1069,10 @@ fn parse_nav2_export_dir(dir: &Path) -> AdapterResult<ParsedNav2Export> {
             message_count: costmap_count,
         });
     }
-    let diagnostics_count = points.iter().filter(|p| p.topic == "planner_diagnostics").count() as u32;
+    let diagnostics_count = points
+        .iter()
+        .filter(|p| p.topic == "planner_diagnostics")
+        .count() as u32;
     if diagnostics_count > 0 {
         topics.push(Topic {
             name: "planner_diagnostics".to_string(),
@@ -965,7 +1081,13 @@ fn parse_nav2_export_dir(dir: &Path) -> AdapterResult<ParsedNav2Export> {
         });
     }
 
-    Ok(ParsedNav2Export { topics, points, metadata, start_time_ns: start, end_time_ns: end })
+    Ok(ParsedNav2Export {
+        topics,
+        points,
+        metadata,
+        start_time_ns: start,
+        end_time_ns: end,
+    })
 }
 
 impl DataSource for Nav2ExportAdapter {
@@ -996,17 +1118,17 @@ impl DataSource for Nav2ExportAdapter {
 
     fn available_topics(&self) -> AdapterResult<Vec<Topic>> {
         let dir_guard = self.dir.lock().unwrap();
-        let dir = dir_guard
-            .as_ref()
-            .ok_or_else(|| AdapterError::MissingData("call load() before available_topics()".to_string()))?;
+        let dir = dir_guard.as_ref().ok_or_else(|| {
+            AdapterError::MissingData("call load() before available_topics()".to_string())
+        })?;
         Ok(parse_nav2_export_dir(dir)?.topics)
     }
 
     fn extract_stream(&self, topic: &str) -> AdapterResult<Vec<TimeSeriesPoint>> {
         let dir_guard = self.dir.lock().unwrap();
-        let dir = dir_guard
-            .as_ref()
-            .ok_or_else(|| AdapterError::MissingData("call load() before extract_stream()".to_string()))?;
+        let dir = dir_guard.as_ref().ok_or_else(|| {
+            AdapterError::MissingData("call load() before extract_stream()".to_string())
+        })?;
         Ok(parse_nav2_export_dir(dir)?
             .points
             .into_iter()
@@ -1090,10 +1212,19 @@ struct FfprobeOutput {
 
 fn probe_video_metadata(path: &Path) -> AdapterResult<HashMap<String, String>> {
     let output = std::process::Command::new("ffprobe")
-        .args(["-v", "error", "-print_format", "json", "-show_format", "-show_streams"])
+        .args([
+            "-v",
+            "error",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_streams",
+        ])
         .arg(path)
         .output()
-        .map_err(|e| AdapterError::ParseError(format!("failed to run ffprobe (is it installed?): {e}")))?;
+        .map_err(|e| {
+            AdapterError::ParseError(format!("failed to run ffprobe (is it installed?): {e}"))
+        })?;
 
     if !output.status.success() {
         return Err(AdapterError::ParseError(format!(
@@ -1107,7 +1238,11 @@ fn probe_video_metadata(path: &Path) -> AdapterResult<HashMap<String, String>> {
         .map_err(|e| AdapterError::ParseError(format!("failed to parse ffprobe output: {e}")))?;
 
     let mut metadata = HashMap::new();
-    if let Some(stream) = parsed.streams.iter().find(|s| s.codec_type.as_deref() == Some("video")) {
+    if let Some(stream) = parsed
+        .streams
+        .iter()
+        .find(|s| s.codec_type.as_deref() == Some("video"))
+    {
         if let (Some(w), Some(h)) = (stream.width, stream.height) {
             metadata.insert("width".to_string(), w.to_string());
             metadata.insert("height".to_string(), h.to_string());
@@ -1151,11 +1286,17 @@ impl DataSource for VideoAdapter {
             ));
         }
 
-        let mut metadata = probe_video_metadata(path)
-            .map_err(|e| AdapterError::LoadFailed(format!("Video ({:?})", self.format), e.to_string()))?;
+        let mut metadata = probe_video_metadata(path).map_err(|e| {
+            AdapterError::LoadFailed(format!("Video ({:?})", self.format), e.to_string())
+        })?;
 
-        let frame_count = metadata.get("frame_count").and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
-        let duration_seconds = metadata.get("duration_seconds").and_then(|s| s.parse::<f64>().ok());
+        let frame_count = metadata
+            .get("frame_count")
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(0);
+        let duration_seconds = metadata
+            .get("duration_seconds")
+            .and_then(|s| s.parse::<f64>().ok());
 
         metadata.insert("format".to_string(), format!("{:?}", self.format));
         metadata.insert("configured_fps".to_string(), self.fps.to_string());
@@ -1530,7 +1671,11 @@ mod tests {
     }
 
     fn temp_path(name: &str) -> PathBuf {
-        std::env::temp_dir().join(format!("pyroboreplay_modality_test_{}_{}", std::process::id(), name))
+        std::env::temp_dir().join(format!(
+            "pyroboreplay_modality_test_{}_{}",
+            std::process::id(),
+            name
+        ))
     }
 
     /// Real end-to-end test: writes an actual MCAP file with `mcap::Writer`
@@ -1578,7 +1723,10 @@ mod tests {
         let adapter = RosBagAdapter::new();
         let data = adapter.load(&path).unwrap();
         assert_eq!(data.source_type, DataSourceType::RosBag);
-        assert_eq!(data.metadata.get("storage_format").map(|s| s.as_str()), Some("mcap"));
+        assert_eq!(
+            data.metadata.get("storage_format").map(|s| s.as_str()),
+            Some("mcap")
+        );
 
         let mut topic_names: Vec<_> = data.topics.iter().map(|t| t.name.clone()).collect();
         topic_names.sort();
@@ -1629,7 +1777,10 @@ mod tests {
 
         let adapter = RosBagAdapter::new();
         let data = adapter.load(&path).unwrap();
-        assert_eq!(data.metadata.get("storage_format").map(|s| s.as_str()), Some("rosbag2-sqlite"));
+        assert_eq!(
+            data.metadata.get("storage_format").map(|s| s.as_str()),
+            Some("rosbag2-sqlite")
+        );
         assert_eq!(data.topics.len(), 1);
         assert_eq!(data.topics[0].name, "/imu");
         assert_eq!(data.topics[0].message_count, 3);
@@ -1645,7 +1796,8 @@ mod tests {
     #[test]
     fn test_syslog_rfc3164_real_parse() {
         let path = temp_path("syslog3164.log");
-        let content = "Jun 14 15:16:01 combo sshd(pam_unix)[19939]: authentication failure; logname= uid=0\n";
+        let content =
+            "Jun 14 15:16:01 combo sshd(pam_unix)[19939]: authentication failure; logname= uid=0\n";
         std::fs::write(&path, content).unwrap();
 
         let adapter = LinuxLogsAdapter::new(LogType::Syslog);
@@ -1671,8 +1823,14 @@ mod tests {
 
         let adapter = LinuxLogsAdapter::new(LogType::Syslog);
         let data = adapter.load(&path).unwrap();
-        assert_eq!(data.start_time.unwrap().to_rfc3339(), "2023-10-11T22:14:15.003+00:00");
-        assert_eq!(data.metadata.get("critical_count").map(|s| s.as_str()), Some("1")); // pri 34 % 8 == 2 -> critical
+        assert_eq!(
+            data.start_time.unwrap().to_rfc3339(),
+            "2023-10-11T22:14:15.003+00:00"
+        );
+        assert_eq!(
+            data.metadata.get("critical_count").map(|s| s.as_str()),
+            Some("1")
+        ); // pri 34 % 8 == 2 -> critical
 
         std::fs::remove_file(&path).ok();
     }
@@ -1699,7 +1857,10 @@ mod tests {
 
         let adapter = LinuxLogsAdapter::new(LogType::Dmesg);
         let data = adapter.load(&path).unwrap();
-        assert_eq!(data.metadata.get("boot_relative_lines").map(|s| s.as_str()), Some("2"));
+        assert_eq!(
+            data.metadata.get("boot_relative_lines").map(|s| s.as_str()),
+            Some("2")
+        );
         assert_eq!(data.duration_seconds, Some(1.234567));
 
         std::fs::remove_file(&path).ok();
@@ -1736,9 +1897,22 @@ mod tests {
 
         let mut topic_names: Vec<_> = data.topics.iter().map(|t| t.name.clone()).collect();
         topic_names.sort();
-        assert_eq!(topic_names, vec!["costmap".to_string(), "planner_diagnostics".to_string()]);
-        assert_eq!(data.metadata.get("costmap.costmap.width").map(|s| s.as_str()), Some("4"));
-        assert_eq!(data.metadata.get("costmap.costmap.height").map(|s| s.as_str()), Some("3"));
+        assert_eq!(
+            topic_names,
+            vec!["costmap".to_string(), "planner_diagnostics".to_string()]
+        );
+        assert_eq!(
+            data.metadata
+                .get("costmap.costmap.width")
+                .map(|s| s.as_str()),
+            Some("4")
+        );
+        assert_eq!(
+            data.metadata
+                .get("costmap.costmap.height")
+                .map(|s| s.as_str()),
+            Some("3")
+        );
 
         let diag_stream = adapter.extract_stream("planner_diagnostics").unwrap();
         assert_eq!(diag_stream.len(), 1);
@@ -1772,13 +1946,22 @@ mod tests {
 
         let gen = std::process::Command::new("ffmpeg")
             .args([
-                "-y", "-v", "error",
-                "-f", "lavfi", "-i", "testsrc=duration=2:size=64x48:rate=10",
+                "-y",
+                "-v",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc=duration=2:size=64x48:rate=10",
                 video_path.to_str().unwrap(),
             ])
             .output()
             .expect("failed to run ffmpeg to generate test video");
-        assert!(gen.status.success(), "ffmpeg generation failed: {}", String::from_utf8_lossy(&gen.stderr));
+        assert!(
+            gen.status.success(),
+            "ffmpeg generation failed: {}",
+            String::from_utf8_lossy(&gen.stderr)
+        );
 
         let adapter = VideoAdapter::new(VideoFormat::MP4, 10.0);
         let data = adapter.load(&video_path).unwrap();

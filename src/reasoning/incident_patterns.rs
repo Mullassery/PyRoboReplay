@@ -75,7 +75,10 @@ impl IncidentPatternAnalyzer {
                     occurrence_count: count,
                     fleet_percentage: (count as f32 / incidents.len() as f32) * 100.0,
                     robot_types: Self::extract_robot_types(incidents, &obj_type),
-                    root_causes: vec!["Perception gap".to_string(), "Sensor limitation".to_string()],
+                    root_causes: vec![
+                        "Perception gap".to_string(),
+                        "Sensor limitation".to_string(),
+                    ],
                     confidence: 0.85,
                     fleet_action: format!(
                         "Enhance detection for {} objects; add redundant sensors",
@@ -111,7 +114,10 @@ impl IncidentPatternAnalyzer {
                     .collect::<std::collections::HashSet<_>>()
                     .into_iter()
                     .collect(),
-                root_causes: vec!["Limited sensor FOV".to_string(), "Range limitations".to_string()],
+                root_causes: vec![
+                    "Limited sensor FOV".to_string(),
+                    "Range limitations".to_string(),
+                ],
                 confidence: 0.88,
                 fleet_action: "Conduct sensor placement analysis; consider additional cameras"
                     .to_string(),

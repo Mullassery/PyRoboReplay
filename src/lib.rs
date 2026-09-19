@@ -1,14 +1,11 @@
 pub mod adapters;
-pub mod core;
-pub mod cli;
-pub mod storage;
-pub mod streaming;
 pub mod analyzers;
-pub mod perception;
-pub mod intelligence;
-pub mod reasoning;
-pub mod knowledge;
+pub mod cli;
+pub mod core;
 pub mod fusion;
+pub mod intelligence;
+pub mod knowledge;
+pub mod perception;
 pub mod phase14;
 pub mod phase15;
 pub mod phase16;
@@ -16,17 +13,20 @@ pub mod phase17;
 pub mod phase18;
 pub mod phase19;
 pub mod phase20;
+pub mod reasoning;
+pub mod storage;
+pub mod streaming;
 
-use pyo3::prelude::*;
-use core::event::{MissionEvent, MissionRecord};
-use core::Timeline;
-use core::anomaly_detector::{AnomalyDetector, Failure as RustFailure};
-use core::root_cause::{RootCauseAnalysis as RustRootCauseAnalysis, RootCauseHypothesis as RustHypothesis};
-use core::explanation::ExplanationGenerator;
-use core::failure_actions::{ActionRecommender, Action as RustAction};
-use core::geospatial_export::{GeospatialExporter, GeoJsonExport as RustGeoJsonExport};
 use adapters::ros2::Ros2Adapter;
 use adapters::MissionAdapter;
+use core::anomaly_detector::{AnomalyDetector, Failure as RustFailure};
+use core::event::{MissionEvent, MissionRecord};
+use core::explanation::ExplanationGenerator;
+use core::failure_actions::{Action as RustAction, ActionRecommender};
+use core::geospatial_export::GeospatialExporter;
+use core::root_cause::RootCauseAnalysis as RustRootCauseAnalysis;
+use core::Timeline;
+use pyo3::prelude::*;
 
 /// Python wrapper for a Mission
 #[pyclass]
@@ -91,7 +91,10 @@ impl Mission {
             .get_sensor_frames(&self.inner.id.to_string(), sensor_type)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 
-        Ok(events.iter().map(|e| Event::from_event((*e).clone())).collect())
+        Ok(events
+            .iter()
+            .map(|e| Event::from_event((*e).clone()))
+            .collect())
     }
 
     /// Get multiple sensor types at once
@@ -102,7 +105,10 @@ impl Mission {
             .get_multi_sensor_frames(&self.inner.id.to_string(), &sensor_refs)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 
-        Ok(events.iter().map(|e| Event::from_event((*e).clone())).collect())
+        Ok(events
+            .iter()
+            .map(|e| Event::from_event((*e).clone()))
+            .collect())
     }
 
     /// Get all events at a specific timestamp
@@ -116,13 +122,15 @@ impl Mission {
             .get_events_at_timestamp(&self.inner.id.to_string(), ts)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
 
-        Ok(events.iter().map(|e| Event::from_event((*e).clone())).collect())
+        Ok(events
+            .iter()
+            .map(|e| Event::from_event((*e).clone()))
+            .collect())
     }
 
     /// Get event counts by type
     pub fn get_event_counts(&self) -> PyResult<Vec<(String, usize)>> {
-        let mut counts: std::collections::HashMap<String, usize> =
-            std::collections::HashMap::new();
+        let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
 
         for event in &self.inner.events {
             let key = event.event_type().to_string();
@@ -166,7 +174,7 @@ impl Mission {
 
         Ok(rust_failures
             .into_iter()
-            .map(|f| Failure::from_rust_failure(f))
+            .map(Failure::from_rust_failure)
             .collect())
     }
 
@@ -184,8 +192,8 @@ impl Mission {
     ///     analysis = mission.analyze_failure(first_failure.get_timestamp())
     ///     print(analysis.get_primary_hypothesis())
     pub fn analyze_failure(&self, timestamp: f64) -> PyResult<RootCauseAnalysis> {
-        use core::root_cause::RootCauseAnalyzer;
         use core::causality::CausalGraphBuilder;
+        use core::root_cause::RootCauseAnalyzer;
 
         // Find failure event at or near this timestamp
         let secs = timestamp.floor() as i64;
@@ -216,7 +224,7 @@ impl Mission {
         };
 
         // Build causal graph
-        let mut builder = CausalGraphBuilder::new(self.inner.events.clone());
+        let builder = CausalGraphBuilder::new(self.inner.events.clone());
         let graph = builder.build();
 
         // Analyze failure
@@ -260,13 +268,11 @@ impl Mission {
         let failures = detector.detect_all();
 
         // Find the closest failure to this timestamp
-        let failure_opt = failures
-            .iter()
-            .min_by_key(|f| {
-                let diff = f.timestamp - target_timestamp;
-                let abs_diff = if diff.num_seconds() < 0 { -diff } else { diff };
-                abs_diff.num_milliseconds()
-            });
+        let failure_opt = failures.iter().min_by_key(|f| {
+            let diff = f.timestamp - target_timestamp;
+            let abs_diff = if diff.num_seconds() < 0 { -diff } else { diff };
+            abs_diff.num_milliseconds()
+        });
 
         match failure_opt {
             Some(failure) => Ok(ExplanationGenerator::explain(failure)),
@@ -301,20 +307,18 @@ impl Mission {
         let failures = detector.detect_all();
 
         // Find the closest failure to this timestamp
-        let failure_opt = failures
-            .iter()
-            .min_by_key(|f| {
-                let diff = f.timestamp - target_timestamp;
-                let abs_diff = if diff.num_seconds() < 0 { -diff } else { diff };
-                abs_diff.num_milliseconds()
-            });
+        let failure_opt = failures.iter().min_by_key(|f| {
+            let diff = f.timestamp - target_timestamp;
+            let abs_diff = if diff.num_seconds() < 0 { -diff } else { diff };
+            abs_diff.num_milliseconds()
+        });
 
         match failure_opt {
             Some(failure) => {
                 let rust_actions = ActionRecommender::recommend(failure);
                 Ok(rust_actions
                     .into_iter()
-                    .map(|a| Action::from_rust_action(a))
+                    .map(Action::from_rust_action)
                     .collect())
             }
             None => Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(

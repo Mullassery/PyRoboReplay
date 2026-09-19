@@ -1,5 +1,4 @@
 use crate::core::event::MissionEvent;
-use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -207,7 +206,10 @@ impl CorrelationAnalyzer {
     }
 
     /// Find anomaly patterns (unusual event sequences)
-    pub fn detect_anomaly_patterns(&self, correlations: &[EventCorrelation]) -> Vec<AnomalyPattern> {
+    pub fn detect_anomaly_patterns(
+        &self,
+        correlations: &[EventCorrelation],
+    ) -> Vec<AnomalyPattern> {
         let mut patterns = Vec::new();
 
         // Group anomalies by event types
@@ -219,7 +221,7 @@ impl CorrelationAnalyzer {
                     "{}_->_{}",
                     correlation.event_a_type, correlation.event_b_type
                 );
-                anomaly_map.entry(key).or_insert_with(Vec::new).push(correlation);
+                anomaly_map.entry(key).or_default().push(correlation);
             }
         }
 
@@ -246,7 +248,11 @@ impl CorrelationAnalyzer {
     }
 
     /// Find correlated event chains (multi-event patterns)
-    pub fn find_event_chains(&self, correlations: &[EventCorrelation], min_length: usize) -> Vec<EventChain> {
+    pub fn find_event_chains(
+        &self,
+        correlations: &[EventCorrelation],
+        min_length: usize,
+    ) -> Vec<EventChain> {
         let mut chains = Vec::new();
 
         // Build adjacency graph
@@ -254,7 +260,7 @@ impl CorrelationAnalyzer {
         for corr in correlations {
             graph
                 .entry(corr.event_a_idx)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(corr.event_b_idx);
         }
 
@@ -442,17 +448,15 @@ mod tests {
 
     #[test]
     fn test_anomaly_detection() {
-        let correlations = vec![
-            EventCorrelation {
-                event_a_idx: 0,
-                event_b_idx: 1,
-                time_gap_ms: 500,
-                event_a_type: "a".to_string(),
-                event_b_type: "b".to_string(),
-                correlation_strength: 0.92,
-                is_anomaly: true,
-            },
-        ];
+        let correlations = vec![EventCorrelation {
+            event_a_idx: 0,
+            event_b_idx: 1,
+            time_gap_ms: 500,
+            event_a_type: "a".to_string(),
+            event_b_type: "b".to_string(),
+            correlation_strength: 0.92,
+            is_anomaly: true,
+        }];
 
         let analyzer = CorrelationAnalyzer::new();
         let patterns = analyzer.detect_anomaly_patterns(&correlations);

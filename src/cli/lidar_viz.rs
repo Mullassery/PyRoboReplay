@@ -1,6 +1,5 @@
 /// Lidar ASCII visualization for terminal replay
 /// Renders 2D polar projection of lidar scans as ASCII art
-
 use std::f32::consts::PI;
 
 /// Configuration for lidar visualization
@@ -81,10 +80,8 @@ impl LidarVisualization {
                 let xi = x.round() as usize;
                 let yi = y.round() as usize;
 
-                if xi < config.width && yi < config.height {
-                    if grid[yi][xi] == ' ' {
-                        grid[yi][xi] = '·';
-                    }
+                if xi < config.width && yi < config.height && grid[yi][xi] == ' ' {
+                    grid[yi][xi] = '·';
                 }
             }
         }
@@ -158,7 +155,7 @@ impl LidarVisualization {
     /// Render to string
     pub fn render(&self) -> String {
         let mut output = String::new();
-        output.push_str("╔");
+        output.push('╔');
         for _ in 0..self.width {
             output.push('═');
         }
@@ -172,17 +169,22 @@ impl LidarVisualization {
             output.push_str("║\n");
         }
 
-        output.push_str("╚");
+        output.push('╚');
         for _ in 0..self.width {
             output.push('═');
         }
-        output.push_str("╝");
+        output.push('╝');
 
         output
     }
 
     /// Get as string with legend
-    pub fn render_with_legend(&self, frame_count: usize, avg_range: f32, anomalies: usize) -> String {
+    pub fn render_with_legend(
+        &self,
+        frame_count: usize,
+        avg_range: f32,
+        anomalies: usize,
+    ) -> String {
         let mut output = self.render();
         output.push_str("\n\nLidar Scan Visualization\n");
         output.push_str(&format!("├─ Frames: {}\n", frame_count));

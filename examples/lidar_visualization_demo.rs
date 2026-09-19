@@ -1,6 +1,5 @@
 /// Demonstration of lidar ASCII visualization
 /// Shows how the 2D polar projection renders different sensor configurations
-
 use pyroboreplay::cli::lidar_viz::{LidarVisualization, LidarVizConfig};
 
 fn main() {
@@ -68,7 +67,7 @@ fn demo_obstacle_detection() {
     // Obstacle in front (0-45°) and back (180-225°)
     for angle in (0..360).step_by(2) {
         let angle_f = angle as f32;
-        let range = if (angle >= 0 && angle <= 45) || (angle >= 180 && angle <= 225) {
+        let range = if (0..=45).contains(&angle) || (180..=225).contains(&angle) {
             8.0 // Obstacle detected
         } else {
             25.0 // Clear path
@@ -95,12 +94,12 @@ fn demo_signal_variation() {
     // Dense wall ahead (high intensity)
     for angle in (0..360).step_by(2) {
         let angle_f = angle as f32;
-        let range = if angle >= 0 && angle <= 90 || angle >= 270 {
+        let range = if (0..=90).contains(&angle) || angle >= 270 {
             12.0 // Wall
         } else {
             25.0
         };
-        let intensity = if angle >= 0 && angle <= 90 || angle >= 270 {
+        let intensity = if (0..=90).contains(&angle) || angle >= 270 {
             Some(0.95) // High reflection
         } else {
             Some(0.5) // Lower reflection

@@ -1,12 +1,10 @@
-use pyroboreplay::core::{
-    MissionEvent, MissionRecord, Pose, Location,
-    IncidentAnalysisOrchestrator, IncidentBundle, BundleManifest,
-    ConfidenceScoringEngine, ConfidenceTier,
-    Priority, TimeRange,
-};
 use chrono::Utc;
-use std::path::PathBuf;
+use pyroboreplay::core::{
+    BundleManifest, ConfidenceTier, IncidentAnalysisOrchestrator, IncidentBundle, Location,
+    MissionEvent, MissionRecord, Pose, Priority, TimeRange,
+};
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[test]
 fn test_mlrias_integration_basic_flow() {
@@ -74,7 +72,10 @@ fn test_confidence_scoring_with_events() {
     // Test confidence tier classification
     assert_eq!(ConfidenceTier::classify(1.0), ConfidenceTier::Fact);
     assert_eq!(ConfidenceTier::classify(0.95), ConfidenceTier::Fact);
-    assert_eq!(ConfidenceTier::classify(0.70), ConfidenceTier::HighInference);
+    assert_eq!(
+        ConfidenceTier::classify(0.70),
+        ConfidenceTier::HighInference
+    );
     assert_eq!(ConfidenceTier::classify(0.50), ConfidenceTier::Hypothesis);
     assert_eq!(ConfidenceTier::classify(0.20), ConfidenceTier::Speculative);
 }
@@ -130,7 +131,11 @@ fn test_multiple_robot_incident() {
     let manifest = BundleManifest {
         bundle_id: "multi_robot_incident".to_string(),
         created_at: Utc::now(),
-        robot_ids: vec!["robot_1".to_string(), "robot_2".to_string(), "robot_3".to_string()],
+        robot_ids: vec![
+            "robot_1".to_string(),
+            "robot_2".to_string(),
+            "robot_3".to_string(),
+        ],
         mission_type: Some("multi_robot_coordination".to_string()),
         failure_type_suspected: Some("coordination_failure".to_string()),
         time_range: Some(TimeRange {

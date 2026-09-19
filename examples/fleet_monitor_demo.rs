@@ -1,7 +1,7 @@
-use pyroboreplay::streaming::{
-    FleetMonitor, FleetMonitorConfig, FleetDashboard, StreamEvent, RobotStatusType,
-};
 use chrono::Utc;
+use pyroboreplay::streaming::{
+    FleetDashboard, FleetMonitor, FleetMonitorConfig, RobotStatusType, StreamEvent,
+};
 use serde_json::json;
 use uuid::Uuid;
 
@@ -25,7 +25,10 @@ fn main() {
 
     let summary = monitor.get_fleet_summary();
     println!("✓ Fleet initialized with {} robots", summary.total_robots);
-    println!("✓ Health score: {:.1}%", summary.overall_health_score * 100.0);
+    println!(
+        "✓ Health score: {:.1}%",
+        summary.overall_health_score * 100.0
+    );
     println!("✓ Active missions: {}\n", summary.active_missions);
 
     println!("═══════════════════════════════════════════════════════════════════");
@@ -69,8 +72,14 @@ fn main() {
 
     let summary = monitor.get_fleet_summary();
     println!("✓ Processed {} events", events.len());
-    println!("✓ Active robots: {} / {}", summary.active_missions, summary.total_robots);
-    println!("✓ Current health score: {:.1}%\n", summary.overall_health_score * 100.0);
+    println!(
+        "✓ Active robots: {} / {}",
+        summary.active_missions, summary.total_robots
+    );
+    println!(
+        "✓ Current health score: {:.1}%\n",
+        summary.overall_health_score * 100.0
+    );
 
     println!("═══════════════════════════════════════════════════════════════════");
     println!("DEMO 3: FLEET HEALTH SUMMARY");
@@ -80,7 +89,10 @@ fn main() {
     println!("  Total Robots: {}", summary.total_robots);
     println!("  Active Missions: {}", summary.active_missions);
     println!("  Alert Count: {}", summary.alerts_by_severity.len());
-    println!("  Health Score: {:.1}%", summary.overall_health_score * 100.0);
+    println!(
+        "  Health Score: {:.1}%",
+        summary.overall_health_score * 100.0
+    );
 
     println!("\nRobot Status Details:");
     for (i, robot) in summary.robots.iter().enumerate() {
@@ -106,7 +118,10 @@ fn main() {
 
     let window = dashboard.current_window();
     println!("\nDashboard Window:");
-    println!("  Window Start: {}", window.window_start.format("%H:%M:%S UTC"));
+    println!(
+        "  Window Start: {}",
+        window.window_start.format("%H:%M:%S UTC")
+    );
     println!("  Window End: {}", window.window_end.format("%H:%M:%S UTC"));
     println!("  Snapshots in Window: {}", window.summaries.len());
     println!("  Health Trend: {:?}\n", window.trend);

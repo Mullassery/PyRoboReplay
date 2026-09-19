@@ -10,37 +10,37 @@
 //! - System (CPU contention, memory pressure, network issues)
 //! - Coordination (multi-robot deadlocks, congestion, communication)
 
-pub mod physical;
-pub mod sensor;
-pub mod system;
-pub mod environmental;
+pub mod adaptive_recalibration;
+pub mod aggregation;
 pub mod coordination;
+pub mod drift_detection;
+pub mod environmental;
+pub mod evidence_quality_scoring;
+pub mod feedback_loop;
+pub mod fleet_learning;
+pub mod gap_narrative_pipeline;
+pub mod gap_to_causal;
+pub mod historical;
+pub mod incident_narrative;
+pub mod multi_factor_causality;
+mod phase3_validation;
+mod phase4_integration;
+pub mod physical;
+pub mod predictive_gaps;
+pub mod quality_confidence;
+pub mod recalibration;
+pub mod robot_calibration;
+pub mod scoring;
+pub mod sensor;
+pub mod severity;
+pub mod severity_contracts;
+pub mod system;
 pub mod telemetry;
 pub mod test_data;
 pub mod validation;
-pub mod scoring;
-pub mod severity;
-pub mod historical;
-pub mod aggregation;
-pub mod feedback_loop;
-pub mod recalibration;
-pub mod robot_calibration;
-pub mod severity_contracts;
-pub mod drift_detection;
-pub mod quality_confidence;
-pub mod gap_to_causal;
-pub mod multi_factor_causality;
-pub mod incident_narrative;
-pub mod evidence_quality_scoring;
-pub mod gap_narrative_pipeline;
-pub mod fleet_learning;
-pub mod predictive_gaps;
-pub mod adaptive_recalibration;
-mod phase3_validation;
-mod phase4_integration;
 
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt;
 
 /// A detected reality gap with confidence and severity scores
@@ -347,8 +347,11 @@ impl RealityGapDetector {
 
         // Sort by severity and confidence
         findings.sort_by(|a, b| {
-            b.severity.cmp(&a.severity)
-                .then_with(|| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal))
+            b.severity.cmp(&a.severity).then_with(|| {
+                b.confidence
+                    .partial_cmp(&a.confidence)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
         });
 
         findings
@@ -367,7 +370,7 @@ mod tests {
 
     #[test]
     fn test_gap_detector_creation() {
-        let detector = RealityGapDetector::new();
+        let _detector = RealityGapDetector::new();
         // Should not panic
     }
 

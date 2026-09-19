@@ -1,6 +1,5 @@
 /// Demonstration of IMU ASCII visualization
 /// Shows accelerometer, gyroscope, and magnetometer graphs
-
 use pyroboreplay::cli::imu_viz::{IMUVisualization, IMUVizConfig};
 
 fn main() {
@@ -130,8 +129,8 @@ fn demo_impact() {
         // Impact at frame 15 (sudden acceleration)
         if i == 15 {
             accel[0] = 15.0; // Sharp impact in X
-            accel[2] = 5.0;  // Drop in Z
-            gyro[0] = 5.0;   // Sudden rotation
+            accel[2] = 5.0; // Drop in Z
+            gyro[0] = 5.0; // Sudden rotation
             gyro[1] = 3.0;
         } else if i > 15 && i < 20 {
             // Ringing after impact (damping oscillation)

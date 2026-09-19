@@ -1,8 +1,7 @@
 use chrono::Utc;
 use pyroboreplay::core::{
     event::{MissionEvent, MissionRecord, Odometry, Pose},
-    Obstacle, PyTerrainBridge, SpatialCausalityAnalyzer, TerrainKnowledgeGraph,
-    TraversabilityZone,
+    Obstacle, PyTerrainBridge, SpatialCausalityAnalyzer, TerrainKnowledgeGraph, TraversabilityZone,
 };
 
 fn main() {
@@ -76,7 +75,7 @@ fn main() {
     println!("═══════════════════════════════════════════════════════════════════\n");
 
     println!("Obstacles tracked from PyTerrainMap:");
-    for (_, obstacle) in &graph.obstacles {
+    for obstacle in graph.obstacles.values() {
         println!(
             "  • {} ({}): at ({:.1}, {:.1}, {:.1}) | confidence {:.0}% | {}",
             obstacle.id,
@@ -94,10 +93,15 @@ fn main() {
     }
 
     println!("\nTraversability zones:");
-    for (_, zone) in &graph.traversability_zones {
+    for zone in graph.traversability_zones.values() {
         println!(
             "  • {} ({}): center ({:.1}, {:.1}) | radius {:.1}m | traversability {:.0}%",
-            zone.id, zone.terrain_type, zone.center.0, zone.center.1, zone.radius_m, zone.traversability * 100.0
+            zone.id,
+            zone.terrain_type,
+            zone.center.0,
+            zone.center.1,
+            zone.radius_m,
+            zone.traversability * 100.0
         );
     }
 
@@ -213,37 +217,37 @@ fn main() {
 
     println!("Events enriched with PyTerrainMap data:");
     for (idx, event) in mission.events.iter().enumerate() {
-        match event {
-            MissionEvent::OdometryUpdate { data, timestamp, .. } => {
-                println!(
-                    "\nEvent {}: OdometryUpdate at ({:.1}, {:.1}, {:.1})",
-                    idx, data.pose.x, data.pose.y, data.pose.z
-                );
+        if let MissionEvent::OdometryUpdate {
+            data, timestamp, ..
+        } = event
+        {
+            println!(
+                "\nEvent {}: OdometryUpdate at ({:.1}, {:.1}, {:.1})",
+                idx, data.pose.x, data.pose.y, data.pose.z
+            );
 
-                // Query obstacles at this time
-                let obstacles_at_time = bridge.knowledge_graph.query_obstacles_at_time(*timestamp);
-                if !obstacles_at_time.is_empty() {
-                    println!("  Active obstacles at this time:");
-                    for obs in obstacles_at_time {
-                        println!(
-                            "    • {} at distance {:.1}m",
-                            obs.id,
-                            (
-                                (obs.position.0 - data.pose.x).powi(2)
-                                    + (obs.position.1 - data.pose.y).powi(2)
-                            )
-                            .sqrt()
-                        );
-                    }
+            // Query obstacles at this time
+            let obstacles_at_time = bridge.knowledge_graph.query_obstacles_at_time(*timestamp);
+            if !obstacles_at_time.is_empty() {
+                println!("  Active obstacles at this time:");
+                for obs in obstacles_at_time {
+                    println!(
+                        "    • {} at distance {:.1}m",
+                        obs.id,
+                        ((obs.position.0 - data.pose.x).powi(2)
+                            + (obs.position.1 - data.pose.y).powi(2))
+                        .sqrt()
+                    );
                 }
-
-                // Query traversability
-                let traversability = bridge
-                    .knowledge_graph
-                    .query_traversability_at_position((data.pose.x, data.pose.y, data.pose.z));
-                println!("  Traversability: {:.0}%", traversability * 100.0);
             }
-            _ => {}
+
+            // Query traversability
+            let traversability = bridge.knowledge_graph.query_traversability_at_position((
+                data.pose.x,
+                data.pose.y,
+                data.pose.z,
+            ));
+            println!("  Traversability: {:.0}%", traversability * 100.0);
         }
     }
 
@@ -258,7 +262,10 @@ fn main() {
     println!("Coverage statistics from t0 to t1:");
     println!("  Initial coverage: {:.1}%", evolution.initial_coverage);
     println!("  Final coverage: {:.1}%", evolution.final_coverage);
-    println!("  New obstacles discovered: {}", evolution.new_obstacles_found);
+    println!(
+        "  New obstacles discovered: {}",
+        evolution.new_obstacles_found
+    );
 
     println!("\n═══════════════════════════════════════════════════════════════════");
     println!("BRIDGE REPORT");

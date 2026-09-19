@@ -5,22 +5,12 @@ use std::collections::HashMap;
 
 pub type EventFilter = Box<dyn Fn(&StreamEvent) -> bool + Send + Sync>;
 
+#[derive(Default)]
 pub struct ProcessorConfig {
     pub mission_id_filter: Option<String>,
     pub event_type_filter: Option<Vec<String>>,
     pub robot_id_filter: Option<String>,
     pub max_events: Option<usize>,
-}
-
-impl Default for ProcessorConfig {
-    fn default() -> Self {
-        ProcessorConfig {
-            mission_id_filter: None,
-            event_type_filter: None,
-            robot_id_filter: None,
-            max_events: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,7 +58,11 @@ impl StreamProcessor {
         true
     }
 
-    pub fn aggregate_window(&self, events: &[StreamEvent], window_ms: u64) -> Vec<AggregationResult> {
+    pub fn aggregate_window(
+        &self,
+        events: &[StreamEvent],
+        window_ms: u64,
+    ) -> Vec<AggregationResult> {
         if events.is_empty() {
             return Vec::new();
         }

@@ -1,9 +1,9 @@
 use chrono::Utc;
+use pyroboreplay::cli::causal_viz::CausalViz;
 use pyroboreplay::core::{
     event::{Costmap, LidarData, Location, MissionEvent, MissionRecord, Odometry, Pose},
     CausalGraphBuilder,
 };
-use pyroboreplay::cli::causal_viz::CausalViz;
 
 fn create_visualization_demo_mission() -> MissionRecord {
     let base_time = Utc::now();
@@ -30,7 +30,13 @@ fn create_visualization_demo_mission() -> MissionRecord {
         timestamp: base_time + chrono::Duration::milliseconds(200),
         data: LidarData {
             ranges: (0..360)
-                .map(|i| if (i as i32 - 180).abs() < 40 { 2.5 } else { 5.0 })
+                .map(|i| {
+                    if (i as i32 - 180).abs() < 40 {
+                        2.5
+                    } else {
+                        5.0
+                    }
+                })
                 .collect(),
             intensities: None,
             frame_id: "lidar".to_string(),
@@ -138,14 +144,20 @@ fn main() {
     println!("ANALYSIS 2: Comparing all causal hypotheses\n");
 
     if !query_motion.hypotheses.is_empty() {
-        println!("{}", CausalViz::render_comparison(&query_motion.hypotheses, &mission.events));
+        println!(
+            "{}",
+            CausalViz::render_comparison(&query_motion.hypotheses, &mission.events)
+        );
     }
 
     // Display: Confidence timeline
     println!("\n═══════════════════════════════════════════════════════════════════\n");
     println!("ANALYSIS 3: Confidence Timeline (Event Contribution)\n");
 
-    println!("{}\n", CausalViz::render_confidence_timeline(&query_motion, &mission.events));
+    println!(
+        "{}\n",
+        CausalViz::render_confidence_timeline(&query_motion, &mission.events)
+    );
 
     // Display: Navigation decision analysis
     println!("═══════════════════════════════════════════════════════════════════\n");
@@ -157,10 +169,22 @@ fn main() {
 
     println!("\n═══════════════════════════════════════════════════════════════════");
     println!("\n✨ SUMMARY\n");
-    println!("   Total causal chains analyzed: {}", query_motion.hypotheses.len());
-    println!("   Confidence range: {:.0}% - {:.0}%",
-        query_motion.hypotheses.iter().map(|h| h.confidence * 100.0).fold(f32::INFINITY, f32::min),
-        query_motion.hypotheses.iter().map(|h| h.confidence * 100.0).fold(0.0, f32::max)
+    println!(
+        "   Total causal chains analyzed: {}",
+        query_motion.hypotheses.len()
+    );
+    println!(
+        "   Confidence range: {:.0}% - {:.0}%",
+        query_motion
+            .hypotheses
+            .iter()
+            .map(|h| h.confidence * 100.0)
+            .fold(f32::INFINITY, f32::min),
+        query_motion
+            .hypotheses
+            .iter()
+            .map(|h| h.confidence * 100.0)
+            .fold(0.0, f32::max)
     );
     println!("\n✅ Phase 3 Task #17 Complete: Causal Visualization Engine");
 }

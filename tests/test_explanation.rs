@@ -1,9 +1,8 @@
 // Phase 1: Explanation Generator Unit Tests
 // Tests NLP explanation generation for all 8 failure types
 
-use pyroboreplay::core::{AnomalyDetector, MissionEvent, ExplanationGenerator};
 use chrono::Utc;
-use std::collections::HashMap;
+use pyroboreplay::core::ExplanationGenerator;
 
 // ============================================================================
 // Test Fixtures
@@ -17,8 +16,12 @@ fn create_collision_failure() -> pyroboreplay::core::Failure {
         "high".to_string(),
         "LiDAR detected obstacle at 0.3m (threshold: 0.5m)".to_string(),
     );
-    failure.evidence.insert("min_range_m".to_string(), "0.3".to_string());
-    failure.evidence.insert("threshold_m".to_string(), "0.5".to_string());
+    failure
+        .evidence
+        .insert("min_range_m".to_string(), "0.3".to_string());
+    failure
+        .evidence
+        .insert("threshold_m".to_string(), "0.5".to_string());
     failure
 }
 
@@ -30,8 +33,12 @@ fn create_perception_failure() -> pyroboreplay::core::Failure {
         "medium".to_string(),
         "50% of detections below confidence threshold (80%)".to_string(),
     );
-    failure.evidence.insert("low_confidence_count".to_string(), "50".to_string());
-    failure.evidence.insert("total_frames".to_string(), "100".to_string());
+    failure
+        .evidence
+        .insert("low_confidence_count".to_string(), "50".to_string());
+    failure
+        .evidence
+        .insert("total_frames".to_string(), "100".to_string());
     failure
 }
 
@@ -43,8 +50,12 @@ fn create_sensor_dropout_failure() -> pyroboreplay::core::Failure {
         "high".to_string(),
         "lidar sensor stopped reporting 2.5s ago".to_string(),
     );
-    failure.evidence.insert("sensor".to_string(), "lidar".to_string());
-    failure.evidence.insert("gap_seconds".to_string(), "2.5".to_string());
+    failure
+        .evidence
+        .insert("sensor".to_string(), "lidar".to_string());
+    failure
+        .evidence
+        .insert("gap_seconds".to_string(), "2.5".to_string());
     failure
 }
 
@@ -56,7 +67,9 @@ fn create_navigation_deadlock_failure() -> pyroboreplay::core::Failure {
         "high".to_string(),
         "Navigation deadlock: 25 replans detected".to_string(),
     );
-    failure.evidence.insert("replan_count".to_string(), "25".to_string());
+    failure
+        .evidence
+        .insert("replan_count".to_string(), "25".to_string());
     failure
 }
 
@@ -189,11 +202,21 @@ fn test_all_failure_types_generate_explanations() {
             "high".to_string(),
             "Test failure".to_string(),
         );
-        failure.evidence.insert("test_key".to_string(), "test_value".to_string());
+        failure
+            .evidence
+            .insert("test_key".to_string(), "test_value".to_string());
 
         let explanation = ExplanationGenerator::explain(&failure);
-        assert!(!explanation.is_empty(), "No explanation for {}", failure_type);
-        assert!(explanation.len() > 10, "Explanation too short for {}", failure_type);
+        assert!(
+            !explanation.is_empty(),
+            "No explanation for {}",
+            failure_type
+        );
+        assert!(
+            explanation.len() > 10,
+            "Explanation too short for {}",
+            failure_type
+        );
     }
 }
 

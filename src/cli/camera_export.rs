@@ -1,9 +1,8 @@
 /// Camera frame export with timeline-based intelligent loading
 /// Generates lightweight HTML with frame manifest that references mission file
 /// Only loads frames on-demand based on timeline position (not all frames embedded)
-
-use crate::core::event::{MissionRecord, MissionEvent};
-use serde::{Serialize, Deserialize};
+use crate::core::event::{MissionEvent, MissionRecord};
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Write;
 
@@ -38,7 +37,7 @@ pub struct FrameMetadata {
     pub width: u32,
     pub height: u32,
     pub encoding: String,
-    pub event_index: usize,  // Index in mission.events
+    pub event_index: usize, // Index in mission.events
 }
 
 /// Complete frame manifest for the exported HTML
@@ -67,9 +66,7 @@ pub fn export_camera_to_html(
 
     for event in &mission.events {
         if let MissionEvent::CameraFrame {
-            timestamp,
-            data,
-            ..
+            timestamp, data, ..
         } = event
         {
             frames.push(FrameMetadata {

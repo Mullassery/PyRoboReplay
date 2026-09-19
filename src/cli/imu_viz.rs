@@ -6,9 +6,9 @@
 pub struct IMUVizConfig {
     pub width: usize,
     pub height: usize,
-    pub accel_range: f64,      // m/s^2, typically 0-20
-    pub gyro_range: f64,       // rad/s, typically 0-10
-    pub mag_range: f64,        // µT, typically 0-100
+    pub accel_range: f64, // m/s^2, typically 0-20
+    pub gyro_range: f64,  // rad/s, typically 0-10
+    pub mag_range: f64,   // µT, typically 0-100
     pub show_stats: bool,
     pub detect_peaks: bool,
 }
@@ -38,7 +38,7 @@ pub struct Peak {
 /// IMU visualization with graphs and statistics
 #[derive(Debug, Clone)]
 pub struct IMUVisualization {
-    accel_data: [Vec<f64>; 3],  // x, y, z
+    accel_data: [Vec<f64>; 3], // x, y, z
     gyro_data: [Vec<f64>; 3],
     mag_data: [Vec<f64>; 3],
     timestamps: Vec<String>,
@@ -231,14 +231,13 @@ impl IMUVisualization {
                 }
 
                 // Get max value in chunk
-                let max_in_chunk = chunk
-                    .iter()
-                    .map(|x| x.abs())
-                    .fold(0.0f64, |a, b| a.max(b));
+                let max_in_chunk = chunk.iter().map(|x| x.abs()).fold(0.0f64, |a, b| a.max(b));
 
                 // Normalize to range [0, 1]
                 let normalized = if actual_range > 0.01 {
-                    ((max_in_chunk - min_val.abs()) / actual_range).max(0.0).min(1.0)
+                    ((max_in_chunk - min_val.abs()) / actual_range)
+                        .max(0.0)
+                        .min(1.0)
                 } else {
                     0.0
                 };
@@ -349,9 +348,7 @@ impl IMUVisualization {
 
     /// Calculate peak (max absolute value)
     fn peak(data: &[f64]) -> f64 {
-        data.iter()
-            .map(|x| x.abs())
-            .fold(0.0f64, |a, b| a.max(b))
+        data.iter().map(|x| x.abs()).fold(0.0f64, |a, b| a.max(b))
     }
 
     /// Calculate drift (variance from first value)
@@ -424,7 +421,7 @@ mod tests {
 
         assert!(peaks.is_some());
         let peaks = peaks.unwrap();
-        assert!(peaks.len() > 0);
+        assert!(!peaks.is_empty());
         // Should detect peak at index 2 (value 5.0)
         assert!(peaks.iter().any(|(idx, _)| *idx == 2));
     }
@@ -432,18 +429,8 @@ mod tests {
     #[test]
     fn test_statistics() {
         let mut viz = IMUVisualization::new();
-        viz.add_reading(
-            "t1",
-            [1.0, 2.0, 3.0],
-            [0.1, 0.2, 0.3],
-            None,
-        );
-        viz.add_reading(
-            "t2",
-            [1.5, 2.5, 3.5],
-            [0.1, 0.2, 0.3],
-            None,
-        );
+        viz.add_reading("t1", [1.0, 2.0, 3.0], [0.1, 0.2, 0.3], None);
+        viz.add_reading("t2", [1.5, 2.5, 3.5], [0.1, 0.2, 0.3], None);
 
         let stats = viz.stats(&IMUVizConfig::default());
         assert!(stats.contains("Accelerometer"));
@@ -461,12 +448,7 @@ mod tests {
     #[test]
     fn test_render_accel() {
         let mut viz = IMUVisualization::new();
-        viz.add_reading(
-            "t1",
-            [5.0, 5.0, 5.0],
-            [0.0, 0.0, 0.0],
-            None,
-        );
+        viz.add_reading("t1", [5.0, 5.0, 5.0], [0.0, 0.0, 0.0], None);
 
         let _config = IMUVizConfig::default();
         let output = viz.render_accel(&_config);

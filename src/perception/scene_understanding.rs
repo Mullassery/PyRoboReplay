@@ -4,7 +4,6 @@
 //! Answers: What did the robot understand about its environment?
 
 use crate::perception::object_detection::ObjectClass;
-use std::collections::HashMap;
 
 /// Spatial relationship between two objects
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -144,9 +143,8 @@ impl SceneUnderstandingEngine {
         // Analyze each object
         for (class, _conf, pos) in objects {
             // Calculate distance to robot
-            let distance = ((pos.0 - robot_position.0).powi(2)
-                + (pos.1 - robot_position.1).powi(2))
-                .sqrt();
+            let distance =
+                ((pos.0 - robot_position.0).powi(2) + (pos.1 - robot_position.1).powi(2)).sqrt();
 
             // Check spatial relationships
             match class {
@@ -206,7 +204,8 @@ impl SceneUnderstandingEngine {
 
     /// Check if object is approaching
     fn is_approaching(obj_pos: &(f32, f32, f32), robot_pos: (f32, f32, f32)) -> bool {
-        let distance = ((obj_pos.0 - robot_pos.0).powi(2) + (obj_pos.1 - robot_pos.1).powi(2)).sqrt();
+        let distance =
+            ((obj_pos.0 - robot_pos.0).powi(2) + (obj_pos.1 - robot_pos.1).powi(2)).sqrt();
         distance < 5.0 // Within 5 meters
     }
 

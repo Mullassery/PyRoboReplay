@@ -2,7 +2,8 @@
 //!
 //! Multi-factor decision tree for CRITICAL/HIGH/MEDIUM/LOW classification.
 
-use crate::analyzers::{RealityGapFinding, Severity, MissionAnalysisData};
+use crate::analyzers::{MissionAnalysisData, RealityGapFinding, Severity};
+#[cfg(test)]
 use std::collections::HashMap;
 
 /// Classify gap finding by severity
@@ -10,10 +11,7 @@ pub struct SeverityClassifier;
 
 impl SeverityClassifier {
     /// Classify severity based on multiple factors
-    pub fn classify(
-        finding: &RealityGapFinding,
-        mission: &MissionAnalysisData,
-    ) -> Severity {
+    pub fn classify(finding: &RealityGapFinding, mission: &MissionAnalysisData) -> Severity {
         // Factor 1: Direct performance impact
         let performance_impact = Self::compute_performance_impact(finding);
 
@@ -112,18 +110,13 @@ impl SeverityClassifier {
     /// Safety risk assessment (0.0-1.0)
     /// Does this gap create a safety hazard?
     fn assess_safety_risk(finding: &RealityGapFinding) -> f32 {
-        if finding
-            .finding_type
-            .contains("Obstacle")
+        if finding.finding_type.contains("Obstacle")
             || finding.finding_type.contains("Collision")
             || finding.finding_type.contains("Emergency Stop")
             || finding.finding_type.contains("Timestamp Reversal")
         {
             0.8 // High safety risk
-        } else if finding
-            .category
-            .contains("Detection")
-            || finding.category.contains("Mechanical")
+        } else if finding.category.contains("Detection") || finding.category.contains("Mechanical")
         {
             0.3 // Medium safety risk
         } else {

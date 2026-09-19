@@ -76,10 +76,11 @@ impl ActionRecommender {
                 description: "Increase detection confidence threshold".to_string(),
                 impact: "medium".to_string(),
                 complexity: "easy".to_string(),
-                implementation: "Raise 'min_detection_confidence' from 0.5 to 0.7 in perception config. \
+                implementation:
+                    "Raise 'min_detection_confidence' from 0.5 to 0.7 in perception config. \
                                  This will reduce false positives but may miss some objects. \
                                  Monitor detection rates in next few missions."
-                    .to_string(),
+                        .to_string(),
             },
             Action {
                 priority: "P1".to_string(),

@@ -4,7 +4,6 @@
 //! Thermal detects heat signatures invisible to RGB in low-light, fog, smoke, etc.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Thermal camera configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,12 +184,18 @@ impl ThermalFrame {
     }
 
     /// Estimate human presence likelihood based on thermal signature
-    pub fn estimate_human_likelihood(&self, region_x: u32, region_y: u32, region_w: u32, region_h: u32) -> f32 {
+    pub fn estimate_human_likelihood(
+        &self,
+        region_x: u32,
+        region_y: u32,
+        region_w: u32,
+        region_h: u32,
+    ) -> f32 {
         let avg_temp = self.get_region_avg(region_x, region_y, region_w, region_h);
         let max_temp = self.get_region_max(region_x, region_y, region_w, region_h);
 
         // Human body temperature ~310K (37°C), clothes ~300-310K
-        let core_temp = 310.0;
+        let _core_temp = 310.0;
         let surface_temp = 305.0;
 
         // Likelihood increases near body temperature
@@ -232,7 +237,7 @@ impl ThermalHotspot {
     pub fn estimate_source(&self) -> ThermalSource {
         let temp_c = self.avg_temp_k - 273.15;
 
-        if temp_c >= 30.0 && temp_c <= 40.0 {
+        if (30.0..=40.0).contains(&temp_c) {
             // Body temperature range
             if self.pixel_count > 100 {
                 ThermalSource::Human
@@ -241,7 +246,7 @@ impl ThermalHotspot {
             } else {
                 ThermalSource::Unknown
             }
-        } else if temp_c >= 20.0 && temp_c <= 35.0 {
+        } else if (20.0..=35.0).contains(&temp_c) {
             ThermalSource::Animal
         } else if temp_c > 60.0 {
             ThermalSource::Engine

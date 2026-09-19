@@ -43,7 +43,10 @@ fn test_ollama_generates_real_explanation() {
     );
     assert_eq!(explanation.backend, InferenceBackend::Ollama);
     assert_eq!(explanation.model, test_model());
-    assert!(!explanation.text.trim().is_empty(), "Ollama response text should not be empty");
+    assert!(
+        !explanation.text.trim().is_empty(),
+        "Ollama response text should not be empty"
+    );
     assert!(explanation.inference_time_ms > 0.0);
 }
 
@@ -59,10 +62,8 @@ fn test_ollama_perception_gap_and_recommend_fix_are_real() {
     assert!(gap_explanation.is_from_llm);
     assert!(!gap_explanation.text.trim().is_empty());
 
-    let fix_explanation = explainer.recommend_fix(
-        "Sensor blind spot at close range",
-        "collision_near_miss",
-    );
+    let fix_explanation =
+        explainer.recommend_fix("Sensor blind spot at close range", "collision_near_miss");
     assert!(fix_explanation.is_from_llm);
     assert!(!fix_explanation.text.trim().is_empty());
 }

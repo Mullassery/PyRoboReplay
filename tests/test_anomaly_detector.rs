@@ -1,8 +1,8 @@
 // Phase 1: Anomaly Detector Unit Tests
 // Tests all 8 failure detection types with comprehensive coverage
 
-use pyroboreplay::core::{AnomalyDetector, MissionEvent};
 use chrono::Utc;
+use pyroboreplay::core::{AnomalyDetector, MissionEvent};
 
 // ============================================================================
 // Test Fixtures
@@ -108,7 +108,9 @@ fn test_near_collision_affected_systems() {
     let failures = detector.detect_near_collision();
 
     assert!(failures[0].affected_systems.contains(&"lidar".to_string()));
-    assert!(failures[0].affected_systems.contains(&"planner".to_string()));
+    assert!(failures[0]
+        .affected_systems
+        .contains(&"planner".to_string()));
 }
 
 #[test]
@@ -123,7 +125,10 @@ fn test_near_collision_confidence_scales_with_distance() {
     let conf1 = det1.detect_near_collision()[0].confidence;
     let conf2 = det2.detect_near_collision()[0].confidence;
 
-    assert!(conf1 > conf2, "Closer obstacle should have higher confidence");
+    assert!(
+        conf1 > conf2,
+        "Closer obstacle should have higher confidence"
+    );
 }
 
 #[test]
@@ -234,10 +239,12 @@ fn test_detector_independence() {
     let detector = AnomalyDetector::new(events);
 
     let all_failures = detector.detect_all();
-    let collision_failures = detector.detect_near_collision();
+    let _collision_failures = detector.detect_near_collision();
 
     // detect_all should include collision failures
-    assert!(all_failures.iter().any(|f| f.failure_type == "near_collision"));
+    assert!(all_failures
+        .iter()
+        .any(|f| f.failure_type == "near_collision"));
 }
 
 #[test]
@@ -258,7 +265,7 @@ fn test_severity_values() {
 
     for failure in detector.detect_all() {
         assert!(
-            vec!["critical", "high", "medium", "low"].contains(&failure.severity.as_str()),
+            ["critical", "high", "medium", "low"].contains(&failure.severity.as_str()),
             "Invalid severity: {}",
             failure.severity
         );
@@ -304,7 +311,8 @@ fn test_detect_all_no_duplicates() {
     let failures = detector.detect_all();
 
     // Count occurrences of near_collision
-    let collision_count = failures.iter()
+    let collision_count = failures
+        .iter()
         .filter(|f| f.failure_type == "near_collision")
         .count();
 

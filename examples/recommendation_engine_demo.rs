@@ -1,4 +1,4 @@
-use pyroboreplay::core::{RecommendationEngine};
+use pyroboreplay::core::RecommendationEngine;
 
 fn main() {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
@@ -19,23 +19,31 @@ fn main() {
 
     println!("Generated {} recommendations:\n", deadlock_recs.len());
     for (idx, rec) in deadlock_recs.iter().enumerate() {
-        println!("Recommendation {}. {} [{}]", idx + 1, rec.title, rec.priority);
+        println!(
+            "Recommendation {}. {} [{}]",
+            idx + 1,
+            rec.title,
+            rec.priority
+        );
         println!("  Description: {}", rec.description);
         println!("  Expected Impact: {:.0}%", rec.expected_impact * 100.0);
-        println!("  Effort Required: {:.0}%", rec.implementation_effort * 100.0);
+        println!(
+            "  Effort Required: {:.0}%",
+            rec.implementation_effort * 100.0
+        );
         println!("  ROI Score: {:.2}", rec.roi_score);
-        println!("  Risk of Regression: {:.0}%\n", rec.risk_of_regression * 100.0);
+        println!(
+            "  Risk of Regression: {:.0}%\n",
+            rec.risk_of_regression * 100.0
+        );
     }
 
     println!("═══════════════════════════════════════════════════════════════════");
     println!("SCENARIO 2: BATTERY DRAIN FAILURE");
     println!("═══════════════════════════════════════════════════════════════════\n");
 
-    let battery_recs = engine.generate_for_failure(
-        "battery_drain",
-        "suboptimal_path_planning",
-        "high",
-    );
+    let battery_recs =
+        engine.generate_for_failure("battery_drain", "suboptimal_path_planning", "high");
 
     println!("Generated {} recommendations:\n", battery_recs.len());
     for (idx, rec) in battery_recs.iter().enumerate() {
@@ -61,14 +69,26 @@ fn main() {
     println!("Root Cause: {}\n", set.root_cause);
 
     println!("Summary Statistics:");
-    println!("  Total Recommendations: {}", set.stats.total_recommendations);
+    println!(
+        "  Total Recommendations: {}",
+        set.stats.total_recommendations
+    );
     println!("  Critical Priority: {}", set.stats.critical_count);
     println!("  High Priority: {}", set.stats.high_count);
     println!("  Medium Priority: {}", set.stats.medium_count);
     println!("  Low Priority: {}", set.stats.low_count);
-    println!("  Average Expected Impact: {:.0}%", set.stats.avg_impact * 100.0);
-    println!("  Average Implementation Effort: {:.0}%", set.stats.avg_effort * 100.0);
-    println!("  Average Confidence: {:.0}%", set.stats.avg_confidence * 100.0);
+    println!(
+        "  Average Expected Impact: {:.0}%",
+        set.stats.avg_impact * 100.0
+    );
+    println!(
+        "  Average Implementation Effort: {:.0}%",
+        set.stats.avg_effort * 100.0
+    );
+    println!(
+        "  Average Confidence: {:.0}%",
+        set.stats.avg_confidence * 100.0
+    );
     println!("  Best ROI Score: {:.2}\n", set.stats.best_roi);
 
     println!("═══════════════════════════════════════════════════════════════════");
@@ -78,10 +98,12 @@ fn main() {
     if !set.quick_wins.is_empty() {
         for (idx, qw) in set.quick_wins.iter().enumerate() {
             println!("Quick Win {}. {}", idx + 1, qw.title);
-            println!("  Impact: {:.0}% | Effort: {:.0}% | ROI: {:.2}",
+            println!(
+                "  Impact: {:.0}% | Effort: {:.0}% | ROI: {:.2}",
                 qw.expected_impact * 100.0,
                 qw.implementation_effort * 100.0,
-                qw.roi_score);
+                qw.roi_score
+            );
             println!("  Action: {}\n", qw.description);
         }
     } else {
@@ -95,10 +117,12 @@ fn main() {
     if !set.strategic_improvements.is_empty() {
         for (idx, si) in set.strategic_improvements.iter().enumerate() {
             println!("Strategic Improvement {}. {}", idx + 1, si.title);
-            println!("  Impact: {:.0}% | Effort: {:.0}% | ROI: {:.2}",
+            println!(
+                "  Impact: {:.0}% | Effort: {:.0}% | ROI: {:.2}",
                 si.expected_impact * 100.0,
                 si.implementation_effort * 100.0,
-                si.roi_score);
+                si.roi_score
+            );
             println!("  Rationale: {}\n", si.rationale);
         }
     } else {
@@ -112,14 +136,24 @@ fn main() {
     println!("Phase 1 (Immediate - Quick Wins):");
     if !set.quick_wins.is_empty() {
         for (idx, qw) in set.quick_wins.iter().take(2).enumerate() {
-            println!("  {}. {} (Est. {}% effort)", idx + 1, qw.title, (qw.implementation_effort * 100.0) as i32);
+            println!(
+                "  {}. {} (Est. {}% effort)",
+                idx + 1,
+                qw.title,
+                (qw.implementation_effort * 100.0) as i32
+            );
         }
     }
 
     println!("\nPhase 2 (Medium-Term):");
     if !set.strategic_improvements.is_empty() {
         for (idx, si) in set.strategic_improvements.iter().take(2).enumerate() {
-            println!("  {}. {} (Est. {}% effort)", idx + 1, si.title, (si.implementation_effort * 100.0) as i32);
+            println!(
+                "  {}. {} (Est. {}% effort)",
+                idx + 1,
+                si.title,
+                (si.implementation_effort * 100.0) as i32
+            );
         }
     }
 
@@ -135,14 +169,19 @@ fn main() {
     ];
 
     for (failure_type, root_cause, severity) in failures {
-        println!("For {} failure ({}), {} severity:", failure_type, root_cause, severity);
+        println!(
+            "For {} failure ({}), {} severity:",
+            failure_type, root_cause, severity
+        );
         let mut temp_engine = RecommendationEngine::new();
         let recs = temp_engine.generate_for_failure(failure_type, root_cause, severity);
         if let Some(first) = recs.first() {
             println!("  → Top recommendation: {}", first.title);
-            println!("    Impact: {:.0}% | Effort: {:.0}%\n",
+            println!(
+                "    Impact: {:.0}% | Effort: {:.0}%\n",
                 first.expected_impact * 100.0,
-                first.implementation_effort * 100.0);
+                first.implementation_effort * 100.0
+            );
         }
     }
 

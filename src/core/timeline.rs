@@ -79,7 +79,7 @@ impl Timeline {
         Ok(mission
             .events
             .iter()
-            .filter(|e| e.robot_id().map_or(false, |rid| rid == robot_id))
+            .filter(|e| e.robot_id() == Some(robot_id))
             .collect())
     }
 
@@ -97,7 +97,8 @@ impl Timeline {
             return Err(TimelineError::IndexOutOfBounds);
         }
 
-        self.cursor_positions.insert(mission_id.to_string(), event_index);
+        self.cursor_positions
+            .insert(mission_id.to_string(), event_index);
         Ok(&mission.events[event_index])
     }
 
@@ -110,7 +111,8 @@ impl Timeline {
         let current_pos = *self.cursor_positions.get(mission_id).unwrap_or(&0);
         if current_pos + 1 < mission.events.len() {
             let next_pos = current_pos + 1;
-            self.cursor_positions.insert(mission_id.to_string(), next_pos);
+            self.cursor_positions
+                .insert(mission_id.to_string(), next_pos);
             Ok(Some(&mission.events[next_pos]))
         } else {
             Ok(None)
@@ -124,7 +126,8 @@ impl Timeline {
         let current_pos = *self.cursor_positions.get(mission_id).unwrap_or(&0);
         if current_pos > 0 {
             let prev_pos = current_pos - 1;
-            self.cursor_positions.insert(mission_id.to_string(), prev_pos);
+            self.cursor_positions
+                .insert(mission_id.to_string(), prev_pos);
             let mission = self
                 .missions
                 .get(mission_id)
@@ -163,7 +166,7 @@ impl Timeline {
         Ok(mission
             .events
             .iter()
-            .filter(|e| e.sensor_type().map_or(false, |st| st == sensor_type))
+            .filter(|e| e.sensor_type() == Some(sensor_type))
             .collect())
     }
 
@@ -177,10 +180,7 @@ impl Timeline {
         Ok(mission
             .events
             .iter()
-            .filter(|e| {
-                e.sensor_type()
-                    .map_or(false, |st| sensor_types.contains(&st))
-            })
+            .filter(|e| e.sensor_type().is_some_and(|st| sensor_types.contains(&st)))
             .collect())
     }
 
@@ -232,7 +232,7 @@ impl Timeline {
             .iter()
             .filter(|e| {
                 let ts = e.timestamp();
-                let is_sensor = e.sensor_type().map_or(false, |st| st == sensor_type);
+                let is_sensor = e.sensor_type() == Some(sensor_type);
                 is_sensor && ts >= start && ts <= end
             })
             .collect())
@@ -310,7 +310,9 @@ mod tests {
         let mission_id = mission.id.to_string();
         timeline.add_mission(mission);
 
-        let events = timeline.get_events_by_type(&mission_id, "robot_pose").unwrap();
+        let events = timeline
+            .get_events_by_type(&mission_id, "robot_pose")
+            .unwrap();
         assert_eq!(events.len(), 2);
     }
 
@@ -430,10 +432,14 @@ mod tests {
         timeline.jump_to_event(&m1_id, 0).unwrap();
         timeline.jump_to_event(&m2_id, 1).unwrap();
 
-        assert_eq!(timeline.current_event(&m1_id).unwrap().unwrap().timestamp(),
-                   timeline.get_mission(&m1_id).unwrap().events[0].timestamp());
-        assert_eq!(timeline.current_event(&m2_id).unwrap().unwrap().timestamp(),
-                   timeline.get_mission(&m2_id).unwrap().events[1].timestamp());
+        assert_eq!(
+            timeline.current_event(&m1_id).unwrap().unwrap().timestamp(),
+            timeline.get_mission(&m1_id).unwrap().events[0].timestamp()
+        );
+        assert_eq!(
+            timeline.current_event(&m2_id).unwrap().unwrap().timestamp(),
+            timeline.get_mission(&m2_id).unwrap().events[1].timestamp()
+        );
     }
 
     #[test]
@@ -452,6 +458,9 @@ mod tests {
         timeline.jump_to_event(&m1_id, 0).unwrap();
 
         let evt1 = timeline.current_event(&m1_id).unwrap().unwrap();
-        assert_eq!(evt1.timestamp(), timeline.get_mission(&m1_id).unwrap().events[0].timestamp());
+        assert_eq!(
+            evt1.timestamp(),
+            timeline.get_mission(&m1_id).unwrap().events[0].timestamp()
+        );
     }
 }

@@ -36,13 +36,13 @@ pub struct PerceptionGap {
 /// Types of perception gaps
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GapType {
-    ObjectNotDetected,      // Object present but not detected
-    ObjectMisclassified,    // Detected but wrong type
-    DistanceEstimateError,  // Wrong distance estimate
-    FieldOfViewGap,         // Object outside effective sensing region
-    TemporalLag,            // Detection came too late
-    SensorFailure,          // Sensor didn't work
-    AmbiguousScene,         // Scene too complex to understand
+    ObjectNotDetected,     // Object present but not detected
+    ObjectMisclassified,   // Detected but wrong type
+    DistanceEstimateError, // Wrong distance estimate
+    FieldOfViewGap,        // Object outside effective sensing region
+    TemporalLag,           // Detection came too late
+    SensorFailure,         // Sensor didn't work
+    AmbiguousScene,        // Scene too complex to understand
 }
 
 impl std::fmt::Display for GapType {
@@ -134,24 +134,24 @@ impl PerceptionGapAnalyzer {
             .collect();
 
         if !outside_fov.is_empty() {
-            evidence.push(format!("{} objects outside field of view", outside_fov.len()));
+            evidence.push(format!(
+                "{} objects outside field of view",
+                outside_fov.len()
+            ));
         }
 
         // Determine gap type
-        let gap_type = if undetected_objects.len() > 0 {
+        let gap_type = if !undetected_objects.is_empty() {
             GapType::ObjectNotDetected
-        } else if outside_fov.len() > 0 {
+        } else if !outside_fov.is_empty() {
             GapType::FieldOfViewGap
         } else {
             GapType::AmbiguousScene
         };
 
         // Assess behavioral impact
-        let behavioral_impact = Self::assess_behavioral_impact(
-            &gap_type,
-            robot_sensors,
-            robot_behavior_history,
-        );
+        let behavioral_impact =
+            Self::assess_behavioral_impact(&gap_type, robot_sensors, robot_behavior_history);
 
         // Compute severity
         let severity = Self::compute_severity(&gap_type, &evidence);
@@ -192,8 +192,9 @@ impl PerceptionGapAnalyzer {
             }
             GapType::SensorFailure => "Sensor malfunction or degradation".to_string(),
             GapType::ObjectMisclassified => "Object type was incorrectly identified".to_string(),
-            GapType::AmbiguousScene => "Scene was too complex; ambiguous what was present"
-                .to_string(),
+            GapType::AmbiguousScene => {
+                "Scene was too complex; ambiguous what was present".to_string()
+            }
         }
     }
 
@@ -246,9 +247,7 @@ impl PerceptionGapAnalyzer {
     /// Find all critical gaps that likely caused failures
     pub fn find_critical_gaps(gaps: &[PerceptionGap]) -> Vec<PerceptionGap> {
         gaps.iter()
-            .filter(|g| {
-                g.severity > 0.75 && g.gap_type != GapType::AmbiguousScene
-            })
+            .filter(|g| g.severity > 0.75 && g.gap_type != GapType::AmbiguousScene)
             .cloned()
             .collect()
     }
@@ -288,12 +287,8 @@ impl PerceptionGapAnalyzer {
         let mut gaps_by_entity: HashMap<String, usize> = HashMap::new();
 
         for gap in &all_gaps {
-            *gaps_by_type
-                .entry(gap.gap_type.to_string())
-                .or_insert(0) += 1;
-            *gaps_by_entity
-                .entry(gap.entity_type.clone())
-                .or_insert(0) += 1;
+            *gaps_by_type.entry(gap.gap_type.to_string()).or_insert(0) += 1;
+            *gaps_by_entity.entry(gap.entity_type.clone()).or_insert(0) += 1;
         }
 
         let avg_severity: f32 = if all_gaps.is_empty() {

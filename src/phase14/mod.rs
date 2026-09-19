@@ -13,37 +13,28 @@
 //! 5. Video Processing: Frame extraction, YOLO detection, optical flow
 //! 6. Analyzer Capabilities: Extended registry for multi-modal analysis
 
+pub mod analyzer_capabilities;
 pub mod modality_adapters;
+pub mod navigation_session;
 pub mod temporal_sync;
 pub mod timeline_indexing;
-pub mod navigation_session;
 pub mod video_processing;
-pub mod analyzer_capabilities;
 
 // Re-exports for public API
+pub use analyzer_capabilities::{AnalysisCapability, AnalyzerCapabilitiesV2, AnalyzerRegistry};
 pub use modality_adapters::{
-    DataSource, RosBagAdapter, LinuxLogsAdapter, Nav2ExportAdapter,
-    VideoAdapter, PointCloudAdapter, AnnotationAdapter,
+    AnnotationAdapter, DataSource, LinuxLogsAdapter, Nav2ExportAdapter, PointCloudAdapter,
+    RosBagAdapter, VideoAdapter,
 };
-pub use temporal_sync::{
-    TemporalSyncEngine, TimeModel, ClockOffset, SyncReport,
-};
+pub use navigation_session::{DataSource as SessionDataSource, NavigationSession, SessionBuilder};
+pub use temporal_sync::{ClockOffset, SyncReport, TemporalSyncEngine, TimeModel};
 pub use timeline_indexing::{
-    Timeline, TimelineEvent, TimeSlice, TimeSliceQuery, EventIndex, Modality,
+    EventIndex, Modality, TimeSlice, TimeSliceQuery, Timeline, TimelineEvent,
 };
-pub use navigation_session::{
-    NavigationSession, SessionBuilder, DataSource as SessionDataSource,
-};
-pub use video_processing::{
-    VideoProcessor, FrameData, ObjectDetection, OpticalFlowFrame,
-};
-pub use analyzer_capabilities::{
-    AnalyzerCapabilitiesV2, AnalyzerRegistry, AnalysisCapability,
-};
+pub use video_processing::{FrameData, ObjectDetection, OpticalFlowFrame, VideoProcessor};
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_phase14_modules_accessible() {

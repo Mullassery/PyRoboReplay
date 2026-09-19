@@ -1,9 +1,8 @@
 /// JSON output format for AI-agent integration
 /// All CLI commands can output structured JSON for programmatic parsing
-
 use crate::core::event::MissionRecord;
-use serde::{Serialize, Deserialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 /// Mission analysis in JSON format
 #[derive(Debug, Serialize, Deserialize)]
@@ -133,11 +132,7 @@ impl SensorFramesJson {
 impl MissionTimelineJson {
     /// Export entire mission as JSON timeline
     pub fn from_mission(mission: &MissionRecord) -> Self {
-        let events = mission
-            .events
-            .iter()
-            .map(|e| EventJson::from_event(e))
-            .collect();
+        let events = mission.events.iter().map(EventJson::from_event).collect();
 
         Self {
             mission_id: mission.id.to_string(),

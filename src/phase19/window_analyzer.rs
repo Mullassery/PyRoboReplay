@@ -1,5 +1,4 @@
 /// Window Analyzer - Statistical analysis of time windows
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -12,7 +11,7 @@ pub struct WindowStatistics {
     pub unique_events: usize,
     pub failure_rate: f32,
     pub average_event_interval_ms: u32,
-    pub entropy: f32,                  // Information entropy of events
+    pub entropy: f32, // Information entropy of events
     pub anomaly_score: f32,
 }
 
@@ -45,6 +44,12 @@ pub struct WindowAnalyzer {
     event_history: Vec<(u64, String)>,
 }
 
+impl Default for WindowAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl WindowAnalyzer {
     pub fn new() -> Self {
         WindowAnalyzer {
@@ -63,7 +68,8 @@ impl WindowAnalyzer {
         let mut stats = WindowStatistics::new(window_id, start_time, end_time);
 
         // Filter events in window
-        let window_events: Vec<_> = self.event_history
+        let window_events: Vec<_> = self
+            .event_history
             .iter()
             .filter(|(t, _)| *t >= start_time && *t <= end_time)
             .collect();
@@ -78,7 +84,8 @@ impl WindowAnalyzer {
         stats.unique_events = event_types.len();
 
         // Calculate failure rate
-        let failures = window_events.iter()
+        let failures = window_events
+            .iter()
             .filter(|(_, e)| e.contains("failure") || e.contains("error"))
             .count();
         stats.failure_rate = if window_events.is_empty() {
@@ -126,8 +133,8 @@ impl WindowAnalyzer {
 
     fn _calculate_anomaly_score(&self, stats: &WindowStatistics) -> f32 {
         // Higher anomaly if: high failure rate + high entropy + unusual event count
-        let failure_factor = stats.failure_rate * 2.0;  // Weight failures heavily
-        let entropy_factor = (stats.entropy / 8.0).min(1.0);  // Normalize to 0-1
+        let failure_factor = stats.failure_rate * 2.0; // Weight failures heavily
+        let entropy_factor = (stats.entropy / 8.0).min(1.0); // Normalize to 0-1
         let event_factor = if stats.event_count > 100 { 0.5 } else { 0.0 };
 
         ((failure_factor + entropy_factor + event_factor) / 3.0).min(1.0)
@@ -169,13 +176,15 @@ impl WindowAnalyzer {
         stats.insert("total_windows".to_string(), self.windows.len() as f32);
 
         if !self.windows.is_empty() {
-            let avg_events: f32 = self.windows.iter().map(|w| w.event_count as f32).sum::<f32>()
+            let avg_events: f32 = self
+                .windows
+                .iter()
+                .map(|w| w.event_count as f32)
+                .sum::<f32>()
                 / self.windows.len() as f32;
             let avg_failure_rate: f32 = self.windows.iter().map(|w| w.failure_rate).sum::<f32>()
                 / self.windows.len() as f32;
-            let anomalous_count = self.windows.iter()
-                .filter(|w| w.is_anomalous())
-                .count();
+            let anomalous_count = self.windows.iter().filter(|w| w.is_anomalous()).count();
 
             stats.insert("avg_events_per_window".to_string(), avg_events);
             stats.insert("avg_failure_rate".to_string(), avg_failure_rate);
@@ -190,7 +199,7 @@ impl WindowAnalyzer {
 pub struct WindowComparison {
     pub window1_id: String,
     pub window2_id: String,
-    pub similarity: f32,           // 0-1: how similar?
+    pub similarity: f32, // 0-1: how similar?
     pub event_count_ratio: f32,
     pub failure_rate_diff: f32,
 }

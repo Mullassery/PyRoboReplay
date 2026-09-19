@@ -28,7 +28,10 @@ pub struct EventExtractor;
 impl EventExtractor {
     /// Extract structured events from scenes
     pub fn extract_events(
-        scenes: &[(f32, crate::intelligence::scene_reconstruction::RetrospectiveScene)],
+        scenes: &[(
+            f32,
+            crate::intelligence::scene_reconstruction::RetrospectiveScene,
+        )],
     ) -> EventStream {
         let mut events = Vec::new();
 

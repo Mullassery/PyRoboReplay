@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 /// Executive summary of diagnostic analysis
 #[derive(Debug, Clone, Serialize, Deserialize)]

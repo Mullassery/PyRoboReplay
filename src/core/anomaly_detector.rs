@@ -17,7 +17,7 @@ pub struct Failure {
     /// Confidence score (0.0-1.0)
     pub confidence: f32,
     /// Severity level
-    pub severity: String,  // "critical", "high", "medium", "low"
+    pub severity: String, // "critical", "high", "medium", "low"
     /// Human-readable description
     pub description: String,
     /// Systems affected by this failure
@@ -34,7 +34,8 @@ impl Failure {
         severity: String,
         description: String,
     ) -> Self {
-        let timestamp_seconds = timestamp.timestamp() as f64 + timestamp.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
+        let timestamp_seconds = timestamp.timestamp() as f64
+            + timestamp.timestamp_subsec_nanos() as f64 / 1_000_000_000.0;
         let id = format!("{}_{}", failure_type, uuid::Uuid::new_v4());
         Failure {
             id,
@@ -73,7 +74,7 @@ impl AnomalyDetector {
     pub fn new(events: Vec<MissionEvent>) -> Self {
         AnomalyDetector {
             events,
-            lidar_threshold: 0.5,  // 50cm collision warning
+            lidar_threshold: 0.5, // 50cm collision warning
             perception_confidence_threshold: 0.5,
         }
     }
@@ -97,10 +98,15 @@ impl AnomalyDetector {
         let mut failures = Vec::new();
 
         for event in &self.events {
-            if let MissionEvent::LidarScan { timestamp, data, .. } = event {
-                if let Some(&min_range) = data.ranges.iter().min_by(|a, b| {
-                    a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)
-                }) {
+            if let MissionEvent::LidarScan {
+                timestamp, data, ..
+            } = event
+            {
+                if let Some(&min_range) = data
+                    .ranges
+                    .iter()
+                    .min_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                {
                     if min_range < self.lidar_threshold && min_range > 0.0 {
                         let confidence = 1.0 - (min_range / self.lidar_threshold);
                         let severity = match min_range {
@@ -113,7 +119,7 @@ impl AnomalyDetector {
                         let mut failure = Failure::new(
                             "near_collision".to_string(),
                             *timestamp,
-                            confidence.min(1.0) as f32,
+                            confidence.min(1.0),
                             severity,
                             format!(
                                 "LiDAR detected obstacle at {:.2}m (threshold: {:.2}m)",
@@ -126,9 +132,10 @@ impl AnomalyDetector {
                         failure
                             .evidence
                             .insert("min_range_m".to_string(), format!("{:.2}", min_range));
-                        failure
-                            .evidence
-                            .insert("threshold_m".to_string(), format!("{:.2}", self.lidar_threshold));
+                        failure.evidence.insert(
+                            "threshold_m".to_string(),
+                            format!("{:.2}", self.lidar_threshold),
+                        );
                         failures.push(failure);
                     }
                 }
@@ -141,11 +148,11 @@ impl AnomalyDetector {
     /// Detect perception failures (low detection confidence)
     pub fn detect_perception_failure(&self) -> Vec<Failure> {
         let mut failures = Vec::new();
-        let mut low_confidence_count = 0;
+        let low_confidence_count = 0;
         let mut total_frames = 0;
 
         for event in &self.events {
-            if let MissionEvent::CameraFrame { timestamp, .. } = event {
+            if let MissionEvent::CameraFrame { .. } = event {
                 total_frames += 1;
                 // Placeholder for detection logic
                 // In a real implementation, we'd parse detections from camera data
@@ -162,7 +169,7 @@ impl AnomalyDetector {
                         let mut failure = Failure::new(
                             "perception_failure".to_string(),
                             *timestamp,
-                            (ratio * 0.9) as f32,
+                            ratio * 0.9,
                             "medium".to_string(),
                             format!(
                                 "{:.0}% of detections below confidence threshold ({:.0}%)",
@@ -173,9 +180,10 @@ impl AnomalyDetector {
                         .with_system("camera".to_string())
                         .with_system("perception".to_string());
 
-                        failure
-                            .evidence
-                            .insert("low_confidence_count".to_string(), low_confidence_count.to_string());
+                        failure.evidence.insert(
+                            "low_confidence_count".to_string(),
+                            low_confidence_count.to_string(),
+                        );
                         failure
                             .evidence
                             .insert("total_frames".to_string(), total_frames.to_string());
@@ -206,10 +214,7 @@ impl AnomalyDetector {
         }
 
         // Check for sensors that stopped reporting
-        let last_timestamp = sensor_last_seen
-            .values()
-            .max()
-            .cloned();
+        let last_timestamp = sensor_last_seen.values().max().cloned();
 
         if let Some(last_ts) = last_timestamp {
             for (sensor, last_seen) in &sensor_last_seen {
@@ -285,8 +290,12 @@ impl AnomalyDetector {
                 .with_system("communication".to_string())
                 .with_system("network".to_string());
 
-                failure.evidence.insert("max_gap_s".to_string(), format!("{:.3}", max_gap));
-                failure.evidence.insert("avg_gap_s".to_string(), format!("{:.3}", avg_gap));
+                failure
+                    .evidence
+                    .insert("max_gap_s".to_string(), format!("{:.3}", max_gap));
+                failure
+                    .evidence
+                    .insert("avg_gap_s".to_string(), format!("{:.3}", avg_gap));
                 failures.push(failure);
             }
         }
@@ -366,7 +375,10 @@ impl AnomalyDetector {
         let mut positions = Vec::new();
 
         for event in &self.events {
-            if let MissionEvent::OdometryUpdate { timestamp, data, .. } = event {
+            if let MissionEvent::OdometryUpdate {
+                timestamp, data, ..
+            } = event
+            {
                 positions.push((timestamp, data.pose.x, data.pose.y));
             }
         }
@@ -406,9 +418,10 @@ impl AnomalyDetector {
                 .with_system("navigation".to_string())
                 .with_system("odometry".to_string());
 
-                failure
-                    .evidence
-                    .insert("direction_changes".to_string(), direction_changes.to_string());
+                failure.evidence.insert(
+                    "direction_changes".to_string(),
+                    direction_changes.to_string(),
+                );
                 failure
                     .evidence
                     .insert("velocity_m_s".to_string(), format!("{:.2}", velocity));
@@ -425,7 +438,10 @@ impl AnomalyDetector {
         let mut prev_obstacle_count = 0;
 
         for event in &self.events {
-            if let MissionEvent::CostmapUpdate { timestamp, data, .. } = event {
+            if let MissionEvent::CostmapUpdate {
+                timestamp, data, ..
+            } = event
+            {
                 let obstacle_count = data.data.iter().filter(|&&x| x > 128).count();
 
                 if prev_obstacle_count > 0 {
@@ -449,10 +465,9 @@ impl AnomalyDetector {
                         .with_system("costmap".to_string())
                         .with_system("perception".to_string());
 
-                        failure.evidence.insert(
-                            "current_obstacles".to_string(),
-                            obstacle_count.to_string(),
-                        );
+                        failure
+                            .evidence
+                            .insert("current_obstacles".to_string(), obstacle_count.to_string());
                         failure.evidence.insert(
                             "previous_obstacles".to_string(),
                             prev_obstacle_count.to_string(),

@@ -10,7 +10,7 @@
 //! 5. Compare YOLO vs DINO: identify missed detections
 //! 6. Score invisibility factors (occlusion, distance, blur, etc.)
 
-use crate::perception::object_detection::{BoundingBox, DetectedObject, DetectionFrame, ObjectClass};
+use crate::perception::object_detection::{BoundingBox, DetectedObject, ObjectClass};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -191,12 +191,7 @@ impl RetrospectiveDetectionEngine {
     }
 
     /// Simulate DINO detection (stub - real would use model)
-    pub fn run_dino_detection(
-        &mut self,
-        _image_data: &[u8],
-        width: u32,
-        height: u32,
-    ) {
+    pub fn run_dino_detection(&mut self, _image_data: &[u8], _width: u32, _height: u32) {
         // Stub: in reality this would run DINO model
         // For now, simulate discovering extra objects
         self.dino_detections = vec![
@@ -258,10 +253,10 @@ impl RetrospectiveDetectionEngine {
 
             if !yolo_detected_nearby {
                 // This is a gap - DINO found it, YOLO missed it
-                let invisibility_factors = self.assess_invisibility(&dino_det);
+                let invisibility_factors = self.assess_invisibility(dino_det);
                 let severity = self.compute_severity(&invisibility_factors);
 
-                let recommendation = self.generate_recommendation(&dino_det, &invisibility_factors);
+                let recommendation = self.generate_recommendation(dino_det, &invisibility_factors);
 
                 let gap = DetectionGap {
                     dino_detection: dino_det.clone(),
@@ -372,7 +367,11 @@ impl RetrospectiveDetectionEngine {
         };
 
         let critical_gaps = self.gaps.iter().filter(|g| g.severity > 0.7).count();
-        let moderate_gaps = self.gaps.iter().filter(|g| g.severity > 0.4 && g.severity <= 0.7).count();
+        let moderate_gaps = self
+            .gaps
+            .iter()
+            .filter(|g| g.severity > 0.4 && g.severity <= 0.7)
+            .count();
 
         RetrospectiveDetectionStats {
             yolo_detections: self.yolo_detections.len(),
@@ -475,7 +474,7 @@ mod tests {
         let config = DINOConfig::default();
         let mut engine = RetrospectiveDetectionEngine::new(config);
 
-        engine.run_dino_detection(&vec![], 1920, 1080);
+        engine.run_dino_detection(&[], 1920, 1080);
         assert!(!engine.dino_detections.is_empty());
     }
 
@@ -484,7 +483,7 @@ mod tests {
         let config = DINOConfig::default();
         let mut engine = RetrospectiveDetectionEngine::new(config);
 
-        engine.run_dino_detection(&vec![], 1920, 1080);
+        engine.run_dino_detection(&[], 1920, 1080);
         engine.run_sam_segmentation();
 
         assert!(!engine.segmentations.is_empty());
@@ -515,7 +514,7 @@ mod tests {
         engine.load_yolo_detections(vec![yolo_det]);
 
         // Run DINO (finds person that YOLO missed)
-        engine.run_dino_detection(&vec![], 1920, 1080);
+        engine.run_dino_detection(&[], 1920, 1080);
 
         // Analyze
         engine.analyze_gaps();
@@ -529,7 +528,7 @@ mod tests {
         let config = DINOConfig::default();
         let mut engine = RetrospectiveDetectionEngine::new(config);
 
-        engine.run_dino_detection(&vec![], 1920, 1080);
+        engine.run_dino_detection(&[], 1920, 1080);
         engine.analyze_gaps();
 
         let summary = engine.gap_summary();
@@ -541,7 +540,7 @@ mod tests {
         let config = DINOConfig::default();
         let mut engine = RetrospectiveDetectionEngine::new(config);
 
-        engine.run_dino_detection(&vec![], 1920, 1080);
+        engine.run_dino_detection(&[], 1920, 1080);
         engine.analyze_gaps();
 
         let stats = engine.get_stats();

@@ -21,14 +21,15 @@ pub struct CategoryMetrics {
 impl CategoryMetrics {
     /// Compute accuracy from feedback
     pub fn compute_accuracy(&mut self) {
-        let total = self.verified_correct + self.partially_correct + self.incorrect + self.inconclusive;
+        let total =
+            self.verified_correct + self.partially_correct + self.incorrect + self.inconclusive;
         if total == 0 {
             self.current_accuracy = 0.0;
             return;
         }
 
-        let correct_score = (self.verified_correct as f32 + self.partially_correct as f32 * 0.5)
-            / total as f32;
+        let correct_score =
+            (self.verified_correct as f32 + self.partially_correct as f32 * 0.5) / total as f32;
         self.current_accuracy = correct_score;
     }
 }
@@ -45,13 +46,13 @@ impl RecalibrationEngine {
     pub fn new() -> Self {
         RecalibrationEngine {
             category_metrics: HashMap::new(),
-            min_samples: 5, // Need at least 5 feedback samples
+            min_samples: 5,     // Need at least 5 feedback samples
             learning_rate: 0.1, // Conservative: move 10% toward observed accuracy
         }
     }
 
     /// Initialize with scorer's base probabilities
-    pub fn initialize_from_scorer(&mut self, scorer: &RealityGapScorer) {
+    pub fn initialize_from_scorer(&mut self, _scorer: &RealityGapScorer) {
         // We'd ideally have access to scorer's knowledge base, but it's private
         // For now, initialize with typical defaults
         let default_categories = vec![
@@ -133,8 +134,7 @@ impl RecalibrationEngine {
         // Bayesian update: move toward observed accuracy
         // new_prior = old_prior + learning_rate * (observed_accuracy - old_prior)
         let observed_accuracy = metrics.current_accuracy;
-        let new_prior =
-            old_prior + self.learning_rate * (observed_accuracy - old_prior);
+        let new_prior = old_prior + self.learning_rate * (observed_accuracy - old_prior);
 
         metrics.base_probability = new_prior.max(0.1).min(0.95); // Clamp to reasonable range
 
@@ -313,9 +313,7 @@ mod tests {
         assert_eq!(updates.len(), 2); // 2 categories updated
 
         // Check that confidence increased for all-correct category
-        let mech = engine
-            .category_stats("Mechanical Degradation")
-            .unwrap();
+        let mech = engine.category_stats("Mechanical Degradation").unwrap();
         assert!(mech.base_probability > 0.75); // Original was 0.75
     }
 
@@ -350,16 +348,12 @@ mod tests {
         engine.record_feedback("Mechanical Degradation", "correct");
         engine.record_feedback("Mechanical Degradation", "correct");
 
-        let before = engine
-            .category_stats("Mechanical Degradation")
-            .unwrap();
+        let before = engine.category_stats("Mechanical Degradation").unwrap();
         assert_eq!(before.total_detections, 2);
 
         engine.reset_category("Mechanical Degradation");
 
-        let after = engine
-            .category_stats("Mechanical Degradation")
-            .unwrap();
+        let after = engine.category_stats("Mechanical Degradation").unwrap();
         assert_eq!(after.total_detections, 0);
     }
 }

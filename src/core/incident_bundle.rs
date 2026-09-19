@@ -79,10 +79,18 @@ pub struct LayerAvailability {
 impl LayerAvailability {
     pub fn available_layer_count(&self) -> u32 {
         let mut count = 0;
-        if self.layer1_ros_bags { count += 1; }
-        if self.layer2_linux_logs { count += 1; }
-        if self.layer3_metrics { count += 1; }
-        if self.layer4_configs { count += 1; }
+        if self.layer1_ros_bags {
+            count += 1;
+        }
+        if self.layer2_linux_logs {
+            count += 1;
+        }
+        if self.layer3_metrics {
+            count += 1;
+        }
+        if self.layer4_configs {
+            count += 1;
+        }
         count
     }
 
@@ -201,10 +209,26 @@ impl IncidentBundle {
     /// Get path to a layer directory within the bundle
     pub fn get_layer_path(&self, layer: u32) -> PathBuf {
         match layer {
-            1 => self.bundle_path.parent().unwrap_or_else(|| Path::new("")).join("layer1"),
-            2 => self.bundle_path.parent().unwrap_or_else(|| Path::new("")).join("layer2"),
-            3 => self.bundle_path.parent().unwrap_or_else(|| Path::new("")).join("layer3"),
-            4 => self.bundle_path.parent().unwrap_or_else(|| Path::new("")).join("layer4"),
+            1 => self
+                .bundle_path
+                .parent()
+                .unwrap_or_else(|| Path::new(""))
+                .join("layer1"),
+            2 => self
+                .bundle_path
+                .parent()
+                .unwrap_or_else(|| Path::new(""))
+                .join("layer2"),
+            3 => self
+                .bundle_path
+                .parent()
+                .unwrap_or_else(|| Path::new(""))
+                .join("layer3"),
+            4 => self
+                .bundle_path
+                .parent()
+                .unwrap_or_else(|| Path::new(""))
+                .join("layer4"),
             _ => PathBuf::new(),
         }
     }
@@ -273,9 +297,16 @@ mod tests {
         // process CWD, which varies depending on how/where `cargo test` is
         // invoked from) so this test is reliable regardless of working
         // directory.
-        let fixture = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/test.zip"));
+        let fixture = Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/fixtures/test.zip"
+        ));
         let bundle = IncidentBundle::from_zip(fixture);
-        assert!(bundle.is_ok(), "expected bundle creation to succeed: {:?}", bundle.err());
+        assert!(
+            bundle.is_ok(),
+            "expected bundle creation to succeed: {:?}",
+            bundle.err()
+        );
     }
 
     #[test]

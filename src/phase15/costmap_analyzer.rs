@@ -7,7 +7,7 @@
 //! - False static obstacles
 //! - Overly conservative settings
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum CostmapCause {
@@ -30,10 +30,7 @@ pub struct CostmapIssue {
 pub struct CostmapAnalyzer;
 
 impl CostmapAnalyzer {
-    pub fn analyze_inflation(
-        inflation_radius: f32,
-        robot_footprint: f32,
-    ) -> Option<CostmapIssue> {
+    pub fn analyze_inflation(inflation_radius: f32, robot_footprint: f32) -> Option<CostmapIssue> {
         let ratio = inflation_radius / robot_footprint;
 
         if ratio > 2.0 {
@@ -42,12 +39,17 @@ impl CostmapAnalyzer {
                 confidence: 0.85,
                 inflation_ratio: ratio,
                 evidence: vec![
-                    format!("Inflation radius: {:.2}m, Robot footprint: {:.2}m, Ratio: {:.1}x",
-                            inflation_radius, robot_footprint, ratio),
+                    format!(
+                        "Inflation radius: {:.2}m, Robot footprint: {:.2}m, Ratio: {:.1}x",
+                        inflation_radius, robot_footprint, ratio
+                    ),
                     "Blocking valid navigation paths unnecessarily".to_string(),
                 ],
                 recommendations: vec![
-                    format!("Reduce inflation radius to 0.15–0.30m range (current: {:.2}m)", inflation_radius),
+                    format!(
+                        "Reduce inflation radius to 0.15–0.30m range (current: {:.2}m)",
+                        inflation_radius
+                    ),
                     "Verify clearance margins are appropriate for environment".to_string(),
                     "Test navigation with gradually reduced inflation".to_string(),
                 ],

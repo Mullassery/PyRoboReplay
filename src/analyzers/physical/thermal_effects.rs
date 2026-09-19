@@ -3,11 +3,17 @@
 //! Detects temperature-related performance degradation.
 
 use crate::analyzers::{
-    GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity, Evidence,
+    Evidence, GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity,
 };
 use std::collections::HashMap;
 
 pub struct ThermalEffectsDetector;
+
+impl Default for ThermalEffectsDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ThermalEffectsDetector {
     pub fn new() -> Self {
@@ -21,22 +27,22 @@ impl ThermalEffectsDetector {
         joint_states: &[crate::analyzers::JointState],
         thermal_readings: &[crate::analyzers::ThermalReading],
     ) -> Option<RealityGapFinding> {
-        if motor_currents.is_empty()
-            || joint_states.is_empty()
-            || thermal_readings.is_empty()
-        {
+        if motor_currents.is_empty() || joint_states.is_empty() || thermal_readings.is_empty() {
             return None;
         }
 
         // Compute initial and final efficiency
-        let initial_efficiency = self.compute_efficiency(&motor_currents[0..10.min(motor_currents.len())],
-            &joint_states);
+        let initial_efficiency = self.compute_efficiency(
+            &motor_currents[0..10.min(motor_currents.len())],
+            joint_states,
+        );
         let final_efficiency = self.compute_efficiency(
             &motor_currents[motor_currents.len().saturating_sub(10)..],
-            &joint_states,
+            joint_states,
         );
 
-        let efficiency_decline = (initial_efficiency - final_efficiency) / initial_efficiency.max(0.01);
+        let efficiency_decline =
+            (initial_efficiency - final_efficiency) / initial_efficiency.max(0.01);
 
         // Find peak temperature
         let peak_temp = thermal_readings
@@ -48,7 +54,10 @@ impl ThermalEffectsDetector {
         // Threshold: 5% efficiency decline
         if efficiency_decline > 0.05 && peak_temp > 50.0 {
             let mut metrics = HashMap::new();
-            metrics.insert("efficiency_decline_pct".to_string(), efficiency_decline * 100.0);
+            metrics.insert(
+                "efficiency_decline_pct".to_string(),
+                efficiency_decline * 100.0,
+            );
             metrics.insert("peak_temperature_c".to_string(), peak_temp);
             metrics.insert("initial_efficiency".to_string(), initial_efficiency);
             metrics.insert("final_efficiency".to_string(), final_efficiency);
@@ -85,11 +94,10 @@ impl ThermalEffectsDetector {
                     "Model temperature-dependent efficiency: η(T) = η₀ * (1 - 0.005 * (T - 25)). \
                      Run Gazebo with ambient temperature increasing over mission."
                         .to_string(),
-                remediation:
-                    "1. Ensure adequate ventilation/cooling of motor drivers. \
+                remediation: "1. Ensure adequate ventilation/cooling of motor drivers. \
                      2. Reduce continuous motor load during mission. \
                      3. Consider more efficient gearing or motor selection."
-                        .to_string(),
+                    .to_string(),
                 detection_time_sec: thermal_readings.last().map(|t| t.timestamp),
             });
         }

@@ -3,11 +3,17 @@
 //! Detects image quality degradation due to lens dirt, water droplets, condensation.
 
 use crate::analyzers::{
-    GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity, Evidence,
+    Evidence, GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity,
 };
 use std::collections::HashMap;
 
 pub struct OpticalContaminationDetector;
+
+impl Default for OpticalContaminationDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl OpticalContaminationDetector {
     pub fn new() -> Self {
@@ -40,7 +46,8 @@ impl OpticalContaminationDetector {
             self.compute_sharpness_trend(&sharpness_values);
 
         // Threshold: >15% decline in sharpness
-        let sharpness_decline_pct = (initial_sharpness - final_sharpness) / initial_sharpness * 100.0;
+        let sharpness_decline_pct =
+            (initial_sharpness - final_sharpness) / initial_sharpness * 100.0;
 
         if sharpness_decline_pct > 15.0 {
             // Cross-reference with detection confidence
@@ -208,10 +215,9 @@ impl GapDetector for OpticalContaminationDetector {
     fn analyze(&self, mission_data: &MissionAnalysisData) -> Vec<RealityGapFinding> {
         let mut findings = Vec::new();
 
-        if let Some(finding) = self.analyze_image_quality(
-            &mission_data.camera_frames,
-            &mission_data.detection_results,
-        ) {
+        if let Some(finding) =
+            self.analyze_image_quality(&mission_data.camera_frames, &mission_data.detection_results)
+        {
             findings.push(finding);
         }
 

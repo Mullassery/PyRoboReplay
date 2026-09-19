@@ -1,8 +1,8 @@
 // Phase 2: Failure Prediction & Forecasting Tests
 // Tests predictive capabilities based on historical patterns
 
-use pyroboreplay::core::Failure;
 use chrono::Utc;
+use pyroboreplay::core::Failure;
 use std::collections::HashMap;
 
 // ============================================================================
@@ -191,7 +191,10 @@ fn test_confidence_escalation() {
 fn test_failure_type_progression() {
     let failures = create_escalating_failures();
 
-    let types: Vec<_> = failures.iter().map(|(_, f)| f.failure_type.as_str()).collect();
+    let types: Vec<_> = failures
+        .iter()
+        .map(|(_, f)| f.failure_type.as_str())
+        .collect();
 
     // Progression: sensor_dropout → sensor_dropout → communication_loss
     assert_eq!(types[0], "sensor_dropout");
@@ -216,7 +219,7 @@ fn test_recurring_pattern_detection() {
 #[test]
 fn test_temporal_spacing() {
     // Weekly pattern should be detectible
-    let dates = vec!["2026-07-01", "2026-07-08", "2026-07-15"];
+    let dates = ["2026-07-01", "2026-07-08", "2026-07-15"];
 
     // Each date is 7 days apart (weekly pattern)
     // This would need actual date parsing in production
@@ -227,7 +230,8 @@ fn test_temporal_spacing() {
 fn test_pattern_confidence_average() {
     let failures = create_recurring_pattern();
 
-    let avg_confidence: f32 = failures.iter().map(|(_, f)| f.confidence).sum::<f32>() / failures.len() as f32;
+    let avg_confidence: f32 =
+        failures.iter().map(|(_, f)| f.confidence).sum::<f32>() / failures.len() as f32;
 
     // Average confidence should be high (>0.75)
     assert!(avg_confidence > 0.75);
@@ -263,7 +267,10 @@ fn test_next_failure_type_prediction() {
     let failures = create_historical_failures();
 
     // All are near_collision → predict next is near_collision
-    let failure_types: Vec<_> = failures.iter().map(|(_, f)| f.failure_type.as_str()).collect();
+    let failure_types: Vec<_> = failures
+        .iter()
+        .map(|(_, f)| f.failure_type.as_str())
+        .collect();
 
     let predicted_type = failure_types[failure_types.len() - 1];
     assert_eq!(predicted_type, "near_collision");
@@ -278,7 +285,7 @@ fn test_failure_probability_estimation() {
     let failure_count = failures.len();
 
     // Simple frequency: 3 failures in dataset
-    let probability = failure_count as f32 / 10.0;  // Assume 10 total missions
+    let probability = failure_count as f32 / 10.0; // Assume 10 total missions
     assert!(probability > 0.25, "Should estimate reasonable probability");
 }
 
@@ -304,7 +311,8 @@ fn test_action_recommendation_based_on_pattern() {
     // For recurring collision at loading dock:
     // Recommended actions: improve obstacle detection, map obstacles, etc.
     for (_date, failure) in &failures {
-        if failure.failure_type == "near_collision" && failure.description.contains("loading dock") {
+        if failure.failure_type == "near_collision" && failure.description.contains("loading dock")
+        {
             // Should recommend obstacle mitigation
             assert!(!failure.description.is_empty());
         }
@@ -343,9 +351,12 @@ fn test_prediction_confidence_from_pattern_strength() {
     let failures = create_historical_failures();
 
     // 3 identical failures at same location = strong pattern = high confidence
-    let pattern_strength = failures.len() as f32 / 3.0;  // Normalize to scale
+    let pattern_strength = failures.len() as f32 / 3.0; // Normalize to scale
 
-    assert!(pattern_strength >= 1.0, "Strong pattern should score >= 1.0");
+    assert!(
+        pattern_strength >= 1.0,
+        "Strong pattern should score >= 1.0"
+    );
 }
 
 #[test]
@@ -353,7 +364,7 @@ fn test_prediction_accuracy_baseline() {
     // With 3 historical occurrences of same failure type at same location:
     // Prediction: next failure will be same type at same location
     // Expected accuracy: >60%
-    let prediction_accuracy = 0.85;  // Based on 3/3 pattern matching
+    let prediction_accuracy = 0.85; // Based on 3/3 pattern matching
 
     assert!(prediction_accuracy > 0.6);
 }
@@ -361,7 +372,7 @@ fn test_prediction_accuracy_baseline() {
 #[test]
 fn test_false_positive_rate() {
     // Rare failures should have lower confidence
-    let single_failure = vec![(
+    let single_failure = [(
         "2026-07-01".to_string(),
         Failure::new(
             "rare_failure".to_string(),
@@ -388,7 +399,7 @@ fn test_deviation_from_pattern() {
     failures.push((
         "2026-07-22".to_string(),
         Failure::new(
-            "sensor_dropout".to_string(),  // Deviation!
+            "sensor_dropout".to_string(), // Deviation!
             Utc::now(),
             0.70,
             "medium".to_string(),
@@ -397,11 +408,17 @@ fn test_deviation_from_pattern() {
     ));
 
     // 3 navigation_deadlock + 1 sensor_dropout
-    let deadlock_count = failures.iter().filter(|(_, f)| f.failure_type == "navigation_deadlock").count();
-    let dropout_count = failures.iter().filter(|(_, f)| f.failure_type == "sensor_dropout").count();
+    let deadlock_count = failures
+        .iter()
+        .filter(|(_, f)| f.failure_type == "navigation_deadlock")
+        .count();
+    let dropout_count = failures
+        .iter()
+        .filter(|(_, f)| f.failure_type == "sensor_dropout")
+        .count();
 
     assert_eq!(deadlock_count, 3);
-    assert_eq!(dropout_count, 1);  // Anomaly detected
+    assert_eq!(dropout_count, 1); // Anomaly detected
 }
 
 #[test]
@@ -409,14 +426,17 @@ fn test_outlier_severity() {
     // Most at high severity, one at low = outlier
     let mut failures = create_recurring_pattern();
     let mut outlier = failures[0].1.clone();
-    outlier.severity = "low".to_string();  // Deviation
+    outlier.severity = "low".to_string(); // Deviation
     failures.push(("2026-07-22".to_string(), outlier));
 
-    let high_count = failures.iter().filter(|(_, f)| f.severity == "high").count();
+    let high_count = failures
+        .iter()
+        .filter(|(_, f)| f.severity == "high")
+        .count();
     let low_count = failures.iter().filter(|(_, f)| f.severity == "low").count();
 
     assert_eq!(high_count, 3);
-    assert_eq!(low_count, 1);  // Outlier detected
+    assert_eq!(low_count, 1); // Outlier detected
 }
 
 // ============================================================================

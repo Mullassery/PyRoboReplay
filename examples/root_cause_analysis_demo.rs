@@ -1,8 +1,7 @@
-use pyroboreplay::core::{
-    CausalGraphBuilder, CausalLink, Location, MissionEvent, MissionRecord,
-    Pose, RootCauseAnalyzer,
-};
 use chrono::Utc;
+use pyroboreplay::core::{
+    CausalGraphBuilder, CausalLink, Location, MissionEvent, MissionRecord, Pose, RootCauseAnalyzer,
+};
 
 fn main() {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
@@ -24,7 +23,11 @@ fn main() {
     mission.add_event(MissionEvent::ObstacleDetected {
         robot_id: "robot_1".to_string(),
         timestamp: base_time,
-        location: Location { x: 5.0, y: 5.0, z: 0.0 },
+        location: Location {
+            x: 5.0,
+            y: 5.0,
+            z: 0.0,
+        },
         obstacle_type: "wall".to_string(),
         confidence: Some(0.95),
     });
@@ -40,7 +43,10 @@ fn main() {
 
     // Event 2-4: Robot movement attempts (all fail to move)
     for i in 2..5 {
-        println!("  Event {} (t={}s): Robot at (4.0, 4.0) [NO MOVEMENT]", i, i);
+        println!(
+            "  Event {} (t={}s): Robot at (4.0, 4.0) [NO MOVEMENT]",
+            i, i
+        );
         mission.add_event(MissionEvent::RobotPose {
             robot_id: "robot_1".to_string(),
             timestamp: base_time + chrono::Duration::seconds(i as i64),
@@ -90,28 +96,47 @@ fn main() {
     println!("═══════════════════════════════════════════════════════════════════\n");
 
     // Create root cause analyzer
-    let mut analyzer = RootCauseAnalyzer::new(mission.events.clone())
-        .with_causal_graph(graph);
+    let mut analyzer = RootCauseAnalyzer::new(mission.events.clone()).with_causal_graph(graph);
 
     // Detect failure modes
     analyzer.detect_failure_modes();
 
     println!("Detected Failure Modes:");
     for (idx, mode) in analyzer.failure_modes().iter().enumerate() {
-        println!("  {}. {} (severity: {})", idx + 1, mode.failure_type, mode.severity);
+        println!(
+            "  {}. {} (severity: {})",
+            idx + 1,
+            mode.failure_type,
+            mode.severity
+        );
         println!("     Confidence: {:.0}%", mode.confidence * 100.0);
     }
 
     // Analyze root causes for the failure at event 4
     let failure_event = 4; // Last event (deadlock state)
-    println!("\nAnalyzing root causes for failure at Event {}...", failure_event);
+    println!(
+        "\nAnalyzing root causes for failure at Event {}...",
+        failure_event
+    );
 
     if let Some(analysis) = analyzer.analyze_failure(failure_event) {
         println!("\n✓ Root Cause Analysis Complete");
-        println!("  Diagnostic Confidence: {:.0}%", analysis.diagnostic_confidence * 100.0);
-        println!("  Hypotheses Generated: {}", analysis.stats.total_hypotheses);
-        println!("  High-Confidence Hypotheses (>80%): {}", analysis.stats.high_confidence_hypotheses);
-        println!("  Average Chain Length: {:.1} hops", analysis.stats.avg_chain_length);
+        println!(
+            "  Diagnostic Confidence: {:.0}%",
+            analysis.diagnostic_confidence * 100.0
+        );
+        println!(
+            "  Hypotheses Generated: {}",
+            analysis.stats.total_hypotheses
+        );
+        println!(
+            "  High-Confidence Hypotheses (>80%): {}",
+            analysis.stats.high_confidence_hypotheses
+        );
+        println!(
+            "  Average Chain Length: {:.1} hops",
+            analysis.stats.avg_chain_length
+        );
         println!("  Consensus Score: {:.2}", analysis.stats.consensus_score);
 
         if let Some(root_cause) = &analysis.most_likely_cause {

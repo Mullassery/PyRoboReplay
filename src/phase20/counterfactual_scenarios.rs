@@ -1,5 +1,4 @@
 /// Counterfactual Scenario Analysis - What-if analysis with impact prediction
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -8,10 +7,10 @@ pub struct CounterfactualScenario {
     pub scenario_id: String,
     pub name: String,
     pub description: String,
-    pub modifications: HashMap<String, f32>,  // Feature -> hypothetical value
+    pub modifications: HashMap<String, f32>, // Feature -> hypothetical value
     pub predicted_outcome: String,
     pub confidence: f32,
-    pub impact_magnitude: f32,                // How much different from baseline?
+    pub impact_magnitude: f32, // How much different from baseline?
     pub affected_features: Vec<String>,
 }
 
@@ -101,7 +100,8 @@ impl ScenarioAnalyzer {
                         let indirect_effect = source_value * 0.7;
 
                         if !new_effects.contains_key(target)
-                            || (new_effects.get(target).unwrap_or(&0.0) - indirect_effect).abs() > 0.01
+                            || (new_effects.get(target).unwrap_or(&0.0) - indirect_effect).abs()
+                                > 0.01
                         {
                             new_effects.insert(target.clone(), indirect_effect);
                             changed = true;
@@ -130,7 +130,7 @@ impl ScenarioAnalyzer {
         steps: usize,
     ) -> Vec<CounterfactualScenario> {
         let mut scenarios = Vec::new();
-        let baseline = self.baseline_features.get(&feature).unwrap_or(&0.0);
+        let _baseline = self.baseline_features.get(&feature).unwrap_or(&0.0);
 
         let step_size = (range.1 - range.0) / (steps as f32 - 1.0);
 
@@ -165,8 +165,10 @@ impl ScenarioAnalyzer {
             comparison.insert(format!("diff_{}", feature), diff);
         }
 
-        comparison.insert("impact_diff".to_string(),
-            (scenario_b.impact_magnitude - scenario_a.impact_magnitude).abs());
+        comparison.insert(
+            "impact_diff".to_string(),
+            (scenario_b.impact_magnitude - scenario_a.impact_magnitude).abs(),
+        );
 
         comparison
     }
@@ -175,16 +177,21 @@ impl ScenarioAnalyzer {
     pub fn get_statistics(&self) -> HashMap<String, f32> {
         let mut stats = HashMap::new();
 
-        stats.insert("total_scenarios".to_string(), self.scenario_history.len() as f32);
+        stats.insert(
+            "total_scenarios".to_string(),
+            self.scenario_history.len() as f32,
+        );
 
         if !self.scenario_history.is_empty() {
-            let avg_impact: f32 = self.scenario_history
+            let avg_impact: f32 = self
+                .scenario_history
                 .iter()
                 .map(|s| s.impact_magnitude)
                 .sum::<f32>()
                 / self.scenario_history.len() as f32;
 
-            let avg_confidence: f32 = self.scenario_history
+            let avg_confidence: f32 = self
+                .scenario_history
                 .iter()
                 .map(|s| s.confidence)
                 .sum::<f32>()
@@ -264,7 +271,8 @@ mod tests {
         };
 
         let mut analyzer = ScenarioAnalyzer::new(baseline);
-        let scenarios = analyzer.generate_sensitivity_analysis("feature1".to_string(), (0.0, 1.0), 5);
+        let scenarios =
+            analyzer.generate_sensitivity_analysis("feature1".to_string(), (0.0, 1.0), 5);
 
         assert_eq!(scenarios.len(), 5);
     }

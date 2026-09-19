@@ -7,8 +7,8 @@
 //! - Root cause analysis
 //! - Safety critical incident reports
 
-use crate::fusion::rgb_thermal_fusion::FusionStatistics;
 use crate::fusion::invisible_person_detector::InvisiblePersonSummary;
+use crate::fusion::rgb_thermal_fusion::FusionStatistics;
 use serde::{Deserialize, Serialize};
 
 /// Root cause analysis
@@ -140,12 +140,13 @@ impl ForensicReporter {
     /// Add missed detection
     pub fn add_missed_detection(&mut self, incident: MissedDetectionIncident) {
         if incident.safety_criticality > 0.7 {
-            self.report
-                .safety_critical_findings
-                .push(format!(
-                    "{} missed at ({:.0}, {:.0}), {:.1}s latency",
-                    incident.object_type, incident.location.0, incident.location.1, incident.detection_latency_sec
-                ));
+            self.report.safety_critical_findings.push(format!(
+                "{} missed at ({:.0}, {:.0}), {:.1}s latency",
+                incident.object_type,
+                incident.location.0,
+                incident.location.1,
+                incident.detection_latency_sec
+            ));
         }
         self.report.missed_detections.push(incident);
     }
@@ -160,10 +161,7 @@ impl ForensicReporter {
         let mut summary = String::from("FORENSIC INVESTIGATION EXECUTIVE SUMMARY\n");
         summary.push_str("==========================================\n\n");
 
-        summary.push_str(&format!(
-            "Mission: {}\n",
-            self.report.mission_id
-        ));
+        summary.push_str(&format!("Mission: {}\n", self.report.mission_id));
         summary.push_str(&format!(
             "Duration: {:.1}s ({:.1}s to {:.1}s)\n\n",
             self.report.mission_end - self.report.mission_start,
@@ -173,10 +171,7 @@ impl ForensicReporter {
 
         if let Some(stats) = &self.report.fusion_stats {
             summary.push_str("SENSOR PERFORMANCE:\n");
-            summary.push_str(&format!(
-                "  RGB Detections: {}\n",
-                stats.rgb_detections
-            ));
+            summary.push_str(&format!("  RGB Detections: {}\n", stats.rgb_detections));
             summary.push_str(&format!(
                 "  Thermal-Only Detections: {}\n",
                 stats.thermal_only_detections
@@ -221,7 +216,7 @@ impl ForensicReporter {
             for finding in &self.report.safety_critical_findings {
                 summary.push_str(&format!("  ⚠ {}\n", finding));
             }
-            summary.push_str("\n");
+            summary.push('\n');
         }
 
         if !self.report.recommendations.is_empty() {
@@ -245,22 +240,18 @@ impl ForensicReporter {
         if !self.report.missed_detections.is_empty() {
             report.push_str("MISSED DETECTION ANALYSIS:\n\n");
             for incident in &self.report.missed_detections {
-                report.push_str(&format!(
-                    "{}:\n",
-                    incident.object_type
-                ));
+                report.push_str(&format!("{}:\n", incident.object_type));
                 report.push_str(&format!(
                     "  Location: ({:.0}, {:.0})\n",
                     incident.location.0, incident.location.1
                 ));
                 report.push_str(&format!(
                     "  Detection Latency: RGB miss at {:.1}s, Thermal at {:.1}s ({:.1}s gap)\n",
-                    incident.rgb_miss_timestamp, incident.thermal_detect_timestamp, incident.detection_latency_sec
+                    incident.rgb_miss_timestamp,
+                    incident.thermal_detect_timestamp,
+                    incident.detection_latency_sec
                 ));
-                report.push_str(&format!(
-                    "  RGB Failure: {}\n",
-                    incident.rgb_failure_reason
-                ));
+                report.push_str(&format!("  RGB Failure: {}\n", incident.rgb_failure_reason));
                 report.push_str(&format!(
                     "  Thermal Evidence: {}\n",
                     incident.thermal_evidence
@@ -276,14 +267,8 @@ impl ForensicReporter {
         if !self.report.root_causes.is_empty() {
             report.push_str("ROOT CAUSE ANALYSIS:\n\n");
             for rca in &self.report.root_causes {
-                report.push_str(&format!(
-                    "Event: {}\n",
-                    rca.observation
-                ));
-                report.push_str(&format!(
-                    "  Immediate Cause: {}\n",
-                    rca.immediate_cause
-                ));
+                report.push_str(&format!("Event: {}\n", rca.observation));
+                report.push_str(&format!("  Immediate Cause: {}\n", rca.immediate_cause));
                 if !rca.contributing_factors.is_empty() {
                     report.push_str("  Contributing Factors:\n");
                     for factor in &rca.contributing_factors {
@@ -293,7 +278,7 @@ impl ForensicReporter {
                 if rca.fusion_prevention_potential {
                     report.push_str("  → Fusion could have prevented this\n");
                 }
-                report.push_str("\n");
+                report.push('\n');
             }
         }
 

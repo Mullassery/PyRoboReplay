@@ -1,5 +1,4 @@
 use crate::core::anomaly_detector::Failure;
-use std::collections::HashMap;
 
 /// Generates human-readable explanations for failures
 pub struct ExplanationGenerator;
@@ -240,8 +239,16 @@ mod tests {
             );
 
             let explanation = ExplanationGenerator::explain(&failure);
-            assert!(!explanation.is_empty(), "No explanation for {}", failure_type);
-            assert!(!explanation.contains("Unknown"), "Unknown failure type: {}", failure_type);
+            assert!(
+                !explanation.is_empty(),
+                "No explanation for {}",
+                failure_type
+            );
+            assert!(
+                !explanation.contains("Unknown"),
+                "Unknown failure type: {}",
+                failure_type
+            );
         }
     }
 }

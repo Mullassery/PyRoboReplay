@@ -7,9 +7,9 @@
 //! Shows how persistent knowledge (Phase 10) + spatial grounding (Phase 10.2)
 //! enables robot to understand environment dynamics across time.
 
-use crate::knowledge::world_model::{WorldModelManager, Entity, EntityState};
-use crate::knowledge::spatial_grounding::{SpatialCoordinates, SpatialGroundingEngine};
 use crate::knowledge::longitudinal_reasoning::LongitudinalAnalyzer;
+use crate::knowledge::spatial_grounding::{SpatialCoordinates, SpatialGroundingEngine};
+use crate::knowledge::world_model::WorldModelManager;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -73,8 +73,7 @@ impl LearningProgression {
             trace.anomalies_detected,
         );
 
-        let insight_strings: Vec<String> =
-            insights.iter().map(|i| i.insight.clone()).collect();
+        let insight_strings: Vec<String> = insights.iter().map(|i| i.insight.clone()).collect();
 
         // Store trace with insights
         let mut enriched_trace = trace.clone();

@@ -3,10 +3,8 @@
 //! Transforms raw gaps + causal chains into human-readable incident narratives
 //! explaining what happened, why it happened, and what to do about it.
 
-use crate::analyzers::gap_to_causal::GapCausalEvent;
 use crate::analyzers::multi_factor_causality::MultiFactorCausalChain;
 use crate::analyzers::RealityGapFinding;
-use std::collections::HashMap;
 
 /// Complete incident narrative: what happened, why, and what to do
 #[derive(Debug, Clone)]
@@ -99,23 +97,21 @@ impl IncidentNarrativeGenerator {
         gaps: &[RealityGapFinding],
     ) -> IncidentNarrative {
         let start_time = chain.events.first().map(|e| e.timestamp_sec).unwrap_or(0.0);
-        let end_time = chain
-            .events
-            .last()
-            .map(|e| e.timestamp_sec)
-            .unwrap_or(0.0);
+        let end_time = chain.events.last().map(|e| e.timestamp_sec).unwrap_or(0.0);
 
-        let executive_summary =
-            Self::generate_executive_summary(&chain.ultimate_effect, &chain.root_environmental_cause);
+        let executive_summary = Self::generate_executive_summary(
+            &chain.ultimate_effect,
+            &chain.root_environmental_cause,
+        );
 
         let what_happened = Self::generate_what_happened(&chain.events);
-        let why_it_happened = Self::generate_why(&chain, gaps);
+        let why_it_happened = Self::generate_why(chain, gaps);
         let impact_description = Self::generate_impact(&chain.ultimate_effect);
 
         let contributing_factors_explained =
             Self::explain_contributing_factors(&chain.contributing_factors);
 
-        let recommended_actions = Self::generate_recommendations(&chain);
+        let recommended_actions = Self::generate_recommendations(chain);
         let escalation_risk = Self::assess_escalation_risk(&chain.predicted_severity);
 
         let supporting_evidence = chain
@@ -158,7 +154,9 @@ impl IncidentNarrativeGenerator {
     }
 
     /// Generate chronological "what happened" description
-    fn generate_what_happened(events: &[crate::analyzers::multi_factor_causality::ChainEvent]) -> String {
+    fn generate_what_happened(
+        events: &[crate::analyzers::multi_factor_causality::ChainEvent],
+    ) -> String {
         if events.is_empty() {
             return "No events recorded.".to_string();
         }
@@ -200,7 +198,7 @@ impl IncidentNarrativeGenerator {
                     explanation.push('\n');
                 }
             } else {
-                explanation.push_str(&format!("{}", event.description));
+                explanation.push_str(&event.description.to_string());
             }
         }
         explanation.push_str(&format!("\n\nFinal outcome: {}", chain.ultimate_effect));
@@ -284,9 +282,7 @@ impl IncidentNarrativeGenerator {
     }
 
     /// Generate actionable recommendations
-    fn generate_recommendations(
-        chain: &MultiFactorCausalChain,
-    ) -> Vec<RecommendedAction> {
+    fn generate_recommendations(chain: &MultiFactorCausalChain) -> Vec<RecommendedAction> {
         let mut actions = Vec::new();
 
         for (i, intervention) in chain.intervention_points.iter().enumerate().take(3) {
@@ -315,7 +311,9 @@ impl IncidentNarrativeGenerator {
                         "intermediate"
                     }
                 ),
-                implementation: Self::generate_implementation_steps(&intervention.intervention_type),
+                implementation: Self::generate_implementation_steps(
+                    &intervention.intervention_type,
+                ),
                 effectiveness: intervention.effectiveness_score,
                 priority: priority.to_string(),
                 effort: effort.to_string(),
@@ -328,30 +326,24 @@ impl IncidentNarrativeGenerator {
     /// Generate implementation steps for an intervention
     fn generate_implementation_steps(intervention_type: &str) -> String {
         match intervention_type {
-            "prevent" => {
-                "1. Identify root environmental cause\n\
+            "prevent" => "1. Identify root environmental cause\n\
                  2. Apply protective measure (coating, shielding, or design change)\n\
                  3. Validate effectiveness in simulation\n\
                  4. Test in controlled environment\n\
                  5. Deploy to fleet with monitoring"
-                    .to_string()
-            }
-            "compensate" => {
-                "1. Add redundant sensing or fallback algorithm\n\
+                .to_string(),
+            "compensate" => "1. Add redundant sensing or fallback algorithm\n\
                  2. Tune thresholds for early detection\n\
                  3. Test failover mechanism\n\
                  4. Monitor for effectiveness\n\
                  5. Adjust confidence thresholds as needed"
-                    .to_string()
-            }
-            "fallback" => {
-                "1. Define safe fallback state or behavior\n\
+                .to_string(),
+            "fallback" => "1. Define safe fallback state or behavior\n\
                  2. Implement automatic detection and transition\n\
                  3. Add safety constraints to fallback mode\n\
                  4. Test graceful degradation\n\
                  5. Communicate degraded behavior to operators"
-                    .to_string()
-            }
+                .to_string(),
             _ => "Implement appropriate intervention strategy.".to_string(),
         }
     }
@@ -359,26 +351,18 @@ impl IncidentNarrativeGenerator {
     /// Assess escalation risk
     fn assess_escalation_risk(severity: &str) -> String {
         match severity {
-            "Critical" => {
-                "CRITICAL ESCALATION RISK: This incident requires immediate attention. \
+            "Critical" => "CRITICAL ESCALATION RISK: This incident requires immediate attention. \
                  If not addressed, expect repeated failures and potential safety incidents."
-                    .to_string()
-            }
-            "High" => {
-                "HIGH ESCALATION RISK: This gap will likely recur under similar conditions. \
+                .to_string(),
+            "High" => "HIGH ESCALATION RISK: This gap will likely recur under similar conditions. \
                  Recommend priority implementation of preventive measures."
-                    .to_string()
-            }
-            "Medium" => {
-                "MODERATE ESCALATION RISK: This gap may recur intermittently. \
+                .to_string(),
+            "Medium" => "MODERATE ESCALATION RISK: This gap may recur intermittently. \
                  Plan mitigation within current development cycle."
-                    .to_string()
-            }
-            "Low" => {
-                "LOW ESCALATION RISK: This is a rare edge case. \
+                .to_string(),
+            "Low" => "LOW ESCALATION RISK: This is a rare edge case. \
                  Monitor and consider for future hardening efforts."
-                    .to_string()
-            }
+                .to_string(),
             _ => "Unknown severity level.".to_string(),
         }
     }
@@ -387,10 +371,11 @@ impl IncidentNarrativeGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
 
     fn create_test_chain() -> MultiFactorCausalChain {
-        use crate::analyzers::multi_factor_causality::{ChainEvent, ContributingFactor, InterventionPoint};
+        use crate::analyzers::multi_factor_causality::{
+            ChainEvent, ContributingFactor, InterventionPoint,
+        };
 
         MultiFactorCausalChain {
             chain_id: "test_chain".to_string(),
@@ -428,14 +413,12 @@ mod tests {
                 },
             ],
             predicted_severity: "Critical".to_string(),
-            intervention_points: vec![
-                InterventionPoint {
-                    location_in_chain: 0,
-                    intervention_type: "prevent".to_string(),
-                    recommended_action: "Apply hydrophobic coating".to_string(),
-                    effectiveness_score: 0.95,
-                },
-            ],
+            intervention_points: vec![InterventionPoint {
+                location_in_chain: 0,
+                intervention_type: "prevent".to_string(),
+                recommended_action: "Apply hydrophobic coating".to_string(),
+                effectiveness_score: 0.95,
+            }],
         }
     }
 
@@ -460,7 +443,9 @@ mod tests {
         let narrative = IncidentNarrativeGenerator::from_causal_chain(&chain, &gaps);
 
         assert_eq!(narrative.contributing_factors_explained.len(), 2);
-        assert!(narrative.contributing_factors_explained[0].explanation.len() > 0);
+        assert!(!narrative.contributing_factors_explained[0]
+            .explanation
+            .is_empty());
     }
 
     #[test]
@@ -472,7 +457,7 @@ mod tests {
 
         assert!(!narrative.recommended_actions.is_empty());
         // Critical severity should have critical priority for first action
-        if narrative.recommended_actions.len() > 0 {
+        if !narrative.recommended_actions.is_empty() {
             assert_eq!(narrative.recommended_actions[0].priority, "critical");
         }
     }

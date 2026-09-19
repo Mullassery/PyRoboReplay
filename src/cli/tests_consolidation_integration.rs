@@ -4,10 +4,8 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::analyzers::{
-        RealityGapFinding, Severity, RealityDomain, Evidence, MissionAnalysisData,
-    };
     use crate::analyzers::aggregation::EvidenceAggregator;
+    use crate::analyzers::{Evidence, RealityDomain, RealityGapFinding, Severity};
     use crate::cli::consolidated_output::ConsolidatedFormatter;
     use std::collections::HashMap;
 
@@ -110,7 +108,10 @@ mod tests {
         // Format and verify confidence boost is visible
         let formatter = ConsolidatedFormatter::new(true);
         let text = formatter.format_text(&consolidated);
-        assert!(text.contains(&format!("{:.0}%", consolidated[0].consolidated_confidence * 100.0)));
+        assert!(text.contains(&format!(
+            "{:.0}%",
+            consolidated[0].consolidated_confidence * 100.0
+        )));
     }
 
     #[test]
@@ -156,7 +157,11 @@ mod tests {
         // Redundancy factor is total detectors / consolidated findings
         // (2 + 1) / 2 = 1.5
         let redundancy = json["summary"]["redundancy_factor"].as_f64().unwrap_or(1.0) as f32;
-        assert!((redundancy - 1.5).abs() < 0.1, "Expected 1.5, got {}", redundancy);
+        assert!(
+            (redundancy - 1.5).abs() < 0.1,
+            "Expected 1.5, got {}",
+            redundancy
+        );
     }
 
     #[test]

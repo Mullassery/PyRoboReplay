@@ -1,9 +1,10 @@
 // Phase 1: Edge Case and Boundary Condition Tests
 // Tests robustness against unusual inputs and edge cases
 
-use pyroboreplay::core::{MissionEvent, AnomalyDetector, Failure, ExplanationGenerator, ActionRecommender};
 use chrono::Utc;
-use std::collections::HashMap;
+use pyroboreplay::core::{
+    ActionRecommender, AnomalyDetector, ExplanationGenerator, Failure, MissionEvent,
+};
 
 // ============================================================================
 // 1. BOUNDARY VALUE TESTS
@@ -15,7 +16,7 @@ fn test_lidar_range_at_zero_meters() {
         robot_id: "robot_1".to_string(),
         timestamp: Utc::now(),
         data: pyroboreplay::core::event::LidarData {
-            ranges: vec![0.0, 2.0, 3.0],  // Zero range
+            ranges: vec![0.0, 2.0, 3.0], // Zero range
             intensities: Some(vec![0.5, 0.5, 0.5]),
             frame_id: "lidar".to_string(),
             min_angle: -3.14,
@@ -30,7 +31,7 @@ fn test_lidar_range_at_zero_meters() {
     let failures = detector.detect_near_collision();
 
     // Zero range should not create false positives (might be invalid/filtered)
-    let _ = failures;  // Just ensure no panic
+    let _ = failures; // Just ensure no panic
 }
 
 #[test]
@@ -39,7 +40,7 @@ fn test_lidar_range_very_small_positive() {
         robot_id: "robot_1".to_string(),
         timestamp: Utc::now(),
         data: pyroboreplay::core::event::LidarData {
-            ranges: vec![0.001, 2.0, 3.0],  // Very small but positive
+            ranges: vec![0.001, 2.0, 3.0], // Very small but positive
             intensities: Some(vec![0.5, 0.5, 0.5]),
             frame_id: "lidar".to_string(),
             min_angle: -3.14,
@@ -63,7 +64,7 @@ fn test_lidar_range_at_threshold_exactly() {
         robot_id: "robot_1".to_string(),
         timestamp: Utc::now(),
         data: pyroboreplay::core::event::LidarData {
-            ranges: vec![0.5, 2.0, 3.0],  // Exactly at 0.5m threshold
+            ranges: vec![0.5, 2.0, 3.0], // Exactly at 0.5m threshold
             intensities: Some(vec![0.5, 0.5, 0.5]),
             frame_id: "lidar".to_string(),
             min_angle: -3.14,
@@ -83,10 +84,10 @@ fn test_lidar_range_at_threshold_exactly() {
 
 #[test]
 fn test_confidence_score_exactly_one() {
-    let mut failure = Failure::new(
+    let failure = Failure::new(
         "test_failure".to_string(),
         Utc::now(),
-        1.0,  // Maximum confidence
+        1.0, // Maximum confidence
         "high".to_string(),
         "Test".to_string(),
     );
@@ -100,7 +101,7 @@ fn test_confidence_score_exactly_zero() {
     let failure = Failure::new(
         "test_failure".to_string(),
         Utc::now(),
-        0.0,  // Minimum confidence
+        0.0, // Minimum confidence
         "low".to_string(),
         "Test".to_string(),
     );
@@ -141,7 +142,9 @@ fn test_very_large_evidence_map() {
 
     // Add many evidence entries
     for i in 0..1000 {
-        failure.evidence.insert(format!("key_{}", i), format!("value_{}", i));
+        failure
+            .evidence
+            .insert(format!("key_{}", i), format!("value_{}", i));
     }
 
     let explanation = ExplanationGenerator::explain(&failure);
@@ -150,7 +153,7 @@ fn test_very_large_evidence_map() {
 
 #[test]
 fn test_very_long_description() {
-    let long_description = "x".repeat(10000);  // 10KB description
+    let long_description = "x".repeat(10000); // 10KB description
     let failure = Failure::new(
         "test_failure".to_string(),
         Utc::now(),
@@ -175,7 +178,7 @@ fn test_empty_affected_systems() {
 
     assert!(failure.affected_systems.is_empty());
     let actions = ActionRecommender::recommend(&failure);
-    let _ = actions;  // Should not panic
+    let _ = actions; // Should not panic
 }
 
 #[test]
@@ -220,7 +223,7 @@ fn test_unicode_robot_id() {
     let detector = AnomalyDetector::new(events);
     let failures = detector.detect_all();
 
-    assert_eq!(failures.len(), 0);  // No failures, but should handle unicode
+    assert_eq!(failures.len(), 0); // No failures, but should handle unicode
 }
 
 #[test]
@@ -256,7 +259,7 @@ fn test_empty_string_frame_id() {
         data: pyroboreplay::core::event::LidarData {
             ranges: vec![2.0, 2.5, 3.0],
             intensities: None,
-            frame_id: "".to_string(),  // Empty frame ID
+            frame_id: "".to_string(), // Empty frame ID
             min_angle: -3.14,
             max_angle: 3.14,
             angle_increment: 0.01,
@@ -280,7 +283,7 @@ fn test_very_large_confidence_clamped() {
     let failure = Failure::new(
         "test_failure".to_string(),
         Utc::now(),
-        1.5,  // Over 1.0
+        1.5, // Over 1.0
         "high".to_string(),
         "Test".to_string(),
     );
@@ -294,7 +297,7 @@ fn test_negative_confidence() {
     let failure = Failure::new(
         "test_failure".to_string(),
         Utc::now(),
-        -0.5,  // Negative
+        -0.5, // Negative
         "high".to_string(),
         "Test".to_string(),
     );
@@ -305,7 +308,7 @@ fn test_negative_confidence() {
 
 #[test]
 fn test_massive_sensor_array() {
-    let ranges = vec![2.0; 100000];  // 100k range readings
+    let ranges = vec![2.0; 100000]; // 100k range readings
 
     let events = vec![MissionEvent::LidarScan {
         robot_id: "robot_1".to_string(),
@@ -352,7 +355,7 @@ fn test_same_timestamp_events() {
         },
         MissionEvent::LidarScan {
             robot_id: "robot_1".to_string(),
-            timestamp: ts,  // Exact same timestamp
+            timestamp: ts, // Exact same timestamp
             data: pyroboreplay::core::event::LidarData {
                 ranges: vec![2.0],
                 intensities: None,
@@ -394,7 +397,7 @@ fn test_reversed_timestamp_order() {
         },
         MissionEvent::LidarScan {
             robot_id: "robot_1".to_string(),
-            timestamp: ts2,  // Earlier than previous
+            timestamp: ts2, // Earlier than previous
             data: pyroboreplay::core::event::LidarData {
                 ranges: vec![2.0],
                 intensities: None,
@@ -411,7 +414,7 @@ fn test_reversed_timestamp_order() {
     let detector = AnomalyDetector::new(events);
     let failures = detector.detect_all();
 
-    let _ = failures;  // Should handle out-of-order gracefully
+    let _ = failures; // Should handle out-of-order gracefully
 }
 
 // ============================================================================
@@ -438,7 +441,7 @@ fn test_nan_in_sensor_data() {
     let detector = AnomalyDetector::new(events);
     let failures = detector.detect_all();
 
-    let _ = failures;  // Should handle NaN gracefully
+    let _ = failures; // Should handle NaN gracefully
 }
 
 #[test]

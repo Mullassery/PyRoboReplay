@@ -1,8 +1,8 @@
-use pyroboreplay::core::{
-    CausalGraphBuilder, CausalLink, CounterfactualAnalyzer, Location, MissionEvent,
-    MissionRecord, Pose,
-};
 use chrono::Utc;
+use pyroboreplay::core::{
+    CausalGraphBuilder, CausalLink, CounterfactualAnalyzer, Location, MissionEvent, MissionRecord,
+    Pose,
+};
 
 fn main() {
     println!("\n╔════════════════════════════════════════════════════════════════╗");
@@ -116,8 +116,8 @@ fn main() {
     println!("═══════════════════════════════════════════════════════════════════\n");
 
     // Create counterfactual analyzer
-    let mut cf_analyzer = CounterfactualAnalyzer::new(mission.events.clone())
-        .with_causal_graph(graph);
+    let mut cf_analyzer =
+        CounterfactualAnalyzer::new(mission.events.clone()).with_causal_graph(graph);
 
     // Identify critical links
     let failure_idx = 4;
@@ -127,7 +127,9 @@ fn main() {
         for (rank, link) in critical_links.iter().take(3).enumerate() {
             println!(
                 "{}. Event {} → Event {}",
-                rank + 1, link.source_event_idx, link.target_event_idx
+                rank + 1,
+                link.source_event_idx,
+                link.target_event_idx
             );
             println!("   Criticality: {:.0}%", link.criticality * 100.0);
             println!("   Cascade Size: {} events", link.cascade_size);
@@ -147,7 +149,10 @@ fn main() {
         println!("  Confidence: {:.0}%", scenario.confidence * 100.0);
         println!("  Failure Prevented: {}", scenario.impact.failure_prevented);
         println!("  Affected Events: {}", scenario.impact.cascade_size);
-        println!("  Outcome Confidence: {:.0}%\n", scenario.impact.outcome_confidence * 100.0);
+        println!(
+            "  Outcome Confidence: {:.0}%\n",
+            scenario.impact.outcome_confidence * 100.0
+        );
     }
 
     println!("Scenario 2: What if optimal path planning was used?\n");
@@ -156,7 +161,10 @@ fn main() {
         println!("  Outcome: {}", scenario.predicted_outcome);
         println!("  Confidence: {:.0}%", scenario.confidence * 100.0);
         println!("  Failure Prevented: {}", scenario.impact.failure_prevented);
-        println!("  Outcome Confidence: {:.0}%\n", scenario.impact.outcome_confidence * 100.0);
+        println!(
+            "  Outcome Confidence: {:.0}%\n",
+            scenario.impact.outcome_confidence * 100.0
+        );
     }
 
     println!("Scenario 3: What if conservative path planning was used?\n");
@@ -172,11 +180,23 @@ fn main() {
     println!("═══════════════════════════════════════════════════════════════════\n");
 
     if let Some(analysis) = cf_analyzer.analyze(failure_idx) {
-        println!("Critical Links Identified: {}", analysis.critical_links.len());
+        println!(
+            "Critical Links Identified: {}",
+            analysis.critical_links.len()
+        );
         println!("Scenarios Analyzed: {}", analysis.stats.scenarios_analyzed);
-        println!("Scenarios Preventing Failure: {}", analysis.stats.failure_preventable);
-        println!("Average Cascade Size: {:.1} events", analysis.stats.avg_cascade_size);
-        println!("Most Critical Link Score: {:.0}%", analysis.stats.most_critical_score * 100.0);
+        println!(
+            "Scenarios Preventing Failure: {}",
+            analysis.stats.failure_preventable
+        );
+        println!(
+            "Average Cascade Size: {:.1} events",
+            analysis.stats.avg_cascade_size
+        );
+        println!(
+            "Most Critical Link Score: {:.0}%",
+            analysis.stats.most_critical_score * 100.0
+        );
         println!(
             "Intervention Feasibility: {:.0}%\n",
             analysis.stats.intervention_feasibility * 100.0
@@ -190,7 +210,10 @@ fn main() {
             println!("Intervention: {}", best.description);
             println!("Expected Outcome: {}", best.predicted_outcome);
             println!("Confidence: {:.0}%", best.confidence * 100.0);
-            println!("Outcome Confidence: {:.0}%\n", best.impact.outcome_confidence * 100.0);
+            println!(
+                "Outcome Confidence: {:.0}%\n",
+                best.impact.outcome_confidence * 100.0
+            );
         }
     }
 

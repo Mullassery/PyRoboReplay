@@ -1,9 +1,10 @@
+use chrono::Utc;
+use pyroboreplay::cli::sensor_stats::SensorMetadataPanel;
 /// Demonstration of sensor metadata panel
 /// Shows real-time statistics for all sensor types
-
-use pyroboreplay::core::event::{MissionRecord, MissionEvent, LidarData, CameraFrame, IMUData, Odometry, Pose};
-use pyroboreplay::cli::sensor_stats::SensorMetadataPanel;
-use chrono::Utc;
+use pyroboreplay::core::event::{
+    CameraFrame, IMUData, LidarData, MissionEvent, MissionRecord, Odometry, Pose,
+};
 
 fn main() {
     println!("╔════════════════════════════════════════════════════════════════╗");
@@ -14,7 +15,10 @@ fn main() {
     println!("📹 Creating synthetic mission with 5 sensors...");
     let mission = create_sample_mission();
 
-    println!("✅ Generated mission with {} events\n", mission.events.len());
+    println!(
+        "✅ Generated mission with {} events\n",
+        mission.events.len()
+    );
 
     // Create metadata panel
     let panel = SensorMetadataPanel::from_mission(&mission);

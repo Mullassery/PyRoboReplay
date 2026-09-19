@@ -1,5 +1,8 @@
-use pyroboreplay::streaming::{create_stream, StreamConfig, StreamEvent, StreamProcessor, ProcessorConfig, LiveDiagnostics, DiagnosticsConfig};
 use chrono::Utc;
+use pyroboreplay::streaming::{
+    create_stream, DiagnosticsConfig, LiveDiagnostics, ProcessorConfig, StreamConfig, StreamEvent,
+    StreamProcessor,
+};
 use std::thread;
 use std::time::Duration;
 

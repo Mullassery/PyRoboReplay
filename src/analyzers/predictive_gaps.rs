@@ -6,7 +6,9 @@
 //! - Degradation curves (mechanical wear, thermal aging)
 //! - Fleet-wide leading indicators
 
-use crate::analyzers::{RealityGapFinding, RealityDomain};
+#[cfg(test)]
+use crate::analyzers::RealityDomain;
+use crate::analyzers::RealityGapFinding;
 use std::collections::HashMap;
 
 /// Predicted gap with timing and confidence
@@ -92,7 +94,7 @@ impl PredictiveGapEngine {
         for (from, to, rate) in gap_chains {
             chains_map
                 .entry(from.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((to.clone(), *rate));
         }
 
@@ -123,7 +125,7 @@ impl PredictiveGapEngine {
         model: &PredictiveModel,
         current_gaps: &[RealityGapFinding],
         environmental_conditions: &HashMap<String, f32>,
-        missions_completed: usize,
+        _missions_completed: usize,
     ) -> Vec<PredictedGap> {
         let mut predictions = Vec::new();
 
@@ -131,11 +133,8 @@ impl PredictiveGapEngine {
         for current_gap in current_gaps {
             if let Some(following_gaps) = model.gap_chains.get(&current_gap.category) {
                 for (following_category, co_occurrence_rate) in following_gaps {
-                    let time_to_next = Self::estimate_time_to_gap(
-                        following_category,
-                        model,
-                        *co_occurrence_rate,
-                    );
+                    let time_to_next =
+                        Self::estimate_time_to_gap(following_category, model, *co_occurrence_rate);
 
                     predictions.push(PredictedGap {
                         predicted_category: following_category.clone(),
@@ -159,7 +158,8 @@ impl PredictiveGapEngine {
             // Check if any current gap matches this degradation curve
             if let Some(current_gap) = current_gaps.iter().find(|g| g.category == *gap_category) {
                 let missions_remaining = if curve.degradation_rate > 0.0 {
-                    ((curve.critical_threshold - current_gap.confidence) / curve.degradation_rate).max(0.0)
+                    ((curve.critical_threshold - current_gap.confidence) / curve.degradation_rate)
+                        .max(0.0)
                 } else {
                     f32::INFINITY
                 };
@@ -229,7 +229,7 @@ impl PredictiveGapEngine {
             for gap in &mission.gaps {
                 gap_progression
                     .entry(gap.category.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(gap.confidence);
             }
         }
@@ -242,7 +242,8 @@ impl PredictiveGapEngine {
 
             let avg_confidence: f32 = confidences.iter().sum::<f32>() / confidences.len() as f32;
             let degradation_rate = if confidences.len() > 1 {
-                (confidences[confidences.len() - 1] - confidences[0]) / (confidences.len() - 1) as f32
+                (confidences[confidences.len() - 1] - confidences[0])
+                    / (confidences.len() - 1) as f32
             } else {
                 0.0
             };
@@ -400,7 +401,8 @@ mod tests {
 
         let gap_chains = vec![("Optical".to_string(), "Detection".to_string(), 0.5)];
 
-        let model = PredictiveGapEngine::build_predictive_model("mobile_robot", &missions, &gap_chains);
+        let model =
+            PredictiveGapEngine::build_predictive_model("mobile_robot", &missions, &gap_chains);
 
         assert_eq!(model.robot_type, "mobile_robot");
         assert!(!model.gap_chains.is_empty());
@@ -415,12 +417,14 @@ mod tests {
 
         let gap_chains = vec![("Optical".to_string(), "Detection".to_string(), 0.75)];
 
-        let model = PredictiveGapEngine::build_predictive_model("mobile_robot", &missions, &gap_chains);
+        let model =
+            PredictiveGapEngine::build_predictive_model("mobile_robot", &missions, &gap_chains);
 
         let current_gaps = vec![create_test_gap("Optical", 0.85, 30.0)];
         let env_conditions = HashMap::new();
 
-        let predictions = PredictiveGapEngine::predict_next_gaps(&model, &current_gaps, &env_conditions, 0);
+        let predictions =
+            PredictiveGapEngine::predict_next_gaps(&model, &current_gaps, &env_conditions, 0);
 
         assert!(!predictions.is_empty());
         assert!(predictions[0].prediction_confidence > 0.0);

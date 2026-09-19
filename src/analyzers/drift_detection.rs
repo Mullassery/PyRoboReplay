@@ -29,10 +29,7 @@ pub struct DriftDetector;
 
 impl DriftDetector {
     /// Detect drift in a signal using sliding window comparison
-    pub fn detect_drift(
-        signal: &[f32],
-        window_size: usize,
-    ) -> Option<DriftStats> {
+    pub fn detect_drift(signal: &[f32], window_size: usize) -> Option<DriftStats> {
         if signal.len() < window_size * 2 {
             return None; // Not enough data
         }
@@ -71,10 +68,10 @@ impl DriftDetector {
 
         // Confidence based on magnitude and stability
         let magnitude_confidence = (drift_sigma.abs() / 3.0).min(1.0); // 3σ = max confidence
-        let stability_confidence = (1.0 - (var_second / (var_first + 0.01)).abs().min(2.0) / 2.0)
-            .max(0.0); // High if variances similar
-        let overall_confidence = (magnitude_confidence * 0.6 + stability_confidence * 0.4)
-            .clamp(0.0, 1.0);
+        let stability_confidence =
+            (1.0 - (var_second / (var_first + 0.01)).abs().min(2.0) / 2.0).max(0.0); // High if variances similar
+        let overall_confidence =
+            (magnitude_confidence * 0.6 + stability_confidence * 0.4).clamp(0.0, 1.0);
 
         // Classify drift type
         let drift_type = if drift_sigma.abs() > 2.0 {
@@ -116,7 +113,7 @@ impl DriftDetector {
     /// Returns: (multiplier, explanation)
     pub fn drift_severity_multiplier(drift: &DriftStats) -> (f32, String) {
         let base_multiplier = match drift.drift_type.as_str() {
-            "jump" => 1.5, // Sudden jumps are concerning
+            "jump" => 1.5,  // Sudden jumps are concerning
             "trend" => 1.2, // Gradual trends are moderate
             _ => 1.0,       // Noise-like oscillations are normal
         };
@@ -145,50 +142,54 @@ pub struct DriftAwareScorer;
 
 impl DriftAwareScorer {
     /// Boost gap score based on detected drift
-    pub fn boost_gap_score(
-        base_gap_score: f32,
-        drifts: &[DriftStats],
-    ) -> (f32, String) {
+    pub fn boost_gap_score(base_gap_score: f32, drifts: &[DriftStats]) -> (f32, String) {
         if drifts.is_empty() {
             return (base_gap_score, "No drift detected".to_string());
         }
 
         // Find most significant drift
-        let most_significant = drifts
-            .iter()
-            .max_by(|a, b| {
-                a.drift_sigma
-                    .partial_cmp(&b.drift_sigma)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
+        let most_significant = drifts.iter().max_by(|a, b| {
+            a.drift_sigma
+                .partial_cmp(&b.drift_sigma)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         if let Some(drift) = most_significant {
             if DriftDetector::is_significant(drift) {
                 let (multiplier, explanation) = DriftDetector::drift_severity_multiplier(drift);
                 let boosted = (base_gap_score * multiplier).min(1.0);
 
-                return (boosted, format!("{} [boost: {:.2}x]", explanation, multiplier));
+                return (
+                    boosted,
+                    format!("{} [boost: {:.2}x]", explanation, multiplier),
+                );
             }
         }
 
-        (base_gap_score, "Drift present but not significant".to_string())
+        (
+            base_gap_score,
+            "Drift present but not significant".to_string(),
+        )
     }
 
     /// Compute drift-aware confidence
-    pub fn drift_aware_confidence(
-        base_confidence: f32,
-        drifts: &[DriftStats],
-    ) -> f32 {
+    pub fn drift_aware_confidence(base_confidence: f32, drifts: &[DriftStats]) -> f32 {
         if drifts.is_empty() {
             return base_confidence;
         }
 
         // High drift → higher confidence (drift corroborates finding)
-        let avg_drift_sigma = drifts.iter().map(|d| d.drift_sigma).sum::<f32>()
-            / drifts.len() as f32;
+        let avg_drift_sigma =
+            drifts.iter().map(|d| d.drift_sigma).sum::<f32>() / drifts.len() as f32;
 
         // Boost confidence if drift is significant
-        let drift_boost = if avg_drift_sigma > 2.0 { 0.15 } else if avg_drift_sigma > 1.0 { 0.10 } else { 0.0 };
+        let drift_boost = if avg_drift_sigma > 2.0 {
+            0.15
+        } else if avg_drift_sigma > 1.0 {
+            0.10
+        } else {
+            0.0
+        };
 
         (base_confidence + drift_boost).min(1.0)
     }

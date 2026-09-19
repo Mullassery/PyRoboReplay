@@ -79,7 +79,11 @@ impl PatternLibrary {
     /// Get most frequent patterns
     pub fn most_frequent(&self, n: usize) -> Vec<&MissionPattern> {
         let mut patterns: Vec<_> = self.patterns.values().collect();
-        patterns.sort_by(|a, b| b.frequency.partial_cmp(&a.frequency).unwrap_or(std::cmp::Ordering::Equal));
+        patterns.sort_by(|a, b| {
+            b.frequency
+                .partial_cmp(&a.frequency)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         patterns.into_iter().take(n).collect()
     }
 
@@ -179,7 +183,10 @@ impl CrossMissionAnalyzer {
         let mut matches = Vec::new();
 
         // Extract event types from current stream
-        let event_types: Vec<String> = current_events.iter().map(|e| e.event_type.clone()).collect();
+        let event_types: Vec<String> = current_events
+            .iter()
+            .map(|e| e.event_type.clone())
+            .collect();
 
         // Score against all patterns
         for pattern in self.library.all_patterns() {
@@ -197,17 +204,28 @@ impl CrossMissionAnalyzer {
         }
 
         // Sort by confidence
-        matches.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+        matches.sort_by(|a, b| {
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         matches
     }
 
     /// Score event sequence against pattern
-    fn score_event_sequence_against_pattern(&self, event_types: &[String], pattern: &MissionPattern) -> f32 {
-        let pattern_event_types: Vec<&String> = pattern.occurrences.iter().map(|o| &o.event_type).collect();
+    fn score_event_sequence_against_pattern(
+        &self,
+        event_types: &[String],
+        pattern: &MissionPattern,
+    ) -> f32 {
+        let pattern_event_types: Vec<&String> =
+            pattern.occurrences.iter().map(|o| &o.event_type).collect();
 
         // Count matching event types in last 10 events
         let recent_events = event_types.iter().rev().take(10);
-        let matches = recent_events.filter(|e| pattern_event_types.contains(e)).count();
+        let matches = recent_events
+            .filter(|e| pattern_event_types.contains(e))
+            .count();
 
         let score = (matches as f32 / pattern_event_types.len().max(1) as f32).min(1.0);
         score * pattern.avg_confidence

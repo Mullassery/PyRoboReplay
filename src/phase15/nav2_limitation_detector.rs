@@ -1,6 +1,6 @@
 //! Detect genuine Nav2 architectural limitations vs tuning/environment issues
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Nav2Limitation {
@@ -40,7 +40,7 @@ impl Nav2LimitationDetector {
             (_, "feature_sparse") => (Nav2Limitation::LocalizationArchitectureLimitation, 0.82),
             (_, "warehouse") if scale_meters > 500.0 => {
                 (Nav2Limitation::HierarchicalPlanningNeeded, 0.80)
-            },
+            }
             (_, "outdoor_gps_denied") => (Nav2Limitation::LocalizationArchitectureLimitation, 0.85),
             _ => (Nav2Limitation::TuningIssue, 0.60),
         };
@@ -50,26 +50,26 @@ impl Nav2LimitationDetector {
                 "Failure indicates occupancy-grid navigation insufficient. \
                  Consider semantic mapping, object-centric navigation, or VLM-assisted planning."
                     .to_string()
-            },
+            }
             Nav2Limitation::LocalizationArchitectureLimitation => {
                 "AMCL with grid-based features insufficient. \
                  Deploy visual SLAM, VIO, or multi-sensor fusion."
                     .to_string()
-            },
+            }
             Nav2Limitation::HierarchicalPlanningNeeded => {
                 "Single-level planner unsuitable for large-scale environments. \
                  Implement hierarchical multi-level planning."
                     .to_string()
-            },
+            }
             Nav2Limitation::OccupancyGridLimitation => {
                 "Occupancy-grid approach inherent limitation. \
                  Consider topological or hybrid representations."
                     .to_string()
-            },
+            }
             Nav2Limitation::TuningIssue => {
                 "Failure likely solvable through parameter tuning or environment adaptation."
                     .to_string()
-            },
+            }
         };
 
         Nav2LimitationDetection {
@@ -87,7 +87,10 @@ mod tests {
     #[test]
     fn test_semantic_limitation_detection() {
         let result = Nav2LimitationDetector::classify("door_crossing", "office", 100.0);
-        assert_eq!(result.limitation, Nav2Limitation::SemanticNavigationRequired);
+        assert_eq!(
+            result.limitation,
+            Nav2Limitation::SemanticNavigationRequired
+        );
         assert!(result.confidence > 0.9);
     }
 

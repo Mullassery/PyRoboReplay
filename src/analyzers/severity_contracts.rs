@@ -52,7 +52,8 @@ impl SeverityContract {
 
     /// Add a condition to the contract
     pub fn add_condition(&mut self, metric: &str, min_threshold: f32, max_threshold: f32) {
-        self.conditions.insert(metric.to_string(), (min_threshold, max_threshold));
+        self.conditions
+            .insert(metric.to_string(), (min_threshold, max_threshold));
     }
 
     /// Check if a finding satisfies this contract
@@ -156,10 +157,7 @@ impl SeverityContractCatalog {
     }
 
     /// Determine severity from contract evaluation
-    pub fn determine_severity(
-        &self,
-        metrics: &HashMap<String, f32>,
-    ) -> Option<(String, f32)> {
+    pub fn determine_severity(&self, metrics: &HashMap<String, f32>) -> Option<(String, f32)> {
         // Priority: critical > high > medium > low
         let matches = self.evaluate(metrics);
 
@@ -191,10 +189,7 @@ impl SeverityContractCatalog {
     }
 
     fn add_critical_contract_timestamp_reversal(&mut self) {
-        let mut contract = SeverityContract::new(
-            "critical_timestamp_reversal",
-            "critical",
-        );
+        let mut contract = SeverityContract::new("critical_timestamp_reversal", "critical");
         contract.description = "Time running backwards = critical safety issue".to_string();
         contract.add_condition("clock_drift_direction", -1.0, -0.1); // Negative drift
         contract.confidence = 0.99;
@@ -202,10 +197,7 @@ impl SeverityContractCatalog {
     }
 
     fn add_critical_contract_safety_collision(&mut self) {
-        let mut contract = SeverityContract::new(
-            "critical_safety_collision",
-            "critical",
-        );
+        let mut contract = SeverityContract::new("critical_safety_collision", "critical");
         contract.description = "Collision detection disabled or failing".to_string();
         contract.operator = ContractOperator::Or;
         contract.add_condition("detection_confidence_decline_pct", 80.0, 101.0); // >80% drop
@@ -215,10 +207,7 @@ impl SeverityContractCatalog {
     }
 
     fn add_critical_contract_performance_catastrophic(&mut self) {
-        let mut contract = SeverityContract::new(
-            "critical_performance_catastrophic",
-            "critical",
-        );
+        let mut contract = SeverityContract::new("critical_performance_catastrophic", "critical");
         contract.description = "Mission performance degraded beyond acceptable".to_string();
         contract.add_condition("response_time_increase_pct", 100.0, 500.0); // 100%+ slower
         contract.add_condition("trend_slope_ms_per_hour", 0.5, 10.0); // Rapid degradation
@@ -227,10 +216,7 @@ impl SeverityContractCatalog {
     }
 
     fn add_high_contract_response_degradation(&mut self) {
-        let mut contract = SeverityContract::new(
-            "high_response_degradation",
-            "high",
-        );
+        let mut contract = SeverityContract::new("high_response_degradation", "high");
         contract.description = "Control response time degrading > 5%".to_string();
         contract.add_condition("trend_slope_ms_per_hour", 0.01, 0.5);
         contract.confidence = 0.85;
@@ -238,21 +224,16 @@ impl SeverityContractCatalog {
     }
 
     fn add_high_contract_efficiency_decline(&mut self) {
-        let mut contract = SeverityContract::new(
-            "high_efficiency_decline",
-            "high",
-        );
-        contract.description = "Motor efficiency declining, likely thermal or mechanical wear".to_string();
+        let mut contract = SeverityContract::new("high_efficiency_decline", "high");
+        contract.description =
+            "Motor efficiency declining, likely thermal or mechanical wear".to_string();
         contract.add_condition("efficiency_decline_pct", 10.0, 40.0);
         contract.confidence = 0.80;
         self.add_contract(contract);
     }
 
     fn add_high_contract_detection_confidence_drop(&mut self) {
-        let mut contract = SeverityContract::new(
-            "high_detection_drop",
-            "high",
-        );
+        let mut contract = SeverityContract::new("high_detection_drop", "high");
         contract.description = "Object detection confidence declining rapidly".to_string();
         contract.add_condition("confidence_decline_pct", 20.0, 80.0);
         contract.confidence = 0.78;
@@ -260,21 +241,16 @@ impl SeverityContractCatalog {
     }
 
     fn add_medium_contract_environmental_correlation(&mut self) {
-        let mut contract = SeverityContract::new(
-            "medium_environmental_correlation",
-            "medium",
-        );
-        contract.description = "Gap correlates with environmental factors (rain, lighting, etc)".to_string();
+        let mut contract = SeverityContract::new("medium_environmental_correlation", "medium");
+        contract.description =
+            "Gap correlates with environmental factors (rain, lighting, etc)".to_string();
         contract.add_condition("quality_confidence_correlation", 0.6, 1.0);
         contract.confidence = 0.75;
         self.add_contract(contract);
     }
 
     fn add_medium_contract_thermal_gradual(&mut self) {
-        let mut contract = SeverityContract::new(
-            "medium_thermal_gradual",
-            "medium",
-        );
+        let mut contract = SeverityContract::new("medium_thermal_gradual", "medium");
         contract.description = "Gradual thermal degradation over mission".to_string();
         contract.add_condition("efficiency_decline_pct", 5.0, 15.0);
         contract.add_condition("temperature_rise_c", 20.0, 60.0);
@@ -283,10 +259,7 @@ impl SeverityContractCatalog {
     }
 
     fn add_low_contract_minor_quality(&mut self) {
-        let mut contract = SeverityContract::new(
-            "low_minor_quality",
-            "low",
-        );
+        let mut contract = SeverityContract::new("low_minor_quality", "low");
         contract.description = "Minor quality degradation, not impacting performance".to_string();
         contract.add_condition("sharpness_decline_pct", 5.0, 15.0);
         contract.confidence = 0.65;
@@ -356,7 +329,7 @@ mod tests {
     #[test]
     fn test_catalog_creation() {
         let catalog = SeverityContractCatalog::new();
-        assert!(catalog.contracts.len() > 0);
+        assert!(!catalog.contracts.is_empty());
     }
 
     #[test]
@@ -367,7 +340,7 @@ mod tests {
         metrics.insert("clock_drift_direction".to_string(), -0.5); // Negative drift
 
         let matches = catalog.evaluate(&metrics);
-        assert!(matches.len() > 0);
+        assert!(!matches.is_empty());
 
         let (contract, _) = &matches[0];
         assert_eq!(contract.target_severity, "critical");

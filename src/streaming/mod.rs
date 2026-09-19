@@ -1,18 +1,19 @@
 pub mod channel;
-pub mod processor;
-pub mod live_diagnostics;
-pub mod kafka_stub;
 pub mod fleet_monitor;
+pub mod kafka_stub;
+pub mod live_diagnostics;
+pub mod processor;
 pub mod sla;
 
-pub use channel::{StreamEvent, EventStream, EventStreamConsumer, StreamConfig, create_stream};
-pub use processor::{StreamProcessor, ProcessorConfig, AggregationResult};
-pub use live_diagnostics::{LiveDiagnostics, DiagnosticsConfig, LiveAlert, AlertSeverity};
-pub use kafka_stub::{KafkaConnector, KafkaStub};
+pub use channel::{create_stream, EventStream, EventStreamConsumer, StreamConfig, StreamEvent};
 pub use fleet_monitor::{
-    FleetMonitor, FleetMonitorConfig, FleetDashboard, FleetHealthSummary, RobotStatus,
-    RobotStatusType, HealthTrend, FleetDashboardWindow,
+    FleetDashboard, FleetDashboardWindow, FleetHealthSummary, FleetMonitor, FleetMonitorConfig,
+    HealthTrend, RobotStatus, RobotStatusType,
 };
+pub use kafka_stub::{KafkaConnector, KafkaStub};
+pub use live_diagnostics::{AlertSeverity, DiagnosticsConfig, LiveAlert, LiveDiagnostics};
+pub use processor::{AggregationResult, ProcessorConfig, StreamProcessor};
 pub use sla::{
-    SlaMonitor, SlaContract, SlaEnforcementReport, SlaViolation, SlaViolationType, SlaViolationSeverity,
+    SlaContract, SlaEnforcementReport, SlaMonitor, SlaViolation, SlaViolationSeverity,
+    SlaViolationType,
 };

@@ -1,3 +1,5 @@
+pub mod localization;
+pub mod middleware;
 /// Failure Detection Framework for MLRIAS
 ///
 /// Detects and classifies failures across 5 domains:
@@ -6,22 +8,18 @@
 /// 3. Perception (sensor dropout, frame loss, sync issues)
 /// 4. Middleware (DDS discovery, QoS, topic starvation)
 /// 5. System (OOM kills, kernel panics, USB resets)
-
 pub mod navigation;
-pub mod localization;
 pub mod perception;
-pub mod middleware;
 pub mod system;
 
-use crate::core::event::MissionEvent;
 use crate::core::timeline_correlation::NormalizedEvent;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-pub use navigation::NavigationFailureDetector;
 pub use localization::LocalizationFailureDetector;
-pub use perception::PerceptionFailureDetector;
 pub use middleware::MiddlewareFailureDetector;
+pub use navigation::NavigationFailureDetector;
+pub use perception::PerceptionFailureDetector;
 pub use system::SystemFailureDetector;
 
 /// A detected failure with evidence and diagnostics
@@ -106,7 +104,12 @@ impl DetectedFailure {
     ) -> Self {
         let failure_type_str = failure_type.into();
         Self {
-            id: format!("{}_{}_{}", domain.as_str(), failure_type_str, timestamp.timestamp()),
+            id: format!(
+                "{}_{}_{}",
+                domain.as_str(),
+                failure_type_str,
+                timestamp.timestamp()
+            ),
             failure_type: failure_type_str,
             domain,
             timestamp,
@@ -172,7 +175,11 @@ impl FailureDetectionEngine {
     }
 
     /// Detect failures in a specific domain only
-    pub fn detect_by_domain(&self, events: &[NormalizedEvent], domain: FailureDomain) -> Vec<DetectedFailure> {
+    pub fn detect_by_domain(
+        &self,
+        events: &[NormalizedEvent],
+        domain: FailureDomain,
+    ) -> Vec<DetectedFailure> {
         self.detectors
             .iter()
             .filter(|d| d.domain() == domain)

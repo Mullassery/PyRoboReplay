@@ -6,12 +6,12 @@
 //! - Sensor timing issues (clock drift, synchronization)
 //! - Signal corruption (multipath, interference)
 
-pub mod optical_contamination;
 pub mod detection_robustness;
+pub mod optical_contamination;
 
 use crate::analyzers::{GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding};
-use optical_contamination::OpticalContaminationDetector;
 use detection_robustness::DetectionRobustnessAnalyzer;
+use optical_contamination::OpticalContaminationDetector;
 
 /// Analyzer for sensor domain gaps
 pub struct SensorDomainAnalyzer {

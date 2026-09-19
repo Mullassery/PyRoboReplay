@@ -36,8 +36,10 @@ impl StorageBackend for SqliteBackend {
             .map_err(|e| StorageError::ConnectionFailed(e.to_string()))?;
 
         // Enable WAL mode for concurrent readers/writers
-        conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA synchronous=NORMAL;")
-            .map_err(|e| StorageError::ConnectionFailed(e.to_string()))?;
+        conn.execute_batch(
+            "PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA synchronous=NORMAL;",
+        )
+        .map_err(|e| StorageError::ConnectionFailed(e.to_string()))?;
 
         // Create schema
         conn.execute_batch(
@@ -76,13 +78,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn store_mission(&self, mission_id: &str, data: &str) -> StorageResult<()> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.execute(
             "INSERT OR REPLACE INTO missions (mission_id, data, created_at) VALUES (?1, ?2, datetime('now'))",
@@ -94,13 +93,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn retrieve_mission(&self, mission_id: &str) -> StorageResult<String> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.query_row(
             "SELECT data FROM missions WHERE mission_id = ?1",
@@ -113,13 +109,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn store_event(&self, mission_id: &str, event_id: &str, data: &str) -> StorageResult<()> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.execute(
             "INSERT OR REPLACE INTO events (mission_id, event_id, data, created_at) VALUES (?1, ?2, ?3, datetime('now'))",
@@ -131,13 +124,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn retrieve_event(&self, mission_id: &str, event_id: &str) -> StorageResult<String> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.query_row(
             "SELECT data FROM events WHERE mission_id = ?1 AND event_id = ?2",
@@ -150,13 +140,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn store_report(&self, mission_id: &str, report: &str) -> StorageResult<()> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.execute(
             "INSERT OR REPLACE INTO reports (mission_id, report, created_at) VALUES (?1, ?2, datetime('now'))",
@@ -168,13 +155,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn retrieve_report(&self, mission_id: &str) -> StorageResult<String> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.query_row(
             "SELECT report FROM reports WHERE mission_id = ?1",
@@ -187,16 +171,16 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn list_missions(&self, limit: Option<usize>) -> StorageResult<Vec<String>> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         let query = if let Some(l) = limit {
-            format!("SELECT mission_id FROM missions ORDER BY created_at DESC LIMIT {}", l)
+            format!(
+                "SELECT mission_id FROM missions ORDER BY created_at DESC LIMIT {}",
+                l
+            )
         } else {
             "SELECT mission_id FROM missions ORDER BY created_at DESC".to_string()
         };
@@ -215,13 +199,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn delete_mission(&self, mission_id: &str) -> StorageResult<()> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.execute(
             "DELETE FROM missions WHERE mission_id = ?1",
@@ -233,13 +214,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn mission_exists(&self, mission_id: &str) -> StorageResult<bool> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         let count: i64 = conn
             .query_row(
@@ -253,13 +231,10 @@ impl StorageBackend for SqliteBackend {
     }
 
     fn get_stats(&self) -> StorageResult<StorageStats> {
-        let conn = self
-            .conn
-            .lock()
-            .unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = self.conn.lock().unwrap();
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         let total_missions: u64 = conn
             .query_row("SELECT COUNT(*) FROM missions", [], |row| row.get(0))
@@ -300,11 +275,17 @@ impl StorageBackend for SqliteBackend {
 
 impl SqliteBackend {
     /// Store a pattern in the database
-    pub fn store_pattern(&self, pattern_id: &str, pattern_type: &str, data: &str, occurrences: i32) -> StorageResult<()> {
+    pub fn store_pattern(
+        &self,
+        pattern_id: &str,
+        pattern_type: &str,
+        data: &str,
+        occurrences: i32,
+    ) -> StorageResult<()> {
         let conn = self.conn.lock().unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.execute(
             "INSERT OR REPLACE INTO patterns (pattern_id, pattern_type, data, occurrences, last_seen) VALUES (?1, ?2, ?3, ?4, datetime('now'))",
@@ -318,9 +299,9 @@ impl SqliteBackend {
     /// Retrieve all patterns
     pub fn retrieve_all_patterns(&self) -> StorageResult<Vec<String>> {
         let conn = self.conn.lock().unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         let mut stmt = conn
             .prepare("SELECT data FROM patterns ORDER BY last_seen DESC")
@@ -338,9 +319,9 @@ impl SqliteBackend {
     /// Retrieve a specific pattern
     pub fn retrieve_pattern(&self, pattern_id: &str) -> StorageResult<String> {
         let conn = self.conn.lock().unwrap();
-        let conn = conn.as_ref().ok_or_else(|| {
-            StorageError::ConnectionFailed("Database not connected".to_string())
-        })?;
+        let conn = conn
+            .as_ref()
+            .ok_or_else(|| StorageError::ConnectionFailed("Database not connected".to_string()))?;
 
         conn.query_row(
             "SELECT data FROM patterns WHERE pattern_id = ?1",
@@ -452,7 +433,10 @@ mod tests {
 
         for i in 0..5 {
             backend
-                .store_mission(&format!("mission_{}", i), &format!(r#"{{"id":"mission_{}"}}"#, i))
+                .store_mission(
+                    &format!("mission_{}", i),
+                    &format!(r#"{{"id":"mission_{}"}}"#, i),
+                )
                 .unwrap();
         }
 

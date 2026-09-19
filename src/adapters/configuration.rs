@@ -1,3 +1,4 @@
+use crate::adapters::AdapterError;
 /// Adapter for parsing configuration files (Layer 4)
 ///
 /// Supports:
@@ -6,9 +7,7 @@
 /// - Parameter validation
 ///
 /// Normalizes to MissionEvent::ConfigurationEvent and MissionEvent::ParameterValidationEvent
-
 use crate::core::event::MissionEvent;
-use crate::adapters::AdapterError;
 use chrono::Utc;
 use std::collections::HashMap;
 
@@ -29,7 +28,12 @@ impl ConfigurationAdapter {
     }
 
     /// Parse YAML configuration file
-    pub fn parse_yaml(&self, content: &str, config_type: &str, filename: &str) -> Result<Vec<MissionEvent>, AdapterError> {
+    pub fn parse_yaml(
+        &self,
+        content: &str,
+        config_type: &str,
+        filename: &str,
+    ) -> Result<Vec<MissionEvent>, AdapterError> {
         let mut events = Vec::new();
         let timestamp = Utc::now();
 
@@ -64,7 +68,9 @@ impl ConfigurationAdapter {
                 });
 
                 // Validate parameter
-                if let Some(validation) = self.validate_parameter(&param_name, &value_str, config_type) {
+                if let Some(validation) =
+                    self.validate_parameter(&param_name, &value_str, config_type)
+                {
                     events.push(MissionEvent::ParameterValidationEvent {
                         timestamp,
                         parameter_name: param_name,
@@ -85,7 +91,12 @@ impl ConfigurationAdapter {
     }
 
     /// Validate a parameter against expected ranges and known issues
-    fn validate_parameter(&self, param_name: &str, value_str: &str, config_type: &str) -> Option<ConfigValidationError> {
+    fn validate_parameter(
+        &self,
+        param_name: &str,
+        value_str: &str,
+        config_type: &str,
+    ) -> Option<ConfigValidationError> {
         let param_lower = param_name.to_lowercase();
         let _value_lower = value_str.to_lowercase();
 
@@ -97,7 +108,9 @@ impl ConfigurationAdapter {
                     if timeout < 0.5 {
                         return Some(ConfigValidationError {
                             parameter: param_name.to_string(),
-                            reason: "Planner timeout too low (critical: may cause rapid replanning)".to_string(),
+                            reason:
+                                "Planner timeout too low (critical: may cause rapid replanning)"
+                                    .to_string(),
                             expected: Some("0.5-5.0 seconds".to_string()),
                             actual: value_str.to_string(),
                         });
@@ -111,7 +124,9 @@ impl ConfigurationAdapter {
                     if hz < 1.0 {
                         return Some(ConfigValidationError {
                             parameter: param_name.to_string(),
-                            reason: "Costmap update frequency too low (warning: may miss obstacles)".to_string(),
+                            reason:
+                                "Costmap update frequency too low (warning: may miss obstacles)"
+                                    .to_string(),
                             expected: Some("1.0-10.0 Hz".to_string()),
                             actual: value_str.to_string(),
                         });
@@ -125,7 +140,9 @@ impl ConfigurationAdapter {
                     if radius < 0.1 {
                         return Some(ConfigValidationError {
                             parameter: param_name.to_string(),
-                            reason: "Inflation radius too small (warning: robot may clip obstacles)".to_string(),
+                            reason:
+                                "Inflation radius too small (warning: robot may clip obstacles)"
+                                    .to_string(),
                             expected: Some("0.1-0.5 meters".to_string()),
                             actual: value_str.to_string(),
                         });
@@ -139,7 +156,8 @@ impl ConfigurationAdapter {
                     if tolerance > 1.0 {
                         return Some(ConfigValidationError {
                             parameter: param_name.to_string(),
-                            reason: "Transform tolerance too high (warning: loose TF matching)".to_string(),
+                            reason: "Transform tolerance too high (warning: loose TF matching)"
+                                .to_string(),
                             expected: Some("0.01-0.5 seconds".to_string()),
                             actual: value_str.to_string(),
                         });
@@ -156,7 +174,9 @@ impl ConfigurationAdapter {
                     if hz > 50.0 {
                         return Some(ConfigValidationError {
                             parameter: param_name.to_string(),
-                            reason: "Map update frequency too high (warning: may cause CPU overload)".to_string(),
+                            reason:
+                                "Map update frequency too high (warning: may cause CPU overload)"
+                                    .to_string(),
                             expected: Some("1.0-20.0 Hz".to_string()),
                             actual: value_str.to_string(),
                         });
@@ -167,7 +187,7 @@ impl ConfigurationAdapter {
             // Loop closure threshold
             if param_lower.contains("loop_closure") && param_lower.contains("threshold") {
                 if let Ok(threshold) = value_str.parse::<f32>() {
-                    if threshold < 0.5 || threshold > 0.99 {
+                    if !(0.5..=0.99).contains(&threshold) {
                         return Some(ConfigValidationError {
                             parameter: param_name.to_string(),
                             reason: "Loop closure threshold out of range (warning: may miss/falsely detect loop closures)".to_string(),
@@ -183,43 +203,47 @@ impl ConfigurationAdapter {
     }
 
     /// Detect known anti-patterns in configuration
-    pub fn detect_anti_patterns(&self, config_type: &str, params: &HashMap<String, String>) -> Vec<String> {
+    pub fn detect_anti_patterns(
+        &self,
+        config_type: &str,
+        params: &HashMap<String, String>,
+    ) -> Vec<String> {
         let mut issues = Vec::new();
 
         if config_type == "nav2" {
             // Anti-pattern: Low timeout + High costmap frequency (thrashing)
-            let has_low_timeout = params
-                .iter()
-                .any(|(k, v)| k.to_lowercase().contains("timeout") && v.parse::<f32>().unwrap_or(1.0) < 1.0);
+            let has_low_timeout = params.iter().any(|(k, v)| {
+                k.to_lowercase().contains("timeout") && v.parse::<f32>().unwrap_or(1.0) < 1.0
+            });
 
-            let has_high_costmap_freq = params
-                .iter()
-                .any(|(k, v)| {
-                    k.to_lowercase().contains("update_frequency") && v.parse::<f32>().unwrap_or(10.0) > 20.0
-                });
+            let has_high_costmap_freq = params.iter().any(|(k, v)| {
+                k.to_lowercase().contains("update_frequency")
+                    && v.parse::<f32>().unwrap_or(10.0) > 20.0
+            });
 
             if has_low_timeout && has_high_costmap_freq {
                 issues.push("Anti-pattern: Low planner timeout + high costmap frequency may cause rapid replanning".to_string());
             }
 
             // Anti-pattern: Very small inflation radius
-            if params
-                .iter()
-                .any(|(k, v)| {
-                    k.to_lowercase().contains("inflation_radius") && v.parse::<f32>().unwrap_or(0.2) < 0.05
-                })
-            {
-                issues.push("Anti-pattern: Very small inflation radius may cause collision".to_string());
+            if params.iter().any(|(k, v)| {
+                k.to_lowercase().contains("inflation_radius")
+                    && v.parse::<f32>().unwrap_or(0.2) < 0.05
+            }) {
+                issues.push(
+                    "Anti-pattern: Very small inflation radius may cause collision".to_string(),
+                );
             }
 
             // Anti-pattern: Large transform tolerance with poor localization
-            if params
-                .iter()
-                .any(|(k, v)| {
-                    k.to_lowercase().contains("transform_tolerance") && v.parse::<f32>().unwrap_or(0.1) > 0.5
-                })
-            {
-                issues.push("Anti-pattern: Large transform tolerance may cause navigation in wrong frame".to_string());
+            if params.iter().any(|(k, v)| {
+                k.to_lowercase().contains("transform_tolerance")
+                    && v.parse::<f32>().unwrap_or(0.1) > 0.5
+            }) {
+                issues.push(
+                    "Anti-pattern: Large transform tolerance may cause navigation in wrong frame"
+                        .to_string(),
+                );
             }
         }
 

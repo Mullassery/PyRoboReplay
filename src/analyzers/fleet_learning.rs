@@ -70,9 +70,7 @@ pub struct FleetLearningEngine;
 
 impl FleetLearningEngine {
     /// Aggregate gaps from multiple missions into fleet statistics
-    pub fn aggregate_fleet_gaps(
-        missions: &[FleetMission],
-    ) -> FleetGapStatistics {
+    pub fn aggregate_fleet_gaps(missions: &[FleetMission]) -> FleetGapStatistics {
         let total_missions = missions.len();
         let mut robot_types: HashMap<String, usize> = HashMap::new();
         let mut gap_frequency: HashMap<String, (usize, f32)> = HashMap::new(); // count, sum_confidence
@@ -84,20 +82,22 @@ impl FleetLearningEngine {
             *robot_types.entry(mission.robot_type.clone()).or_insert(0) += 1;
 
             for gap in &mission.gaps {
-                let entry = gap_frequency.entry(gap.category.clone()).or_insert((0, 0.0));
+                let entry = gap_frequency
+                    .entry(gap.category.clone())
+                    .or_insert((0, 0.0));
                 entry.0 += 1;
                 entry.1 += gap.confidence;
 
                 robot_type_gaps
                     .entry(mission.robot_type.clone())
-                    .or_insert_with(HashMap::new)
+                    .or_default()
                     .entry(gap.category.clone())
                     .and_modify(|c| *c += 1)
                     .or_insert(1);
 
                 gap_confidence_trend
                     .entry(gap.category.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push((mission.timestamp_sec, gap.confidence));
             }
         }
@@ -117,7 +117,7 @@ impl FleetLearningEngine {
         let robot_type_gaps_formatted = robot_type_gaps
             .into_iter()
             .map(|(robot_type, gaps)| {
-                let mut gap_vec: Vec<_> = gaps.into_iter().map(|(name, count)| (name, count)).collect();
+                let mut gap_vec: Vec<_> = gaps.into_iter().collect();
                 gap_vec.sort_by(|a, b| b.1.cmp(&a.1));
                 (robot_type, gap_vec)
             })
@@ -159,9 +159,15 @@ impl FleetLearningEngine {
 
             // Split into old and recent
             let midpoint = sorted_data.len() / 2;
-            let old_avg: f32 = sorted_data[..midpoint].iter().map(|(_, conf)| conf).sum::<f32>()
+            let old_avg: f32 = sorted_data[..midpoint]
+                .iter()
+                .map(|(_, conf)| conf)
+                .sum::<f32>()
                 / (midpoint as f32).max(1.0);
-            let new_avg: f32 = sorted_data[midpoint..].iter().map(|(_, conf)| conf).sum::<f32>()
+            let new_avg: f32 = sorted_data[midpoint..]
+                .iter()
+                .map(|(_, conf)| conf)
+                .sum::<f32>()
                 / ((sorted_data.len() - midpoint) as f32).max(1.0);
 
             // If average confidence is increasing over time, it's trending worse
@@ -170,7 +176,11 @@ impl FleetLearningEngine {
             }
         }
 
-        trending.sort_by(|a, b| (b.2 - b.1).partial_cmp(&(a.2 - a.1)).unwrap_or(std::cmp::Ordering::Equal));
+        trending.sort_by(|a, b| {
+            (b.2 - b.1)
+                .partial_cmp(&(a.2 - a.1))
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         trending.truncate(5);
         trending
     }
@@ -219,16 +229,22 @@ impl FleetLearningEngine {
     }
 
     /// Compute overall fleet health score
-    fn compute_fleet_health(most_common_gaps: &[(String, usize, f32)], total_missions: usize) -> f32 {
+    fn compute_fleet_health(
+        most_common_gaps: &[(String, usize, f32)],
+        total_missions: usize,
+    ) -> f32 {
         if most_common_gaps.is_empty() || total_missions == 0 {
             return 1.0;
         }
 
         let gap_rate = most_common_gaps[0].1 as f32 / total_missions as f32;
-        let avg_confidence = most_common_gaps.iter().map(|g| g.2).sum::<f32>() / most_common_gaps.len() as f32;
+        let avg_confidence =
+            most_common_gaps.iter().map(|g| g.2).sum::<f32>() / most_common_gaps.len() as f32;
 
         // Lower health if gap rate is high or confidence is high
-        (1.0 - gap_rate * 0.5 - avg_confidence * 0.2).max(0.0).min(1.0)
+        (1.0 - gap_rate * 0.5 - avg_confidence * 0.2)
+            .max(0.0)
+            .min(1.0)
     }
 
     /// Classify overall fleet risk
@@ -242,10 +258,7 @@ impl FleetLearningEngine {
     }
 
     /// Build calibration profile for a specific robot type
-    pub fn calibrate_robot_type(
-        robot_type: &str,
-        missions: &[FleetMission],
-    ) -> RobotTypeProfile {
+    pub fn calibrate_robot_type(robot_type: &str, missions: &[FleetMission]) -> RobotTypeProfile {
         let relevant_missions: Vec<_> = missions
             .iter()
             .filter(|m| m.robot_type == robot_type)
@@ -265,13 +278,13 @@ impl FleetLearningEngine {
             };
         }
 
-        let mut all_gaps: Vec<&RealityGapFinding> = relevant_missions
+        let all_gaps: Vec<&RealityGapFinding> = relevant_missions
             .iter()
             .flat_map(|m| m.gaps.iter())
             .collect();
 
-        let avg_gap_confidence: f32 = all_gaps.iter().map(|g| g.confidence).sum::<f32>()
-            / all_gaps.len().max(1) as f32;
+        let avg_gap_confidence: f32 =
+            all_gaps.iter().map(|g| g.confidence).sum::<f32>() / all_gaps.len().max(1) as f32;
 
         // Find problematic gaps for this type
         let mut gap_counts: HashMap<String, (usize, f32)> = HashMap::new();
@@ -288,7 +301,8 @@ impl FleetLearningEngine {
         problematic_gaps.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
 
         // Environmental sensitivities
-        let environmental_sensitivities = Self::analyze_environmental_sensitivities(&relevant_missions);
+        let environmental_sensitivities =
+            Self::analyze_environmental_sensitivities(&relevant_missions);
 
         // Alert thresholds (adjust based on observed confidence)
         let mut alert_thresholds = HashMap::new();
@@ -317,18 +331,12 @@ impl FleetLearningEngine {
     }
 
     /// Analyze how environmental conditions affect gaps
-    fn analyze_environmental_sensitivities(
-        missions: &[&FleetMission],
-    ) -> HashMap<String, f32> {
+    fn analyze_environmental_sensitivities(missions: &[&FleetMission]) -> HashMap<String, f32> {
         let mut sensitivities = HashMap::new();
 
         for mission in missions {
-            for (env_factor, env_value) in &mission.environmental_conditions {
-                let gap_rate = if mission.gaps.is_empty() {
-                    0.0
-                } else {
-                    1.0
-                };
+            for env_factor in mission.environmental_conditions.keys() {
+                let gap_rate = if mission.gaps.is_empty() { 0.0 } else { 1.0 };
 
                 sensitivities
                     .entry(env_factor.clone())
@@ -420,10 +428,7 @@ mod tests {
                 "mobile_robot",
                 vec![create_test_gap("Optical Contamination", 0.85, 100.0)],
             ),
-            create_test_mission(
-                "drone",
-                vec![create_test_gap("Clock Drift", 0.90, 50.0)],
-            ),
+            create_test_mission("drone", vec![create_test_gap("Clock Drift", 0.90, 50.0)]),
         ];
 
         let stats = FleetLearningEngine::aggregate_fleet_gaps(&missions);

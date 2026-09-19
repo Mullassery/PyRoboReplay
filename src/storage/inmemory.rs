@@ -76,11 +76,13 @@ impl StorageBackend for InMemoryBackend {
             .write()
             .map_err(|_| StorageError::WriteFailed("Lock poisoned".to_string()))?;
 
-        let mission = missions
-            .get_mut(mission_id)
-            .ok_or_else(|| StorageError::WriteFailed(format!("Mission {} not found", mission_id)))?;
+        let mission = missions.get_mut(mission_id).ok_or_else(|| {
+            StorageError::WriteFailed(format!("Mission {} not found", mission_id))
+        })?;
 
-        mission.events.insert(event_id.to_string(), data.to_string());
+        mission
+            .events
+            .insert(event_id.to_string(), data.to_string());
         Ok(())
     }
 
@@ -107,9 +109,9 @@ impl StorageBackend for InMemoryBackend {
             .write()
             .map_err(|_| StorageError::WriteFailed("Lock poisoned".to_string()))?;
 
-        let mission = missions
-            .get_mut(mission_id)
-            .ok_or_else(|| StorageError::WriteFailed(format!("Mission {} not found", mission_id)))?;
+        let mission = missions.get_mut(mission_id).ok_or_else(|| {
+            StorageError::WriteFailed(format!("Mission {} not found", mission_id))
+        })?;
 
         mission.report = Some(report.to_string());
         Ok(())
@@ -231,7 +233,9 @@ mod tests {
         backend.store_mission("mission_1", "data").unwrap();
 
         let event_data = "event data";
-        assert!(backend.store_event("mission_1", "event_1", event_data).is_ok());
+        assert!(backend
+            .store_event("mission_1", "event_1", event_data)
+            .is_ok());
         let retrieved = backend.retrieve_event("mission_1", "event_1").unwrap();
         assert_eq!(retrieved, event_data);
     }
@@ -278,12 +282,14 @@ mod tests {
 
     #[test]
     fn test_get_stats() {
-        let backend = InMemoryBackend::new();
+        let _backend = InMemoryBackend::new();
         let mut backend_mut = InMemoryBackend::new();
         backend_mut.connect().unwrap();
 
         backend_mut.store_mission("mission_1", "data").unwrap();
-        backend_mut.store_event("mission_1", "event_1", "event").unwrap();
+        backend_mut
+            .store_event("mission_1", "event_1", "event")
+            .unwrap();
         backend_mut.store_report("mission_1", "report").unwrap();
 
         let stats = backend_mut.get_stats().unwrap();

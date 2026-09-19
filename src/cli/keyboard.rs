@@ -92,7 +92,6 @@ impl KeyboardShortcuts {
                 description: "Jump 10 events forward",
                 long_description: "Move 10 events forwards quickly",
             },
-
             // Playback
             Shortcut {
                 category: ShortcutCategory::Playback,
@@ -124,7 +123,6 @@ impl KeyboardShortcuts {
                 description: "Step single frame",
                 long_description: "Advance one frame (while paused)",
             },
-
             // Sensors
             Shortcut {
                 category: ShortcutCategory::Sensors,
@@ -156,7 +154,6 @@ impl KeyboardShortcuts {
                 description: "Toggle Metadata Panel",
                 long_description: "Show/hide sensor metadata and statistics",
             },
-
             // Analysis
             Shortcut {
                 category: ShortcutCategory::Analysis,
@@ -182,7 +179,6 @@ impl KeyboardShortcuts {
                 description: "Mark Keyframe",
                 long_description: "Mark current event as important for analysis",
             },
-
             // Export
             Shortcut {
                 category: ShortcutCategory::Export,
@@ -202,7 +198,6 @@ impl KeyboardShortcuts {
                 description: "Toggle JSON Output",
                 long_description: "Switch between human-readable and JSON output",
             },
-
             // Display
             Shortcut {
                 category: ShortcutCategory::Display,
@@ -228,7 +223,6 @@ impl KeyboardShortcuts {
                 description: "Adjust Panel Size",
                 long_description: "Increase or decrease visualization panel size",
             },
-
             // Help
             Shortcut {
                 category: ShortcutCategory::Help,
@@ -416,16 +410,15 @@ impl HelpPanel {
         ];
 
         use std::collections::hash_map::RandomState;
-        use std::hash::{BuildHasher, Hash, Hasher};
+        use std::hash::BuildHasher;
 
-        let mut hasher = RandomState::new().build_hasher();
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs()
-            .hash(&mut hasher);
-
-        let index = (hasher.finish() as usize) % TIPS.len();
+        let index = (RandomState::new().hash_one(
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs(),
+        ) as usize)
+            % TIPS.len();
         TIPS[index]
     }
 }

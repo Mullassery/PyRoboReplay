@@ -2,9 +2,9 @@
 //!
 //! Records detected gaps, collects human feedback, and learns from verification.
 
-use crate::analyzers::{MissionAnalysisData, RealityGapFinding};
 use crate::analyzers::aggregation::ConsolidatedFinding;
-use crate::analyzers::historical::{HistoricalDatabase, FindingRecord};
+use crate::analyzers::historical::HistoricalDatabase;
+use crate::analyzers::{MissionAnalysisData, RealityGapFinding};
 use std::collections::HashMap;
 
 /// Feedback event from human verification
@@ -109,7 +109,7 @@ impl FeedbackLoopManager {
 
         for feedback in &self.pending_feedback {
             let key = format!("{:?}", feedback.feedback_event);
-            let entry = stats.entry(key).or_insert_with(FeedbackStats::default);
+            let entry = stats.entry(key).or_default();
             entry.count += 1;
 
             match &feedback.feedback_event {
@@ -348,7 +348,7 @@ mod tests {
         });
 
         let summary = manager.feedback_summary();
-        assert!(summary.len() > 0);
+        assert!(!summary.is_empty());
     }
 
     #[test]

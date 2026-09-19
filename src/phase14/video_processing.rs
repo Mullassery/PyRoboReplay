@@ -19,11 +19,11 @@
 //! `modality_adapters.rs`, which is itself still stubbed). This module is
 //! now internally real and tested, but not yet reachable end-to-end.
 
-use serde::{Serialize, Deserialize};
-use thiserror::Error;
+use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::process::Command;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum VideoError {
@@ -83,8 +83,8 @@ pub struct BoundingBox {
 pub struct OpticalFlowFrame {
     pub frame_index: u32,
     pub timestamp_ns: i64,
-    pub flow_magnitude: f32,      // Average motion magnitude, in pixels
-    pub dominant_direction: f32,  // Angle in radians
+    pub flow_magnitude: f32,     // Average motion magnitude, in pixels
+    pub dominant_direction: f32, // Angle in radians
 }
 
 /// Lighting analysis of frame, computed from a real luminance histogram of
@@ -101,7 +101,7 @@ pub struct LightingAnalysis {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DepthEstimate {
     pub frame_index: u32,
-    pub depth_map: Vec<f32>,  // Depth in meters
+    pub depth_map: Vec<f32>, // Depth in meters
     pub resolution: (u32, u32),
 }
 
@@ -124,7 +124,7 @@ impl VideoProcessor {
     pub fn new(fps: f32) -> Self {
         VideoProcessor {
             fps,
-            frame_cache: FrameCache::new(30),  // Cache 30 frames
+            frame_cache: FrameCache::new(30), // Cache 30 frames
             yolo_enabled: false,
             optical_flow_enabled: false,
             lighting_enabled: false,
@@ -181,7 +181,16 @@ impl VideoProcessor {
             .ok_or_else(|| VideoError::ExtractionFailed("no video_path configured".to_string()))?;
 
         let output = Command::new("ffprobe")
-            .args(["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0"])
+            .args([
+                "-v",
+                "error",
+                "-select_streams",
+                "v:0",
+                "-show_entries",
+                "stream=width,height",
+                "-of",
+                "csv=s=x:p=0",
+            ])
             .arg(path)
             .output()
             .map_err(|e| VideoError::ExtractionFailed(format!("failed to run ffprobe: {e}")))?;
@@ -197,10 +206,16 @@ impl VideoProcessor {
         let text = String::from_utf8_lossy(&output.stdout);
         let parts: Vec<&str> = text.trim().split('x').collect();
         if parts.len() != 2 {
-            return Err(VideoError::ExtractionFailed(format!("unexpected ffprobe output: {text}")));
+            return Err(VideoError::ExtractionFailed(format!(
+                "unexpected ffprobe output: {text}"
+            )));
         }
-        let width: u32 = parts[0].parse().map_err(|_| VideoError::ExtractionFailed(format!("bad width in: {text}")))?;
-        let height: u32 = parts[1].parse().map_err(|_| VideoError::ExtractionFailed(format!("bad height in: {text}")))?;
+        let width: u32 = parts[0]
+            .parse()
+            .map_err(|_| VideoError::ExtractionFailed(format!("bad width in: {text}")))?;
+        let height: u32 = parts[1]
+            .parse()
+            .map_err(|_| VideoError::ExtractionFailed(format!("bad height in: {text}")))?;
 
         self.probed_resolution = Some((width, height));
         Ok((width, height))
@@ -216,7 +231,10 @@ impl VideoProcessor {
 
         let timestamp_ns = self.frame_to_timestamp(frame_index);
         let (width, height) = self.probe_resolution()?;
-        let path = self.video_path.clone().expect("probe_resolution would have errored without a path");
+        let path = self
+            .video_path
+            .clone()
+            .expect("probe_resolution would have errored without a path");
         let timestamp_sec = timestamp_ns as f64 / 1e9;
 
         let output = Command::new("ffmpeg")
@@ -280,15 +298,23 @@ impl VideoProcessor {
     /// small search window (minimizing sum of absolute luminance
     /// differences). The average displacement across blocks gives the
     /// frame's overall flow magnitude/direction.
-    pub fn compute_optical_flow(&mut self, frame1_index: u32, frame2_index: u32) -> VideoResult<OpticalFlowFrame> {
+    pub fn compute_optical_flow(
+        &mut self,
+        frame1_index: u32,
+        frame2_index: u32,
+    ) -> VideoResult<OpticalFlowFrame> {
         if !self.optical_flow_enabled {
-            return Err(VideoError::DetectionFailed("Optical flow not enabled".to_string()));
+            return Err(VideoError::DetectionFailed(
+                "Optical flow not enabled".to_string(),
+            ));
         }
 
         let frame1 = self.get_frame(frame1_index)?;
         let frame2 = self.get_frame(frame2_index)?;
         if frame1.resolution != frame2.resolution {
-            return Err(VideoError::DetectionFailed("frame resolutions don't match".to_string()));
+            return Err(VideoError::DetectionFailed(
+                "frame resolutions don't match".to_string(),
+            ));
         }
 
         let (width, height) = frame1.resolution;
@@ -309,7 +335,9 @@ impl VideoProcessor {
     /// frame's pixel data.
     pub fn analyze_lighting(&mut self, frame_index: u32) -> VideoResult<LightingAnalysis> {
         if !self.lighting_enabled {
-            return Err(VideoError::DetectionFailed("Lighting analysis not enabled".to_string()));
+            return Err(VideoError::DetectionFailed(
+                "Lighting analysis not enabled".to_string(),
+            ));
         }
 
         let frame = self.get_frame(frame_index)?;
@@ -324,7 +352,12 @@ impl VideoProcessor {
         // luminance is ~127 (a perfectly bimodal black/white image).
         let contrast = (stddev / 127.0).min(1.0);
 
-        Ok(LightingAnalysis { frame_index, luminance: mean, contrast, brightness: mean })
+        Ok(LightingAnalysis {
+            frame_index,
+            luminance: mean,
+            contrast,
+            brightness: mean,
+        })
     }
 
     /// Monocular depth estimation genuinely needs a pretrained model (e.g.
@@ -332,12 +365,15 @@ impl VideoProcessor {
     /// a fabricated constant depth map.
     pub fn estimate_depth(&self, _frame_index: u32) -> VideoResult<DepthEstimate> {
         if !self.depth_enabled {
-            return Err(VideoError::DetectionFailed("Depth estimation not enabled".to_string()));
+            return Err(VideoError::DetectionFailed(
+                "Depth estimation not enabled".to_string(),
+            ));
         }
         Err(VideoError::NotImplemented(
             "Monocular depth estimation needs a pretrained model (e.g. MiDaS) that isn't wired in \
              yet. Returning a fabricated constant depth map here would be indistinguishable from a \
-             real estimate to a caller, which is worse than an explicit error.".to_string(),
+             real estimate to a caller, which is worse than an explicit error."
+                .to_string(),
         ))
     }
 }
@@ -380,9 +416,16 @@ fn block_matching_flow(gray1: &[u8], gray2: &[u8], width: u32, height: u32) -> (
     while by + BLOCK_SIZE < height {
         let mut bx = BLOCK_SIZE;
         while bx + BLOCK_SIZE < width {
-            if let Some((best_dx, best_dy)) =
-                best_match(gray1, gray2, width, height, bx, by, BLOCK_SIZE, SEARCH_RADIUS)
-            {
+            if let Some((best_dx, best_dy)) = best_match(
+                gray1,
+                gray2,
+                width,
+                height,
+                bx,
+                by,
+                BLOCK_SIZE,
+                SEARCH_RADIUS,
+            ) {
                 dx_sum += best_dx as f32;
                 dy_sum += best_dy as f32;
                 count += 1;
@@ -402,7 +445,16 @@ fn block_matching_flow(gray1: &[u8], gray2: &[u8], width: u32, height: u32) -> (
     (magnitude, direction)
 }
 
-fn block_sad(gray1: &[u8], gray2: &[u8], width: usize, bx: usize, by: usize, size: usize, dx: i32, dy: i32) -> Option<u64> {
+fn block_sad(
+    gray1: &[u8],
+    gray2: &[u8],
+    width: usize,
+    bx: usize,
+    by: usize,
+    size: usize,
+    dx: i32,
+    dy: i32,
+) -> Option<u64> {
     let mut sad: u64 = 0;
     for y in 0..size {
         for x in 0..size {
@@ -471,7 +523,8 @@ impl FrameCache {
     }
 
     fn get(&self, frame_index: u32) -> Option<FrameData> {
-        self.cache.iter()
+        self.cache
+            .iter()
             .find(|(idx, _)| *idx == frame_index)
             .map(|(_, data)| data.clone())
     }
@@ -515,7 +568,8 @@ impl VideoStreamProcessor {
     }
 
     pub fn register_camera(&mut self, camera_name: String, fps: f32) -> &mut VideoProcessor {
-        self.processors.entry(camera_name)
+        self.processors
+            .entry(camera_name)
             .or_insert_with(|| VideoProcessor::new(fps))
     }
 
@@ -551,15 +605,15 @@ mod tests {
     #[test]
     fn test_frame_time_conversion() {
         let processor = VideoProcessor::new(30.0);
-        let timestamp = processor.frame_to_timestamp(30);  // Frame 30 at 30fps = 1 second
-        assert_eq!(timestamp, 1_000_000_000);  // 1 second in nanoseconds
+        let timestamp = processor.frame_to_timestamp(30); // Frame 30 at 30fps = 1 second
+        assert_eq!(timestamp, 1_000_000_000); // 1 second in nanoseconds
     }
 
     #[test]
     fn test_timestamp_to_frame_conversion() {
         let processor = VideoProcessor::new(30.0);
-        let frame = processor.timestamp_to_frame(1_000_000_000);  // 1 second
-        assert_eq!(frame, 30);  // Frame 30 at 30fps
+        let frame = processor.timestamp_to_frame(1_000_000_000); // 1 second
+        assert_eq!(frame, 30); // Frame 30 at 30fps
     }
 
     #[test]
@@ -684,10 +738,17 @@ mod tests {
         let gray1 = base.clone();
         let gray2 = shift_texture(&base, width, height, 4, 0); // shifted 4px right
 
-        let (magnitude, direction) = block_matching_flow(&gray1, &gray2, width as u32, height as u32);
-        assert!((magnitude - 4.0).abs() < 0.6, "expected magnitude ~4.0, got {magnitude}");
+        let (magnitude, direction) =
+            block_matching_flow(&gray1, &gray2, width as u32, height as u32);
+        assert!(
+            (magnitude - 4.0).abs() < 0.6,
+            "expected magnitude ~4.0, got {magnitude}"
+        );
         // Rightward shift -> direction should be near 0 radians (positive x axis).
-        assert!(direction.abs() < 0.3, "expected near-horizontal direction, got {direction}");
+        assert!(
+            direction.abs() < 0.3,
+            "expected near-horizontal direction, got {direction}"
+        );
     }
 
     #[test]
@@ -696,7 +757,10 @@ mod tests {
         let height = 96usize;
         let buf = noise_texture(width, height, 7);
         let (magnitude, _) = block_matching_flow(&buf, &buf, width as u32, height as u32);
-        assert!(magnitude < 0.5, "expected ~0 motion for identical frames, got {magnitude}");
+        assert!(
+            magnitude < 0.5,
+            "expected ~0 motion for identical frames, got {magnitude}"
+        );
     }
 
     /// True end-to-end test against a real video file: generates a small
@@ -707,33 +771,53 @@ mod tests {
     /// environment gap, not a code bug.
     #[test]
     fn real_ffmpeg_decode_end_to_end() {
-        if Command::new("ffmpeg").arg("-version").output().map(|o| !o.status.success()).unwrap_or(true) {
+        if Command::new("ffmpeg")
+            .arg("-version")
+            .output()
+            .map(|o| !o.status.success())
+            .unwrap_or(true)
+        {
             eprintln!("skipping: ffmpeg not available in this environment");
             return;
         }
 
-        let dir = std::env::temp_dir().join(format!("pyroboreplay_video_test_{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("pyroboreplay_video_test_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let video_path = dir.join("test.mp4");
 
         let gen = Command::new("ffmpeg")
             .args([
-                "-y", "-v", "error",
-                "-f", "lavfi", "-i", "testsrc=duration=1:size=64x64:rate=10",
+                "-y",
+                "-v",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc=duration=1:size=64x64:rate=10",
                 video_path.to_str().unwrap(),
             ])
             .output()
             .expect("failed to run ffmpeg to generate test video");
-        assert!(gen.status.success(), "ffmpeg test video generation failed: {}", String::from_utf8_lossy(&gen.stderr));
+        assert!(
+            gen.status.success(),
+            "ffmpeg test video generation failed: {}",
+            String::from_utf8_lossy(&gen.stderr)
+        );
 
-        let mut processor = VideoProcessor::new(10.0).with_video_path(&video_path).enable_lighting();
+        let mut processor = VideoProcessor::new(10.0)
+            .with_video_path(&video_path)
+            .enable_lighting();
 
         let frame = processor.get_frame(0).unwrap();
         assert_eq!(frame.resolution, (64, 64));
         assert_eq!(frame.pixels.len(), 64 * 64 * 3);
         // testsrc is a colorful pattern, not a blank frame — pixel data should
         // have real variation, not be all-zero or all-one-value.
-        assert!(frame.pixels.iter().any(|&b| b != frame.pixels[0]), "decoded frame looks uniform/fake");
+        assert!(
+            frame.pixels.iter().any(|&b| b != frame.pixels[0]),
+            "decoded frame looks uniform/fake"
+        );
 
         let lighting = processor.analyze_lighting(0).unwrap();
         assert!(lighting.luminance > 0.0 && lighting.luminance < 255.0);

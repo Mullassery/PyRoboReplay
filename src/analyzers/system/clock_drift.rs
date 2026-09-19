@@ -3,11 +3,17 @@
 //! Detects sensor clock synchronization issues and timing problems.
 
 use crate::analyzers::{
-    GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity, Evidence,
+    Evidence, GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity,
 };
 use std::collections::HashMap;
 
 pub struct ClockDriftDetector;
+
+impl Default for ClockDriftDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ClockDriftDetector {
     pub fn new() -> Self {
@@ -28,7 +34,7 @@ impl ClockDriftDetector {
         for msg in message_timestamps {
             sensor_messages
                 .entry(msg.sensor_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(msg.timestamp);
         }
 
@@ -76,7 +82,10 @@ impl ClockDriftDetector {
 
                     let mut metrics = HashMap::new();
                     metrics.insert(format!("{}_drift_ppm", sensor_id), drift_ppm);
-                    metrics.insert(format!("{}_expected_interval_ms", sensor_id), expected_interval * 1000.0);
+                    metrics.insert(
+                        format!("{}_expected_interval_ms", sensor_id),
+                        expected_interval * 1000.0,
+                    );
                     metrics.insert(format!("{}_hours_to_1s_skew", sensor_id), hours_to_1s_skew);
 
                     findings = Some(RealityGapFinding {

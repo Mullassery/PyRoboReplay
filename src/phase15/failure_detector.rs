@@ -8,8 +8,7 @@
 //! - Timeout/deadline exceeded
 //! - Safety constraint violations
 
-use crate::phase14::timeline_indexing::{TimelineEvent, Modality};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum FailureType {
@@ -136,10 +135,7 @@ impl FailureDetector {
     }
 
     /// Detect recovery behavior: specific log messages or costmap clear events
-    pub fn detect_recovery_triggered(
-        log_message: &str,
-        timestamp: i64,
-    ) -> Option<FailurePattern> {
+    pub fn detect_recovery_triggered(log_message: &str, timestamp: i64) -> Option<FailurePattern> {
         let recovery_keywords = [
             "recovery",
             "backtrack",
@@ -149,7 +145,8 @@ impl FailureDetector {
             "dynamic_reconfigure",
         ];
 
-        let triggered = recovery_keywords.iter()
+        let triggered = recovery_keywords
+            .iter()
             .any(|kw| log_message.to_lowercase().contains(kw));
 
         if triggered {
@@ -158,9 +155,7 @@ impl FailureDetector {
                 timestamp,
                 confidence: 0.95,
                 duration: 0,
-                evidence: vec![
-                    ("log_message_length".to_string(), log_message.len() as f32),
-                ],
+                evidence: vec![("log_message_length".to_string(), log_message.len() as f32)],
             });
         }
         None
@@ -180,7 +175,10 @@ impl FailureDetector {
                 confidence: 1.0,
                 duration: overage as i64 * 1_000_000,
                 evidence: vec![
-                    ("mission_duration_ms".to_string(), mission_duration_ms as f32),
+                    (
+                        "mission_duration_ms".to_string(),
+                        mission_duration_ms as f32,
+                    ),
                     ("budget_ms".to_string(), budget_ms as f32),
                     ("overage_ms".to_string(), overage as f32),
                 ],
@@ -284,7 +282,10 @@ mod tests {
 
     #[test]
     fn test_detect_recovery_triggered() {
-        let pattern = FailureDetector::detect_recovery_triggered("Triggering recovery behavior: backtrack", 1000);
+        let pattern = FailureDetector::detect_recovery_triggered(
+            "Triggering recovery behavior: backtrack",
+            1000,
+        );
         assert!(pattern.is_some());
     }
 

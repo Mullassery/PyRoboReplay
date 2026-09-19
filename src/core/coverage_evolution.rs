@@ -1,4 +1,3 @@
-use crate::core::event::MissionEvent;
 use crate::core::spatial_causality::SpatialContext;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -414,13 +413,21 @@ impl CoverageEvolutionAnalyzer {
             .snapshots
             .iter()
             .find(|snap| snap.coverage_percentage >= 50.0)
-            .map(|snap| snap.timestamp.signed_duration_since(start_time).num_milliseconds() as u64);
+            .map(|snap| {
+                snap.timestamp
+                    .signed_duration_since(start_time)
+                    .num_milliseconds() as u64
+            });
 
         let time_to_full = self
             .snapshots
             .iter()
             .find(|snap| snap.coverage_percentage >= 95.0)
-            .map(|snap| snap.timestamp.signed_duration_since(start_time).num_milliseconds() as u64);
+            .map(|snap| {
+                snap.timestamp
+                    .signed_duration_since(start_time)
+                    .num_milliseconds() as u64
+            });
 
         // Calculate distance traveled
         let distance_traveled: f64 = self
@@ -538,7 +545,7 @@ mod tests {
         }
 
         let hotspots = analyzer.identify_hotspots();
-        assert!(hotspots.len() >= 1);
+        assert!(!hotspots.is_empty());
     }
 
     #[test]

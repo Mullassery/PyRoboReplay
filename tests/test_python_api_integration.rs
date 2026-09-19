@@ -1,8 +1,8 @@
 // Phase 1-3: Python API Integration Tests
 // Tests full mission workflow and Python bindings
 
-use pyroboreplay::core::{MissionEvent, AnomalyDetector, ExplanationGenerator, ActionRecommender};
 use chrono::Utc;
+use pyroboreplay::core::{ActionRecommender, AnomalyDetector, ExplanationGenerator, MissionEvent};
 
 // ============================================================================
 // Test Fixtures: Synthetic Missions
@@ -123,7 +123,10 @@ fn test_collision_mission_detects_collision() {
     let detector = AnomalyDetector::new(events);
     let failures = detector.detect_all();
 
-    assert!(!failures.is_empty(), "Collision mission should have failures");
+    assert!(
+        !failures.is_empty(),
+        "Collision mission should have failures"
+    );
 
     let has_collision = failures.iter().any(|f| f.failure_type == "near_collision");
     assert!(has_collision, "Should detect near_collision");
@@ -135,14 +138,18 @@ fn test_multi_failure_mission_detects_multiple() {
     let detector = AnomalyDetector::new(events);
     let failures = detector.detect_all();
 
-    assert!(failures.len() > 0, "Multi-failure mission should detect failures");
+    assert!(
+        !failures.is_empty(),
+        "Multi-failure mission should detect failures"
+    );
 
-    let failure_types: std::collections::HashSet<_> = failures
-        .iter()
-        .map(|f| f.failure_type.as_str())
-        .collect();
+    let failure_types: std::collections::HashSet<_> =
+        failures.iter().map(|f| f.failure_type.as_str()).collect();
 
-    assert!(failure_types.len() > 1, "Should detect multiple failure types");
+    assert!(
+        failure_types.len() > 1,
+        "Should detect multiple failure types"
+    );
 }
 
 // ============================================================================
@@ -205,8 +212,10 @@ fn test_failure_evidence_preserved() {
         // Evidence should be populated
         if failure.failure_type == "near_collision" {
             assert!(!failure.evidence.is_empty(), "Evidence should be collected");
-            assert!(failure.evidence.contains_key("min_range_m") ||
-                   !failure.evidence.is_empty(), "Should have range data");
+            assert!(
+                failure.evidence.contains_key("min_range_m") || !failure.evidence.is_empty(),
+                "Should have range data"
+            );
         }
     }
 }
@@ -218,7 +227,10 @@ fn test_affected_systems_tracked() {
     let failures = detector.detect_all();
 
     for failure in &failures {
-        assert!(!failure.affected_systems.is_empty(), "Should track affected systems");
+        assert!(
+            !failure.affected_systems.is_empty(),
+            "Should track affected systems"
+        );
     }
 }
 
@@ -276,22 +288,20 @@ fn test_single_event_mission() {
 #[test]
 fn test_malformed_data_handling() {
     // Mission with edge-case values
-    let events = vec![
-        MissionEvent::LidarScan {
-            robot_id: "".to_string(), // Empty robot ID
-            timestamp: Utc::now(),
-            data: pyroboreplay::core::event::LidarData {
-                ranges: vec![], // Empty ranges
-                intensities: None,
-                frame_id: "".to_string(),
-                min_angle: 0.0,
-                max_angle: 0.0,
-                angle_increment: 0.0,
-                range_min: 0.0,
-                range_max: 0.0,
-            },
+    let events = vec![MissionEvent::LidarScan {
+        robot_id: "".to_string(), // Empty robot ID
+        timestamp: Utc::now(),
+        data: pyroboreplay::core::event::LidarData {
+            ranges: vec![], // Empty ranges
+            intensities: None,
+            frame_id: "".to_string(),
+            min_angle: 0.0,
+            max_angle: 0.0,
+            angle_increment: 0.0,
+            range_min: 0.0,
+            range_max: 0.0,
         },
-    ];
+    }];
 
     let detector = AnomalyDetector::new(events);
     let failures = detector.detect_all();
@@ -311,7 +321,10 @@ fn test_failure_count_accuracy() {
     let failures = detector.detect_all();
 
     // Count by type
-    let collision_count = failures.iter().filter(|f| f.failure_type == "near_collision").count();
+    let collision_count = failures
+        .iter()
+        .filter(|f| f.failure_type == "near_collision")
+        .count();
 
     assert!(collision_count > 0);
 }
@@ -322,12 +335,13 @@ fn test_severity_distribution() {
     let detector = AnomalyDetector::new(events);
     let failures = detector.detect_all();
 
-    let severities: std::collections::HashMap<_, usize> = failures
-        .iter()
-        .fold(std::collections::HashMap::new(), |mut acc, f| {
-            *acc.entry(f.severity.clone()).or_insert(0) += 1;
-            acc
-        });
+    let severities: std::collections::HashMap<_, usize> =
+        failures
+            .iter()
+            .fold(std::collections::HashMap::new(), |mut acc, f| {
+                *acc.entry(f.severity.clone()).or_insert(0) += 1;
+                acc
+            });
 
     // Should have failures with various severities
     assert!(!severities.is_empty());
@@ -340,7 +354,8 @@ fn test_confidence_distribution() {
     let failures = detector.detect_all();
 
     if !failures.is_empty() {
-        let avg_confidence: f32 = failures.iter().map(|f| f.confidence).sum::<f32>() / failures.len() as f32;
+        let avg_confidence: f32 =
+            failures.iter().map(|f| f.confidence).sum::<f32>() / failures.len() as f32;
 
         assert!(avg_confidence >= 0.0);
         assert!(avg_confidence <= 1.0);
@@ -362,7 +377,11 @@ fn test_detection_completes_quickly() {
     let elapsed = start.elapsed();
 
     // Should complete in <500ms even for multi-failure scenario
-    assert!(elapsed.as_millis() < 500, "Detection took {}ms", elapsed.as_millis());
+    assert!(
+        elapsed.as_millis() < 500,
+        "Detection took {}ms",
+        elapsed.as_millis()
+    );
 }
 
 #[test]
@@ -380,7 +399,11 @@ fn test_explanation_generation_completes_quickly() {
     let elapsed = start.elapsed();
 
     // Should complete in <100ms for all explanations
-    assert!(elapsed.as_millis() < 100, "Explanation took {}ms", elapsed.as_millis());
+    assert!(
+        elapsed.as_millis() < 100,
+        "Explanation took {}ms",
+        elapsed.as_millis()
+    );
 }
 
 #[test]
@@ -398,7 +421,11 @@ fn test_recommendation_generation_completes_quickly() {
     let elapsed = start.elapsed();
 
     // Should complete in <100ms for all recommendations
-    assert!(elapsed.as_millis() < 100, "Recommendations took {}ms", elapsed.as_millis());
+    assert!(
+        elapsed.as_millis() < 100,
+        "Recommendations took {}ms",
+        elapsed.as_millis()
+    );
 }
 
 // ============================================================================

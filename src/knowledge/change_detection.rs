@@ -8,7 +8,7 @@
 //! - "Why is the charging station blocked today?"
 //! - "What changed since the last visit?"
 
-use crate::knowledge::world_model::{Entity, Location, WorldState};
+use crate::knowledge::world_model::{Entity, WorldState};
 
 /// Detected change in environment
 #[derive(Debug, Clone)]
@@ -47,14 +47,14 @@ pub struct EnvironmentChange {
 /// Types of changes
 #[derive(Debug, Clone, PartialEq)]
 pub enum ChangeType {
-    EntityMoved,              // Object changed location
-    EntityAdded,              // New object discovered
-    EntityRemoved,            // Object no longer present
-    EntityStateChanged,       // State changed (blocked/active/etc)
-    LocationTrafficChanged,   // Traffic patterns differ
-    LocationHazardAdded,      // New hazard detected
+    EntityMoved,                  // Object changed location
+    EntityAdded,                  // New object discovered
+    EntityRemoved,                // Object no longer present
+    EntityStateChanged,           // State changed (blocked/active/etc)
+    LocationTrafficChanged,       // Traffic patterns differ
+    LocationHazardAdded,          // New hazard detected
     LocationAccessibilityChanged, // Became accessible/blocked
-    AnomalyDetected,          // Behavior differs from baseline
+    AnomalyDetected,              // Behavior differs from baseline
     Unknown,
 }
 
@@ -105,7 +105,7 @@ impl ChangeDetector {
                             current_state: format!("Location: {}", current_location),
                             is_expected: Self::is_expected_move(entity),
                             potential_cause: Some(
-                                "Entity mobility or external movement".to_string()
+                                "Entity mobility or external movement".to_string(),
                             ),
                         });
                     }
@@ -116,7 +116,10 @@ impl ChangeDetector {
                     change_type: ChangeType::EntityAdded,
                     entity_id: Some(entity_id.clone()),
                     location_id: Some(current_location.clone()),
-                    description: format!("New entity {} discovered at {}", entity_id, current_location),
+                    description: format!(
+                        "New entity {} discovered at {}",
+                        entity_id, current_location
+                    ),
                     confidence: 0.85,
                     severity: 0.3, // New entities are generally low severity
                     baseline: "Entity not previously observed".to_string(),
@@ -131,7 +134,10 @@ impl ChangeDetector {
         for (entity_id, entity) in &historical_world.entities {
             if entity.last_observed_sec > (timestamp_sec - 3600.0) {
                 // Was observed recently
-                if !current_observations.iter().any(|(eid, _, _)| eid == entity_id) {
+                if !current_observations
+                    .iter()
+                    .any(|(eid, _, _)| eid == entity_id)
+                {
                     changes.push(EnvironmentChange {
                         change_type: ChangeType::EntityRemoved,
                         entity_id: Some(entity_id.clone()),
@@ -143,8 +149,13 @@ impl ChangeDetector {
                         ),
                         confidence: 0.88,
                         severity: 0.4,
-                        baseline: format!("Entity at {}",
-                            entity.current_location.as_ref().unwrap_or(&"unknown".to_string())),
+                        baseline: format!(
+                            "Entity at {}",
+                            entity
+                                .current_location
+                                .as_ref()
+                                .unwrap_or(&"unknown".to_string())
+                        ),
                         current_state: "Entity not detected".to_string(),
                         is_expected: false,
                         potential_cause: Some("Entity removed or out of view".to_string()),
@@ -159,10 +170,10 @@ impl ChangeDetector {
     /// Assess severity of an entity moving
     fn assess_move_severity(entity: &Entity) -> f32 {
         match entity.entity_type.as_str() {
-            "charging_station" => 0.7,  // High: charging station moving is unusual
-            "obstacle" => 0.6,           // Medium-High: obstacles can move
-            "pallet" => 0.5,             // Medium: pallets move often
-            "person" => 0.3,             // Low: people move constantly
+            "charging_station" => 0.7, // High: charging station moving is unusual
+            "obstacle" => 0.6,         // Medium-High: obstacles can move
+            "pallet" => 0.5,           // Medium: pallets move often
+            "person" => 0.3,           // Low: people move constantly
             _ => 0.4,
         }
     }
@@ -170,9 +181,9 @@ impl ChangeDetector {
     /// Is this move expected (normal behavior)
     fn is_expected_move(entity: &Entity) -> bool {
         match entity.entity_type.as_str() {
-            "person" => true,       // People moving is normal
-            "pallet" => true,       // Pallets move in warehouse
-            "obstacle" => false,    // Obstacles shouldn't move
+            "person" => true,            // People moving is normal
+            "pallet" => true,            // Pallets move in warehouse
+            "obstacle" => false,         // Obstacles shouldn't move
             "charging_station" => false, // Charging station shouldn't move
             _ => false,
         }
@@ -276,7 +287,9 @@ mod tests {
 
         let changes = ChangeDetector::detect_changes(&world, &current_obs, 200.0);
 
-        assert!(changes.iter().any(|c| c.change_type == ChangeType::EntityMoved));
+        assert!(changes
+            .iter()
+            .any(|c| c.change_type == ChangeType::EntityMoved));
     }
 
     #[test]
@@ -286,7 +299,9 @@ mod tests {
 
         let changes = ChangeDetector::detect_changes(&world, &current_obs, 200.0);
 
-        assert!(changes.iter().any(|c| c.change_type == ChangeType::EntityRemoved));
+        assert!(changes
+            .iter()
+            .any(|c| c.change_type == ChangeType::EntityRemoved));
     }
 
     #[test]

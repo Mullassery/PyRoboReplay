@@ -16,30 +16,31 @@
 //! - Nav2 architectural limitation classification
 //! - Actionable recommendations (tuning, capability, architecture)
 
-pub mod failure_detector;
-pub mod localization_analyzer;
-pub mod planner_analyzer;
 pub mod costmap_analyzer;
 pub mod dynamic_obstacle_analyzer;
-pub mod semantic_gap_analyzer;
-pub mod root_cause_generator;
+pub mod failure_detector;
 pub mod finding_generator;
+pub mod localization_analyzer;
 pub mod nav2_limitation_detector;
+pub mod planner_analyzer;
+pub mod root_cause_generator;
+pub mod semantic_gap_analyzer;
 
 // Re-exports for public API
-pub use failure_detector::{FailureDetector, FailurePattern, FailureType};
-pub use localization_analyzer::{LocalizationAnalyzer, LocalizationIssue};
-pub use planner_analyzer::{PlannerAnalyzer, PlannerIssue};
 pub use costmap_analyzer::{CostmapAnalyzer, CostmapIssue};
 pub use dynamic_obstacle_analyzer::{DynamicObstacleAnalyzer, ObstacleIssue};
-pub use semantic_gap_analyzer::{SemanticGapAnalyzer, SemanticGap};
+pub use failure_detector::{FailureDetector, FailurePattern, FailureType};
+pub use finding_generator::{FindingGenerator, Recommendation, RootCauseFinding};
+pub use localization_analyzer::{LocalizationAnalyzer, LocalizationIssue};
+pub use nav2_limitation_detector::{
+    Nav2Limitation, Nav2LimitationDetection, Nav2LimitationDetector,
+};
+pub use planner_analyzer::{PlannerAnalyzer, PlannerIssue};
 pub use root_cause_generator::{RootCauseGenerator, RootCauseHypothesis};
-pub use finding_generator::{FindingGenerator, RootCauseFinding, Recommendation};
-pub use nav2_limitation_detector::{Nav2LimitationDetector, Nav2Limitation, Nav2LimitationDetection};
+pub use semantic_gap_analyzer::{SemanticGap, SemanticGapAnalyzer};
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_phase15_modules_accessible() {

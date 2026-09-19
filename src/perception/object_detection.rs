@@ -187,7 +187,9 @@ impl ObjectDetector {
 
     /// Filter detections by confidence threshold
     pub fn filter_by_confidence(&self, frame: &mut DetectionFrame) {
-        frame.objects.retain(|obj| obj.confidence >= self.confidence_threshold);
+        frame
+            .objects
+            .retain(|obj| obj.confidence >= self.confidence_threshold);
     }
 
     /// Limit detections to max_detections (keep highest confidence)
@@ -280,7 +282,7 @@ mod tests {
     fn test_object_detector_creation() {
         let detector = ObjectDetector::new("yolov8");
         assert_eq!(detector.model_id, "yolov8");
-        assert!(detector.supported_classes.len() > 0);
+        assert!(!detector.supported_classes.is_empty());
     }
 
     #[test]

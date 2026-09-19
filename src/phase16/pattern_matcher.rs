@@ -1,7 +1,6 @@
 /// Decision Pattern Matcher for Phase 16
 ///
 /// Pre-computed decision templates for rapid reconstruction
-
 use crate::phase16::decision_reconstructor::{Alternative, Decision, DecisionCategory};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -116,10 +115,7 @@ impl DecisionTemplate {
         DecisionTemplate {
             pattern: DecisionPattern::PathUnreachable.as_str().to_string(),
             typical_trigger: "planner_returns_no_valid_path".to_string(),
-            typical_context: vec![
-                "goal_set".to_string(),
-                "narrow_corridor".to_string(),
-            ],
+            typical_context: vec!["goal_set".to_string(), "narrow_corridor".to_string()],
             typical_alternatives: vec![
                 "request_alternative_goal".to_string(),
                 "wait_for_obstacle_clearance".to_string(),
@@ -136,10 +132,7 @@ impl DecisionTemplate {
         DecisionTemplate {
             pattern: DecisionPattern::SensorFailure.as_str().to_string(),
             typical_trigger: "sensor_not_responding".to_string(),
-            typical_context: vec![
-                "critical_sensor".to_string(),
-                "no_redundancy".to_string(),
-            ],
+            typical_context: vec!["critical_sensor".to_string(), "no_redundancy".to_string()],
             typical_alternatives: vec![
                 "reduce_speed_and_continue".to_string(),
                 "use_backup_sensor".to_string(),
@@ -155,6 +148,12 @@ impl DecisionTemplate {
 
 pub struct DecisionPatternMatcher {
     templates: HashMap<String, DecisionTemplate>,
+}
+
+impl Default for DecisionPatternMatcher {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DecisionPatternMatcher {
@@ -225,9 +224,11 @@ impl DecisionPatternMatcher {
         }
 
         // Set selected
-        if let Some(first_alt) = decision.alternatives.iter().find(|a| {
-            a.action.to_lowercase() == template.typical_selected.to_lowercase()
-        }) {
+        if let Some(first_alt) = decision
+            .alternatives
+            .iter()
+            .find(|a| a.action.to_lowercase() == template.typical_selected.to_lowercase())
+        {
             decision.selected = Some(first_alt.clone());
         }
 
@@ -275,11 +276,8 @@ mod tests {
     #[test]
     fn test_rapid_reconstruction() {
         let matcher = DecisionPatternMatcher::new();
-        let decision = matcher.reconstruct_from_template(
-            "d1".to_string(),
-            0,
-            "obstacle_detected(static)",
-        );
+        let decision =
+            matcher.reconstruct_from_template("d1".to_string(), 0, "obstacle_detected(static)");
 
         assert!(decision.is_some());
         let d = decision.unwrap();
@@ -303,6 +301,6 @@ mod tests {
         let latency = matcher.reconstruction_latency_us();
 
         assert!(latency < 100000); // < 100ms
-        assert!(latency > 10000);  // > 10ms
+        assert!(latency > 10000); // > 10ms
     }
 }

@@ -4,12 +4,10 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::analyzers::{
-        RealityGapFinding, Severity, RealityDomain, Evidence, MissionAnalysisData,
-    };
+    use crate::analyzers::drift_detection::{DriftAwareScorer, DriftDetector, DriftStats};
+    use crate::analyzers::quality_confidence::{QualityAwareConfidence, QualityMetadata};
     use crate::analyzers::severity_contracts::SeverityContractCatalog;
-    use crate::analyzers::drift_detection::{DriftDetector, DriftStats, DriftAwareScorer};
-    use crate::analyzers::quality_confidence::{QualityMetadata, QualityAwareConfidence};
+    use crate::analyzers::{Evidence, RealityDomain, RealityGapFinding, Severity};
     use std::collections::HashMap;
 
     fn create_test_finding(category: &str, confidence: f32) -> RealityGapFinding {
@@ -67,7 +65,7 @@ mod tests {
         assert!(DriftDetector::is_significant(&drift));
 
         // Boost gap score
-        let (boosted, _) = DriftAwareScorer::boost_gap_score(0.6, &[drift.clone()]);
+        let (boosted, _) = DriftAwareScorer::boost_gap_score(0.6, std::slice::from_ref(&drift));
         assert!(boosted > 0.6);
 
         // Boost confidence
@@ -84,8 +82,7 @@ mod tests {
         // Degraded quality
         let mut degraded_quality = QualityMetadata::new();
         degraded_quality.mark_degraded(0.7);
-        let (degraded_conf, _) =
-            QualityAwareConfidence::adjust_confidence(0.8, &degraded_quality);
+        let (degraded_conf, _) = QualityAwareConfidence::adjust_confidence(0.8, &degraded_quality);
 
         // Perfect quality should result in higher confidence
         assert!(perfect_conf > degraded_conf);
@@ -99,13 +96,17 @@ mod tests {
         let mut finding = create_test_finding("Mechanical Degradation", 0.75);
 
         // Step 2: Add metrics for contract evaluation
-        finding.metrics.insert("trend_slope_ms_per_hour".to_string(), 0.1);
-        finding.metrics.insert("response_time_increase_pct".to_string(), 8.0);
+        finding
+            .metrics
+            .insert("trend_slope_ms_per_hour".to_string(), 0.1);
+        finding
+            .metrics
+            .insert("response_time_increase_pct".to_string(), 8.0);
 
         // Step 3: Evaluate contracts
         let contracts = SeverityContractCatalog::new();
         let severity_matches = contracts.evaluate(&finding.metrics);
-        assert!(severity_matches.len() > 0); // Should match high severity contract
+        assert!(!severity_matches.is_empty()); // Should match high severity contract
 
         // Step 4: Detect drift in response time signal
         let response_times: Vec<f32> = (0..20)
@@ -116,7 +117,8 @@ mod tests {
         assert!(drift.is_some());
 
         let drift = drift.unwrap();
-        let (drift_boosted_score, _) = DriftAwareScorer::boost_gap_score(0.7, &[drift.clone()]);
+        let (drift_boosted_score, _) =
+            DriftAwareScorer::boost_gap_score(0.7, std::slice::from_ref(&drift));
         assert!(drift_boosted_score > 0.7);
 
         // Step 5: Assess quality
@@ -132,7 +134,8 @@ mod tests {
         assert!(quality_adjusted_conf >= finding.confidence * 0.9);
 
         // Step 6: Final severity determination
-        let (final_severity, final_confidence) = contracts.determine_severity(&finding.metrics)
+        let (final_severity, final_confidence) = contracts
+            .determine_severity(&finding.metrics)
             .unwrap_or_else(|| ("high".to_string(), 0.8));
 
         assert_eq!(final_severity, "high");
@@ -186,8 +189,8 @@ mod tests {
         // Test that low-quality data reduces confidence appropriately
         let mut low_quality = QualityMetadata::new();
         low_quality.signal_to_noise = 0.3; // Very noisy
-        low_quality.completeness = 0.4;    // Lots of missing data
-        low_quality.sensor_health = 0.2;   // Sensor failing
+        low_quality.completeness = 0.4; // Lots of missing data
+        low_quality.sensor_health = 0.2; // Sensor failing
         low_quality.calibration_status = 0.3; // Uncalibrated
         low_quality.temporal_consistency = 0.4; // Timing issues
         low_quality.compute_overall_quality();

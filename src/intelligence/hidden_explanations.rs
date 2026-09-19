@@ -6,8 +6,6 @@
 //! Core capability: "The robot did X because Y happened, even though
 //! the robot may not have known about Y."
 
-use std::collections::HashMap;
-
 /// Discovered fact about the world
 #[derive(Debug, Clone)]
 pub struct HiddenFact {
@@ -89,7 +87,10 @@ impl CausalNarrativeGenerator {
     pub fn explain_action(
         robot_action: &str,
         action_time: f32,
-        scene_timeline: &[(f32, crate::intelligence::scene_reconstruction::RetrospectiveScene)],
+        scene_timeline: &[(
+            f32,
+            crate::intelligence::scene_reconstruction::RetrospectiveScene,
+        )],
         robot_sensor_state: &RobotSensorState,
     ) -> CausalNarrative {
         // Reconstruct events before the action
@@ -104,30 +105,30 @@ impl CausalNarrativeGenerator {
                 for obj in &scene.detected_objects {
                     if let Some(distance) = obj.distance_m {
                         if distance < 5.0 {
-                        let description =
-                            format!("{} detected at {:.1}m", obj.entity_type, distance);
-                        let visible_to_robot = obj.in_robot_fov && obj.in_sensor_range;
+                            let description =
+                                format!("{} detected at {:.1}m", obj.entity_type, distance);
+                            let visible_to_robot = obj.in_robot_fov && obj.in_sensor_range;
 
-                        event_chain.push(TimelineEvent {
-                            timestamp_sec: *timestamp,
-                            description: description.clone(),
-                            relevance: 0.8,
-                            visible_to_robot,
-                        });
-
-                        if !visible_to_robot {
-                            hidden_facts.push(HiddenFact {
-                                fact: description,
+                            event_chain.push(TimelineEvent {
                                 timestamp_sec: *timestamp,
-                                confidence: scene.reconstruction_confidence,
-                                evidence: vec!["Detected in replay camera".to_string()],
-                                perception_reason: if !obj.in_robot_fov {
-                                    "Outside robot's field of view".to_string()
-                                } else {
-                                    "Outside effective sensor range".to_string()
-                                },
+                                description: description.clone(),
+                                relevance: 0.8,
+                                visible_to_robot,
                             });
-                        }
+
+                            if !visible_to_robot {
+                                hidden_facts.push(HiddenFact {
+                                    fact: description,
+                                    timestamp_sec: *timestamp,
+                                    confidence: scene.reconstruction_confidence,
+                                    evidence: vec!["Detected in replay camera".to_string()],
+                                    perception_reason: if !obj.in_robot_fov {
+                                        "Outside robot's field of view".to_string()
+                                    } else {
+                                        "Outside effective sensor range".to_string()
+                                    },
+                                });
+                            }
                         }
                     }
                 }
@@ -150,14 +151,10 @@ impl CausalNarrativeGenerator {
             }
         };
 
-        let most_likely_cause = Self::generate_explanation(&robot_action, &hidden_cause);
-        let alternatives = Self::generate_alternatives(&robot_action, &event_chain);
+        let most_likely_cause = Self::generate_explanation(robot_action, &hidden_cause);
+        let alternatives = Self::generate_alternatives(robot_action, &event_chain);
 
-        let confidence = Self::compute_confidence(
-            &hidden_cause,
-            robot_sensor_state,
-            &event_chain,
-        );
+        let confidence = Self::compute_confidence(&hidden_cause, robot_sensor_state, &event_chain);
 
         CausalNarrative {
             robot_action: robot_action.to_string(),
@@ -191,10 +188,7 @@ impl CausalNarrativeGenerator {
                     fact.fact, fact.perception_reason
                 )
             }
-            _ => format!(
-                "Robot {} because: {}.",
-                action, fact.fact
-            ),
+            _ => format!("Robot {} because: {}.", action, fact.fact),
         }
     }
 

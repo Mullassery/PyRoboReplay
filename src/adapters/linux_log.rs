@@ -1,3 +1,4 @@
+use crate::adapters::AdapterError;
 /// Adapter for parsing Linux/kernel logs (Layer 2)
 ///
 /// Supports:
@@ -6,9 +7,7 @@
 /// - syslog entries
 ///
 /// Normalizes to MissionEvent::KernelEvent and MissionEvent::LinuxLogEvent
-
 use crate::core::event::MissionEvent;
-use crate::adapters::AdapterError;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use regex::Regex;
 
@@ -137,7 +136,10 @@ impl LinuxLogAdapter {
                 Ok(naive) => DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc),
                 Err(_) => {
                     // Try ISO format
-                    match chrono::DateTime::parse_from_rfc3339(&format!("{}T{}Z", date_str, time_str)) {
+                    match chrono::DateTime::parse_from_rfc3339(&format!(
+                        "{}T{}Z",
+                        date_str, time_str
+                    )) {
                         Ok(dt) => dt.with_timezone(&Utc),
                         Err(_) => Utc::now(),
                     }
@@ -231,7 +233,8 @@ impl LinuxLogAdapter {
                 let boot_seconds: f64 = timestamp_str.trim().parse().unwrap_or(0.0);
 
                 // Use approximate timestamp (would be improved with system boot time)
-                let timestamp = Utc::now() - chrono::Duration::milliseconds((boot_seconds * 1000.0) as i64);
+                let timestamp =
+                    Utc::now() - chrono::Duration::milliseconds((boot_seconds * 1000.0) as i64);
 
                 // Detect kernel events
                 if let Some(event_type) = self.detect_kernel_event(message) {
@@ -336,17 +339,12 @@ impl LinuxLogAdapter {
     /// Try to extract timestamp from a log line
     fn extract_timestamp(&self, line: &str) -> Option<DateTime<Utc>> {
         // Try various timestamp formats
-        let timestamp_patterns = vec![
-            "%Y-%m-%d %H:%M:%S",
-            "%b %d %H:%M:%S",
-            "%Y-%m-%dT%H:%M:%S",
-        ];
+        let timestamp_patterns = vec!["%Y-%m-%d %H:%M:%S", "%b %d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"];
 
         for pattern in timestamp_patterns {
-            if let Ok(naive) = NaiveDateTime::parse_from_str(
-                &line.chars().take(20).collect::<String>(),
-                pattern,
-            ) {
+            if let Ok(naive) =
+                NaiveDateTime::parse_from_str(&line.chars().take(20).collect::<String>(), pattern)
+            {
                 return Some(DateTime::<Utc>::from_naive_utc_and_offset(naive, Utc));
             }
         }
@@ -404,7 +402,8 @@ mod tests {
     #[test]
     fn test_parse_dmesg() {
         let adapter = LinuxLogAdapter::new();
-        let content = "[  100.123456] Linux version 5.10.0\n[  200.654321] Out of memory: Kill process 2341";
+        let content =
+            "[  100.123456] Linux version 5.10.0\n[  200.654321] Out of memory: Kill process 2341";
 
         let events = adapter.parse_dmesg(content).unwrap();
         assert_eq!(events.len(), 2);

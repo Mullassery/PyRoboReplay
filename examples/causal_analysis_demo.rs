@@ -1,9 +1,6 @@
 use chrono::Utc;
 use pyroboreplay::core::{
-    event::{
-        Costmap, IMUData, LidarData, Location, MissionEvent,
-        MissionRecord, Odometry, Pose,
-    },
+    event::{Costmap, IMUData, LidarData, Location, MissionEvent, MissionRecord, Odometry, Pose},
     CausalGraphBuilder,
 };
 
@@ -133,7 +130,11 @@ fn main() {
     println!("╚═══════════════════════════════════════════════════════════════╝\n");
 
     let mission = create_demo_mission();
-    println!("Created demo mission: {} ({} events)", mission.name, mission.events.len());
+    println!(
+        "Created demo mission: {} ({} events)",
+        mission.name,
+        mission.events.len()
+    );
     println!("Time range: {} ms\n", {
         let first = mission.events.first().map(|e| e.timestamp());
         let last = mission.events.last().map(|e| e.timestamp());
@@ -149,10 +150,7 @@ fn main() {
     let builder = CausalGraphBuilder::new(mission.events.clone()).with_window(2000);
     let graph = builder.build();
 
-    println!(
-        "✅ Graph built with {} causal links\n",
-        graph.links().len()
-    );
+    println!("✅ Graph built with {} causal links\n", graph.links().len());
 
     // Analyze causal structure
     println!("📊 Causal Analysis Results:");

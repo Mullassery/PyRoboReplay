@@ -1,7 +1,7 @@
-pub mod ros2;
+pub mod configuration;
 pub mod linux_log;
 pub mod metrics;
-pub mod configuration;
+pub mod ros2;
 
 use crate::core::event::MissionRecord;
 use thiserror::Error;
@@ -25,6 +25,6 @@ pub trait MissionAdapter {
     fn adapter_name(&self) -> &str;
 }
 
+pub use configuration::ConfigurationAdapter;
 pub use linux_log::LinuxLogAdapter;
 pub use metrics::MetricsAdapter;
-pub use configuration::ConfigurationAdapter;

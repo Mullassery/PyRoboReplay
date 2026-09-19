@@ -31,7 +31,10 @@ impl LightingVariabilityDetector {
         // can have very different lighting exposure to the environment.
         let mut by_camera: HashMap<String, Vec<&CameraFrame>> = HashMap::new();
         for frame in camera_frames {
-            by_camera.entry(frame.camera_id.clone()).or_default().push(frame);
+            by_camera
+                .entry(frame.camera_id.clone())
+                .or_default()
+                .push(frame);
         }
 
         for (camera_id, frames) in by_camera {
@@ -67,7 +70,9 @@ impl LightingVariabilityDetector {
                     .iter()
                     .zip(frames.iter().filter_map(|f| f.quality_entropy).map(Some))
                     .filter_map(|(f, e)| e.map(|e| (f, e)))
-                    .max_by(|(_, a), (_, b)| (a - mean).abs().partial_cmp(&(b - mean).abs()).unwrap())
+                    .max_by(|(_, a), (_, b)| {
+                        (a - mean).abs().partial_cmp(&(b - mean).abs()).unwrap()
+                    })
                     .map(|(f, e)| Evidence {
                         signal: format!("{camera_id}_quality_entropy"),
                         value: e,
@@ -132,8 +137,9 @@ mod tests {
 
     #[test]
     fn stable_entropy_produces_no_finding() {
-        let frames: Vec<CameraFrame> =
-            (0..30).map(|i| frame("front", i as f32 * 0.1, 6.0 + (i % 2) as f32 * 0.05)).collect();
+        let frames: Vec<CameraFrame> = (0..30)
+            .map(|i| frame("front", i as f32 * 0.1, 6.0 + (i % 2) as f32 * 0.05))
+            .collect();
         let detector = LightingVariabilityDetector::new();
         assert!(detector.analyze(&frames).is_empty());
     }
@@ -157,15 +163,18 @@ mod tests {
 
     #[test]
     fn too_few_frames_is_skipped_not_falsely_flagged() {
-        let frames: Vec<CameraFrame> = (0..5).map(|i| frame("front", i as f32 * 0.1, if i % 2 == 0 { 8.0 } else { 1.0 })).collect();
+        let frames: Vec<CameraFrame> = (0..5)
+            .map(|i| frame("front", i as f32 * 0.1, if i % 2 == 0 { 8.0 } else { 1.0 }))
+            .collect();
         let detector = LightingVariabilityDetector::new();
         assert!(detector.analyze(&frames).is_empty());
     }
 
     #[test]
     fn cameras_are_analyzed_independently() {
-        let mut frames: Vec<CameraFrame> =
-            (0..30).map(|i| frame("stable_cam", i as f32 * 0.1, 6.0)).collect();
+        let mut frames: Vec<CameraFrame> = (0..30)
+            .map(|i| frame("stable_cam", i as f32 * 0.1, 6.0))
+            .collect();
         frames.extend((0..30).map(|i| {
             let entropy = if i % 2 == 0 { 7.5 } else { 2.5 };
             frame("variable_cam", i as f32 * 0.1, entropy)

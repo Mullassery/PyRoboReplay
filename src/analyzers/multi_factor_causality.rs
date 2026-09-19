@@ -3,7 +3,6 @@
 //! Combines gaps + drift + quality into unified causal chains.
 //! Shows how multiple phenomena interact to cause failures.
 
-use crate::analyzers::gap_to_causal::GapCausalEvent;
 use crate::analyzers::drift_detection::DriftStats;
 use crate::analyzers::quality_confidence::QualityMetadata;
 use crate::analyzers::RealityGapFinding;
@@ -59,7 +58,7 @@ pub struct ContributingFactor {
 /// Where to intervene to break the causal chain
 #[derive(Debug, Clone)]
 pub struct InterventionPoint {
-    pub location_in_chain: usize, // Index into events
+    pub location_in_chain: usize,  // Index into events
     pub intervention_type: String, // "compensate", "prevent", "fallback"
     pub recommended_action: String,
     pub effectiveness_score: f32,
@@ -107,11 +106,7 @@ impl MultiFactorInferenceEngine {
         // Pattern 3: Clock drift + localization + mechanical
         if let Some(clock_gap) = gaps.iter().find(|g| g.category.contains("Clock")) {
             if let Some(mech_gap) = gaps.iter().find(|g| g.category.contains("Mechanical")) {
-                let chain = Self::timing_navigation_chain(
-                    clock_gap,
-                    mech_gap,
-                    quality_context,
-                );
+                let chain = Self::timing_navigation_chain(clock_gap, mech_gap, quality_context);
                 chains.push(chain);
             }
         }
@@ -136,12 +131,15 @@ impl MultiFactorInferenceEngine {
         let rain_probability = environment.get("rain_probability").copied().unwrap_or(0.0);
         let humidity = environment.get("humidity").copied().unwrap_or(0.5);
 
-        let mut events = vec![
+        let events = vec![
             ChainEvent {
                 timestamp_sec: 0.0,
                 event_type: "environmental".to_string(),
-                description: format!("Rain/humidity detected (rain: {:.0}%, humidity: {:.0}%)",
-                    rain_probability * 100.0, humidity * 100.0),
+                description: format!(
+                    "Rain/humidity detected (rain: {:.0}%, humidity: {:.0}%)",
+                    rain_probability * 100.0,
+                    humidity * 100.0
+                ),
                 confidence: rain_probability * 0.9 + humidity * 0.3,
                 downstream_effects: vec!["Water accumulates on optics".to_string()],
             },
@@ -231,7 +229,7 @@ impl MultiFactorInferenceEngine {
     fn thermal_throttle_chain(
         gap: &RealityGapFinding,
         drift: &DriftStats,
-        quality: &HashMap<String, QualityMetadata>,
+        _quality: &HashMap<String, QualityMetadata>,
         environment: &HashMap<String, f32>,
     ) -> MultiFactorCausalChain {
         let temperature = environment.get("temperature_c").copied().unwrap_or(25.0);
@@ -293,7 +291,8 @@ impl MultiFactorInferenceEngine {
                 InterventionPoint {
                     location_in_chain: 0,
                     intervention_type: "prevent".to_string(),
-                    recommended_action: "Improve cooling system or reduce mission duration".to_string(),
+                    recommended_action: "Improve cooling system or reduce mission duration"
+                        .to_string(),
                     effectiveness_score: 0.9,
                 },
                 InterventionPoint {
@@ -423,9 +422,10 @@ mod tests {
         environment.insert("rain_probability".to_string(), 0.8);
         environment.insert("humidity".to_string(), 0.9);
 
-        let chains = MultiFactorInferenceEngine::construct_chains(&gaps, &drifts, &quality, &environment);
+        let chains =
+            MultiFactorInferenceEngine::construct_chains(&gaps, &drifts, &quality, &environment);
 
-        assert!(chains.len() > 0);
+        assert!(!chains.is_empty());
         assert!(chains[0].chain_confidence > 0.5);
         assert_eq!(chains[0].predicted_severity, "Critical");
     }
@@ -438,9 +438,10 @@ mod tests {
         let mut environment = HashMap::new();
         environment.insert("temperature_c".to_string(), 48.0);
 
-        let chains = MultiFactorInferenceEngine::construct_chains(&gaps, &drifts, &quality, &environment);
+        let chains =
+            MultiFactorInferenceEngine::construct_chains(&gaps, &drifts, &quality, &environment);
 
-        assert!(chains.len() > 0);
+        assert!(!chains.is_empty());
         assert_eq!(chains[0].predicted_severity, "High");
     }
 
@@ -454,10 +455,11 @@ mod tests {
         let quality = HashMap::new();
         let environment = HashMap::new();
 
-        let chains = MultiFactorInferenceEngine::construct_chains(&gaps, &drifts, &quality, &environment);
+        let chains =
+            MultiFactorInferenceEngine::construct_chains(&gaps, &drifts, &quality, &environment);
 
-        assert!(chains.len() > 0);
-        assert!(chains[0].intervention_points.len() > 0);
+        assert!(!chains.is_empty());
+        assert!(!chains[0].intervention_points.is_empty());
 
         // Verify intervention effectiveness scores
         for intervention in &chains[0].intervention_points {

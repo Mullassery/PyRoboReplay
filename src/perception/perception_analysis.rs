@@ -82,10 +82,9 @@ impl PerceptionAnalyzer {
 
         for prev_obj in previous_frame_objects {
             // Check if this object is still in current frame
-            let found = current_frame_objects.iter().any(|obj| {
-                obj.class == prev_obj.class
-                    && Self::is_same_object(prev_obj, obj)
-            });
+            let found = current_frame_objects
+                .iter()
+                .any(|obj| obj.class == prev_obj.class && Self::is_same_object(prev_obj, obj));
 
             if !found && prev_obj.confidence > 0.7 {
                 failures.push(PerceptionFailure {
@@ -120,7 +119,9 @@ impl PerceptionAnalyzer {
 
         for prev_obj in previous_objects {
             for curr_obj in current_objects {
-                if Self::is_same_object(prev_obj, curr_obj) && curr_obj.confidence < prev_obj.confidence {
+                if Self::is_same_object(prev_obj, curr_obj)
+                    && curr_obj.confidence < prev_obj.confidence
+                {
                     let drop = prev_obj.confidence - curr_obj.confidence;
 
                     if drop > 0.2 {
@@ -164,9 +165,9 @@ impl PerceptionAnalyzer {
 
         for detection in detected_objects {
             // Check if this detection has a matching ground truth
-            let has_match = ground_truth_objects.iter().any(|gt_obj| {
-                Self::is_same_object(detection, gt_obj)
-            });
+            let has_match = ground_truth_objects
+                .iter()
+                .any(|gt_obj| Self::is_same_object(detection, gt_obj));
 
             if !has_match && detection.confidence > 0.6 {
                 failures.push(PerceptionFailure {
@@ -292,7 +293,11 @@ mod tests {
 
     #[test]
     fn test_missed_detection() {
-        let prev_objects = vec![create_test_detection(ObjectClass::Person, 0.95, (2.0, 0.0, 0.0))];
+        let prev_objects = vec![create_test_detection(
+            ObjectClass::Person,
+            0.95,
+            (2.0, 0.0, 0.0),
+        )];
         let curr_objects = vec![];
 
         let failures =
@@ -304,9 +309,16 @@ mod tests {
 
     #[test]
     fn test_confidence_drop() {
-        let prev_objects = vec![create_test_detection(ObjectClass::Vehicle, 0.95, (5.0, 0.0, 0.0))];
-        let curr_objects =
-            vec![create_test_detection(ObjectClass::Vehicle, 0.70, (5.1, 0.0, 0.0))];
+        let prev_objects = vec![create_test_detection(
+            ObjectClass::Vehicle,
+            0.95,
+            (5.0, 0.0, 0.0),
+        )];
+        let curr_objects = vec![create_test_detection(
+            ObjectClass::Vehicle,
+            0.70,
+            (5.1, 0.0, 0.0),
+        )];
 
         let failures =
             PerceptionAnalyzer::detect_confidence_drops(&prev_objects, &curr_objects, 1.0, 1);

@@ -38,8 +38,10 @@ fn main() {
 
     for mission_num in 1..=3 {
         let mission_id = format!("mission_{}", mission_num);
-        let mission_data =
-            format!(r#"{{"id": "{}", "name": "Warehouse Exploration", "status": "completed"}}"#, mission_id);
+        let mission_data = format!(
+            r#"{{"id": "{}", "name": "Warehouse Exploration", "status": "completed"}}"#,
+            mission_id
+        );
 
         backend.store_mission(&mission_id, &mission_data).unwrap();
         println!("✓ Stored mission: {}", mission_id);
@@ -51,7 +53,9 @@ fn main() {
                 event_id, event_num
             );
 
-            backend.store_event(&mission_id, &event_id, &event_data).unwrap();
+            backend
+                .store_event(&mission_id, &event_id, &event_data)
+                .unwrap();
         }
 
         println!("  ✓ Stored 5 events for {}", mission_id);
@@ -111,7 +115,10 @@ fn main() {
             println!("  Total missions: {}", stats.total_missions);
             println!("  Total events: {}", stats.total_events);
             println!("  Total reports: {}", stats.total_reports);
-            println!("  Storage size: {} bytes", stats.storage_size_bytes.unwrap_or(0));
+            println!(
+                "  Storage size: {} bytes",
+                stats.storage_size_bytes.unwrap_or(0)
+            );
             println!("  Connected: {}\n", stats.connected);
         }
         Err(e) => println!("Error getting stats: {:?}\n", e),
@@ -170,7 +177,10 @@ fn main() {
             println!("  Missions remaining: {}", stats.total_missions);
             println!("  Events remaining: {}", stats.total_events);
             println!("  Reports remaining: {}", stats.total_reports);
-            println!("  Storage size: {} bytes\n", stats.storage_size_bytes.unwrap_or(0));
+            println!(
+                "  Storage size: {} bytes\n",
+                stats.storage_size_bytes.unwrap_or(0)
+            );
         }
         Err(e) => println!("Error getting final stats: {:?}\n", e),
     }

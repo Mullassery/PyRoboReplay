@@ -27,7 +27,10 @@ impl ThermalDriftDetector {
 
         let mut by_location: HashMap<String, Vec<&ThermalReading>> = HashMap::new();
         for reading in thermal_readings {
-            by_location.entry(reading.location.clone()).or_default().push(reading);
+            by_location
+                .entry(reading.location.clone())
+                .or_default()
+                .push(reading);
         }
 
         for (location, mut readings) in by_location {
@@ -122,13 +125,18 @@ mod tests {
     use super::*;
 
     fn reading(location: &str, timestamp: f32, temp: f32) -> ThermalReading {
-        ThermalReading { timestamp, location: location.to_string(), temperature_c: temp }
+        ThermalReading {
+            timestamp,
+            location: location.to_string(),
+            temperature_c: temp,
+        }
     }
 
     #[test]
     fn stable_temperature_produces_no_finding() {
-        let readings: Vec<ThermalReading> =
-            (0..20).map(|i| reading("ambient", i as f32 * 10.0, 22.0 + (i % 2) as f32 * 0.1)).collect();
+        let readings: Vec<ThermalReading> = (0..20)
+            .map(|i| reading("ambient", i as f32 * 10.0, 22.0 + (i % 2) as f32 * 0.1))
+            .collect();
         let detector = ThermalDriftDetector::new();
         assert!(detector.analyze(&readings).is_empty());
     }
@@ -136,8 +144,9 @@ mod tests {
     #[test]
     fn sustained_drift_produces_a_finding() {
         // 20 readings over 200s, ramping from 15C to 25C — a clear 10C drift.
-        let readings: Vec<ThermalReading> =
-            (0..20).map(|i| reading("ambient", i as f32 * 10.0, 15.0 + i as f32 * 0.5)).collect();
+        let readings: Vec<ThermalReading> = (0..20)
+            .map(|i| reading("ambient", i as f32 * 10.0, 15.0 + i as f32 * 0.5))
+            .collect();
         let detector = ThermalDriftDetector::new();
         let findings = detector.analyze(&readings);
         assert_eq!(findings.len(), 1);
@@ -156,9 +165,12 @@ mod tests {
 
     #[test]
     fn locations_are_analyzed_independently() {
-        let mut readings: Vec<ThermalReading> =
-            (0..20).map(|i| reading("stable_loc", i as f32 * 10.0, 20.0)).collect();
-        readings.extend((0..20).map(|i| reading("drifting_loc", i as f32 * 10.0, 10.0 + i as f32 * 0.4)));
+        let mut readings: Vec<ThermalReading> = (0..20)
+            .map(|i| reading("stable_loc", i as f32 * 10.0, 20.0))
+            .collect();
+        readings.extend(
+            (0..20).map(|i| reading("drifting_loc", i as f32 * 10.0, 10.0 + i as f32 * 0.4)),
+        );
         let detector = ThermalDriftDetector::new();
         let findings = detector.analyze(&readings);
         assert_eq!(findings.len(), 1);

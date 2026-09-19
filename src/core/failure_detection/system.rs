@@ -8,7 +8,6 @@
 /// - Filesystem errors (disk I/O failures)
 /// - CPU saturation (sustained high CPU usage)
 /// - Memory pressure (sustained high memory usage)
-
 use super::{DetectedFailure, FailureDetector, FailureDomain, FailureSeverity};
 use crate::core::timeline_correlation::NormalizedEvent;
 

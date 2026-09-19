@@ -141,22 +141,20 @@ impl ExplanationGenerator {
         let mut recommendations = Vec::new();
 
         if !gaps.is_empty() {
-            recommendations.push(
-                "Address detected reality gaps through simulation improvements".to_string(),
-            );
+            recommendations
+                .push("Address detected reality gaps through simulation improvements".to_string());
         }
 
         if !perception_gaps.is_empty() {
             recommendations.push(
                 "Enhance perception capabilities to cover identified blind spots".to_string(),
             );
-            recommendations.push(
-                "Add redundant sensors for improved robustness".to_string(),
-            );
+            recommendations.push("Add redundant sensors for improved robustness".to_string());
         }
 
         if perception_gaps.len() > 2 {
-            recommendations.push("Consider redesigning sensor suite for this environment".to_string());
+            recommendations
+                .push("Consider redesigning sensor suite for this environment".to_string());
         }
 
         recommendations.push("Re-test in simulation before field deployment".to_string());
@@ -183,8 +181,12 @@ mod tests {
             backend: crate::reasoning::llm_integration::InferenceBackend::Fallback,
         };
 
-        let explanation =
-            ExplanationGenerator::generate_complete_explanation(&gaps, "collision chain", &perception_gaps, &llm_input);
+        let explanation = ExplanationGenerator::generate_complete_explanation(
+            &gaps,
+            "collision chain",
+            &perception_gaps,
+            &llm_input,
+        );
 
         assert!(!explanation.summary.is_empty());
         assert!(!explanation.recommendations.is_empty());

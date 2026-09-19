@@ -7,8 +7,7 @@
 //! - Prediction accuracy
 
 use crate::analyzers::fleet_learning::{FleetMission, RobotTypeProfile};
-use crate::analyzers::predictive_gaps::{PredictiveModel, DegradationCurve};
-use crate::analyzers::RealityGapFinding;
+use crate::analyzers::predictive_gaps::PredictiveModel;
 use std::collections::HashMap;
 
 /// Feedback on whether a prediction was accurate
@@ -105,7 +104,11 @@ impl AdaptiveRecalibrationEngine {
             .iter()
             .filter_map(|f| f.time_to_actual_sec)
             .sum::<f32>()
-            / feedback.iter().filter(|f| f.time_to_actual_sec.is_some()).count().max(1) as f32;
+            / feedback
+                .iter()
+                .filter(|f| f.time_to_actual_sec.is_some())
+                .count()
+                .max(1) as f32;
 
         // Apply learning rate based on strategy
         let learning_rate = match strategy {
@@ -115,7 +118,8 @@ impl AdaptiveRecalibrationEngine {
         };
 
         // Update model accuracy
-        model.model_accuracy = (model.model_accuracy * (1.0 - learning_rate) + accuracy * learning_rate)
+        model.model_accuracy = (model.model_accuracy * (1.0 - learning_rate)
+            + accuracy * learning_rate)
             .max(0.0)
             .min(1.0);
 
@@ -145,10 +149,14 @@ impl AdaptiveRecalibrationEngine {
             if item.actually_occurred {
                 // This gap occurred - we may have a valid chain
                 // Update probability based on accuracy
-                let confidence_boost = if item.was_accurate { learning_rate } else { -learning_rate * 0.5 };
+                let confidence_boost = if item.was_accurate {
+                    learning_rate
+                } else {
+                    -learning_rate * 0.5
+                };
 
                 // Find all chains that predicted this gap
-                for (_from_gap, following_gaps) in model.gap_chains.iter_mut() {
+                for following_gaps in model.gap_chains.values_mut() {
                     for (gap_name, rate) in following_gaps.iter_mut() {
                         if gap_name == &item.predicted_gap {
                             *rate = (*rate + confidence_boost).max(0.0).min(1.0);
@@ -172,7 +180,7 @@ impl AdaptiveRecalibrationEngine {
             if let Some(lead_time) = item.time_to_actual_sec {
                 gap_lead_times
                     .entry(item.predicted_gap.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(lead_time);
             }
         }
@@ -181,14 +189,15 @@ impl AdaptiveRecalibrationEngine {
         for (gap_category, lead_times) in gap_lead_times {
             if let Some(curve) = model.degradation_curves.get_mut(&gap_category) {
                 if !lead_times.is_empty() {
-                    let avg_lead_time: f32 = lead_times.iter().sum::<f32>() / lead_times.len() as f32;
+                    let avg_lead_time: f32 =
+                        lead_times.iter().sum::<f32>() / lead_times.len() as f32;
 
                     // Adjust missions to critical based on observed lead time
                     let new_missions_to_critical = avg_lead_time / 100.0; // Rough conversion back
-                    curve.missions_to_critical =
-                        (curve.missions_to_critical * (1.0 - learning_rate)
-                            + new_missions_to_critical * learning_rate)
-                            .max(1.0);
+                    curve.missions_to_critical = (curve.missions_to_critical
+                        * (1.0 - learning_rate)
+                        + new_missions_to_critical * learning_rate)
+                        .max(1.0);
 
                     // Adjust degradation rate
                     let degradation_adjustment = (avg_lead_time / 100.0) * learning_rate;
@@ -231,9 +240,9 @@ impl AdaptiveRecalibrationEngine {
             if i < profile.problematic_gaps.len() {
                 let old_gap = &profile.problematic_gaps[i];
                 let updated_count = ((old_gap.1 as f32 * (1.0 - learning_rate))
-                    + (*new_count as f32 * learning_rate)) as usize;
-                let updated_conf =
-                    old_gap.2 * (1.0 - learning_rate) + new_conf * learning_rate;
+                    + (*new_count as f32 * learning_rate))
+                    as usize;
+                let updated_conf = old_gap.2 * (1.0 - learning_rate) + new_conf * learning_rate;
                 profile.problematic_gaps[i] = (new_gap.clone(), updated_count, updated_conf);
             }
         }
@@ -296,10 +305,17 @@ impl AdaptiveRecalibrationEngine {
 
         // Generate recommendations
         for analysis in error_analysis.values_mut() {
-            analysis.recommended_adjustment = if analysis.false_positives > analysis.false_negatives {
-                format!("Increase threshold by {:.1}%", 5.0 + analysis.false_positives as f32)
+            analysis.recommended_adjustment = if analysis.false_positives > analysis.false_negatives
+            {
+                format!(
+                    "Increase threshold by {:.1}%",
+                    5.0 + analysis.false_positives as f32
+                )
             } else if analysis.false_negatives > analysis.false_positives {
-                format!("Decrease threshold by {:.1}%", 5.0 + analysis.false_negatives as f32)
+                format!(
+                    "Decrease threshold by {:.1}%",
+                    5.0 + analysis.false_negatives as f32
+                )
             } else {
                 "Threshold appears calibrated".to_string()
             };
@@ -331,7 +347,7 @@ pub struct ErrorAnalysis {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::analyzers::{Evidence, RealityDomain, Severity};
+
     use std::collections::HashMap;
 
     fn create_test_feedback(gap: &str, was_accurate: bool, occurred: bool) -> PredictionFeedback {
@@ -347,10 +363,7 @@ mod tests {
 
     fn create_test_model() -> PredictiveModel {
         let mut gap_chains = HashMap::new();
-        gap_chains.insert(
-            "Optical".to_string(),
-            vec![("Detection".to_string(), 0.7)],
-        );
+        gap_chains.insert("Optical".to_string(), vec![("Detection".to_string(), 0.7)]);
 
         PredictiveModel {
             robot_type: "mobile_robot".to_string(),

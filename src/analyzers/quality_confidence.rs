@@ -84,15 +84,13 @@ pub struct QualityAwareConfidence;
 impl QualityAwareConfidence {
     /// Compute quality-adjusted confidence
     /// Formula: adjusted = base_confidence × quality_weight + overall_quality × (1 - quality_weight)
-    pub fn adjust_confidence(
-        base_confidence: f32,
-        quality: &QualityMetadata,
-    ) -> (f32, String) {
+    pub fn adjust_confidence(base_confidence: f32, quality: &QualityMetadata) -> (f32, String) {
         // Quality weight: how much should quality influence confidence?
         // Higher quality data → weight increases confidence calculation
         let quality_weight = 0.6; // 60% base confidence, 40% quality score
 
-        let adjusted = base_confidence * quality_weight + quality.overall_quality * (1.0 - quality_weight);
+        let adjusted =
+            base_confidence * quality_weight + quality.overall_quality * (1.0 - quality_weight);
 
         let explanation = format!(
             "Quality adj: {:.0}% (completeness: {:.0}%, SNR: {:.0}%, health: {:.0}%, cal: {:.0}%)",
@@ -109,10 +107,7 @@ impl QualityAwareConfidence {
     /// Compute confidence from evidence + quality
     /// When quality is high, evidence is trusted more
     /// When quality is low, evidence confidence is reduced
-    pub fn evidence_quality_confidence(
-        evidence_confidence: f32,
-        quality: &QualityMetadata,
-    ) -> f32 {
+    pub fn evidence_quality_confidence(evidence_confidence: f32, quality: &QualityMetadata) -> f32 {
         // Evidence × Quality interaction
         let quality_boost = if quality.overall_quality > 0.8 {
             0.1 // High quality → boost by 10%
@@ -127,9 +122,7 @@ impl QualityAwareConfidence {
 
     /// Determine if data quality is sufficient for trust
     pub fn is_high_quality(quality: &QualityMetadata) -> bool {
-        quality.overall_quality > 0.75
-            && quality.completeness > 0.7
-            && quality.sensor_health > 0.7
+        quality.overall_quality > 0.75 && quality.completeness > 0.7 && quality.sensor_health > 0.7
     }
 
     /// Determine if data quality is sufficient for any inference
@@ -154,36 +147,36 @@ pub struct QualityAggregator;
 
 impl QualityAggregator {
     /// Compute fleet-wide data quality
-    pub fn aggregate_quality(
-        qualities: &HashMap<String, QualityMetadata>,
-    ) -> QualityMetadata {
+    pub fn aggregate_quality(qualities: &HashMap<String, QualityMetadata>) -> QualityMetadata {
         if qualities.is_empty() {
             return QualityMetadata::new();
         }
 
         let mut aggregate = QualityMetadata::new();
 
-        aggregate.completeness = qualities.values().map(|q| q.completeness).sum::<f32>()
+        aggregate.completeness =
+            qualities.values().map(|q| q.completeness).sum::<f32>() / qualities.len() as f32;
+        aggregate.signal_to_noise =
+            qualities.values().map(|q| q.signal_to_noise).sum::<f32>() / qualities.len() as f32;
+        aggregate.sensor_health =
+            qualities.values().map(|q| q.sensor_health).sum::<f32>() / qualities.len() as f32;
+        aggregate.calibration_status = qualities
+            .values()
+            .map(|q| q.calibration_status)
+            .sum::<f32>()
             / qualities.len() as f32;
-        aggregate.signal_to_noise = qualities.values().map(|q| q.signal_to_noise).sum::<f32>()
+        aggregate.temporal_consistency = qualities
+            .values()
+            .map(|q| q.temporal_consistency)
+            .sum::<f32>()
             / qualities.len() as f32;
-        aggregate.sensor_health = qualities.values().map(|q| q.sensor_health).sum::<f32>()
-            / qualities.len() as f32;
-        aggregate.calibration_status =
-            qualities.values().map(|q| q.calibration_status).sum::<f32>()
-                / qualities.len() as f32;
-        aggregate.temporal_consistency =
-            qualities.values().map(|q| q.temporal_consistency).sum::<f32>()
-                / qualities.len() as f32;
 
         aggregate.compute_overall_quality();
         aggregate
     }
 
     /// Find worst-quality sensor
-    pub fn worst_quality(
-        qualities: &HashMap<String, QualityMetadata>,
-    ) -> Option<(String, f32)> {
+    pub fn worst_quality(qualities: &HashMap<String, QualityMetadata>) -> Option<(String, f32)> {
         qualities
             .iter()
             .min_by(|a, b| {
@@ -195,9 +188,7 @@ impl QualityAggregator {
     }
 
     /// Find best-quality sensor
-    pub fn best_quality(
-        qualities: &HashMap<String, QualityMetadata>,
-    ) -> Option<(String, f32)> {
+    pub fn best_quality(qualities: &HashMap<String, QualityMetadata>) -> Option<(String, f32)> {
         qualities
             .iter()
             .max_by(|a, b| {

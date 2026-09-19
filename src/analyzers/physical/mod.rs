@@ -7,13 +7,13 @@
 //! - Calibration drift
 
 pub mod mechanical_degradation;
-pub mod thermal_effects;
 pub mod structural_dynamics;
+pub mod thermal_effects;
 
 use crate::analyzers::{GapDetector, MissionAnalysisData, RealityDomain, RealityGapFinding};
 use mechanical_degradation::MechanicalDegradationDetector;
-use thermal_effects::ThermalEffectsDetector;
 use structural_dynamics::StructuralDynamicsDetector;
+use thermal_effects::ThermalEffectsDetector;
 
 /// Analyzer for physical domain gaps
 pub struct PhysicalDomainAnalyzer {

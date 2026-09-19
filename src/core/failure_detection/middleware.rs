@@ -6,7 +6,6 @@
 /// - Topic starvation (subscription receiving no messages)
 /// - Message latency spikes
 /// - DDS buffer overflow
-
 use super::{DetectedFailure, FailureDetector, FailureDomain, FailureSeverity};
 use crate::core::timeline_correlation::NormalizedEvent;
 
@@ -24,7 +23,9 @@ impl MiddlewareFailureDetector {
                 ..
             } = &event.event
             {
-                if event_type.contains("discovery_timeout") || event_type.contains("discovery_failed") {
+                if event_type.contains("discovery_timeout")
+                    || event_type.contains("discovery_failed")
+                {
                     failures.push(
                         DetectedFailure::new(
                             "dds_discovery_timeout",
@@ -132,11 +133,12 @@ impl MiddlewareFailureDetector {
     /// Detect topic starvation: subscription receiving no messages
     fn detect_topic_starvation(events: &[NormalizedEvent]) -> Vec<DetectedFailure> {
         let mut failures = Vec::new();
-        let mut topic_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+        let mut topic_counts: std::collections::HashMap<String, usize> =
+            std::collections::HashMap::new();
 
         for event in events {
             if let crate::core::event::MissionEvent::CommunicationEvent {
-                event_type,
+                event_type: _,
                 data,
                 ..
             } = &event.event

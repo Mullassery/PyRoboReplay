@@ -17,8 +17,8 @@ pub struct GapTelemetry {
     // Physical domain signals
     pub actuator_response_times: Vec<(f32, f32)>, // (timestamp, ms)
     pub joint_oscillation_frequencies: HashMap<String, f32>, // (joint_id, Hz)
-    pub thermal_readings: Vec<(f32, f32)>, // (timestamp, celsius)
-    pub motor_currents: Vec<(f32, f32)>, // (timestamp, amps)
+    pub thermal_readings: Vec<(f32, f32)>,        // (timestamp, celsius)
+    pub motor_currents: Vec<(f32, f32)>,          // (timestamp, amps)
 
     // Sensor domain signals
     pub image_sharpness: Vec<(f32, f32)>, // (timestamp, sharpness_metric)
@@ -27,7 +27,7 @@ pub struct GapTelemetry {
 
     // System domain signals
     pub message_interarrivals: HashMap<String, Vec<f32>>, // (sensor_id, intervals)
-    pub clock_drift_ppm: HashMap<String, f32>, // (sensor_id, ppm)
+    pub clock_drift_ppm: HashMap<String, f32>,            // (sensor_id, ppm)
 
     // Pre-computed trends
     pub response_time_trend: Option<TrendLine>,
@@ -54,13 +54,19 @@ impl GapTelemetry {
             mission_id: mission_data.mission_id.clone(),
             actuator_response_times: Vec::new(),
             joint_oscillation_frequencies: HashMap::new(),
-            thermal_readings: mission_data.thermal_readings.iter()
+            thermal_readings: mission_data
+                .thermal_readings
+                .iter()
                 .map(|t| (t.timestamp, t.temperature_c))
                 .collect(),
-            motor_currents: mission_data.motor_currents.iter()
+            motor_currents: mission_data
+                .motor_currents
+                .iter()
                 .map(|m| (m.timestamp, m.current_amps))
                 .collect(),
-            image_sharpness: mission_data.camera_frames.iter()
+            image_sharpness: mission_data
+                .camera_frames
+                .iter()
                 .filter_map(|f| f.quality_sharpness.map(|s| (f.timestamp, s)))
                 .collect(),
             detection_confidence: Vec::new(),
@@ -75,7 +81,8 @@ impl GapTelemetry {
         };
 
         // Compute response times
-        telemetry.compute_response_times(&mission_data.control_messages, &mission_data.joint_states);
+        telemetry
+            .compute_response_times(&mission_data.control_messages, &mission_data.joint_states);
 
         // Compute detection confidence per frame
         telemetry.compute_frame_confidences(&mission_data.detection_results);
@@ -114,7 +121,7 @@ impl GapTelemetry {
         for control in control_messages {
             joint_controls
                 .entry(control.joint_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((control.timestamp, control.value));
         }
 
@@ -129,7 +136,8 @@ impl GapTelemetry {
                 if let Some(first_response) = matching_states.first() {
                     let response_time = first_response.timestamp - ctrl_time;
                     if response_time > 0.0 && response_time < 1.0 {
-                        self.actuator_response_times.push((ctrl_time, response_time * 1000.0));
+                        self.actuator_response_times
+                            .push((ctrl_time, response_time * 1000.0));
                     }
                 }
             }
@@ -148,7 +156,7 @@ impl GapTelemetry {
         for detection in detections {
             frame_conf
                 .entry(detection.frame_index)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(detection.confidence);
         }
 
@@ -180,7 +188,7 @@ impl GapTelemetry {
         for msg in messages {
             sensor_messages
                 .entry(msg.sensor_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(msg.timestamp);
         }
 
@@ -349,7 +357,11 @@ mod tests {
             false_positive_rate: 0.02,
             message_interarrivals,
             clock_drift_ppm,
-            response_time_trend: Some(TrendLine { slope: 1.5, intercept: 0.1, r_squared: 0.92 }),
+            response_time_trend: Some(TrendLine {
+                slope: 1.5,
+                intercept: 0.1,
+                r_squared: 0.92,
+            }),
             sharpness_trend: None,
             confidence_trend: None,
             quality_confidence_correlation: 0.7,
@@ -359,7 +371,10 @@ mod tests {
 
     #[test]
     fn save_and_load_cache_round_trips_exactly() {
-        let dir = std::env::temp_dir().join(format!("pyroboreplay_telemetry_test_{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "pyroboreplay_telemetry_test_{}",
+            std::process::id()
+        ));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("telemetry.json");
         let path_str = path.to_str().unwrap();
@@ -367,10 +382,18 @@ mod tests {
         let original = sample_telemetry();
         original.save_cache(path_str).unwrap();
 
-        let loaded = GapTelemetry::load_cache(path_str).unwrap().expect("cache file should exist");
+        let loaded = GapTelemetry::load_cache(path_str)
+            .unwrap()
+            .expect("cache file should exist");
         assert_eq!(loaded.mission_id, original.mission_id);
-        assert_eq!(loaded.actuator_response_times, original.actuator_response_times);
-        assert_eq!(loaded.joint_oscillation_frequencies, original.joint_oscillation_frequencies);
+        assert_eq!(
+            loaded.actuator_response_times,
+            original.actuator_response_times
+        );
+        assert_eq!(
+            loaded.joint_oscillation_frequencies,
+            original.joint_oscillation_frequencies
+        );
         assert_eq!(loaded.response_time_trend.unwrap().slope, 1.5);
         assert!(loaded.sharpness_trend.is_none());
 
@@ -379,7 +402,8 @@ mod tests {
 
     #[test]
     fn load_cache_returns_none_not_an_error_when_file_is_missing() {
-        let result = GapTelemetry::load_cache("/nonexistent/path/that/should/not/exist.json").unwrap();
+        let result =
+            GapTelemetry::load_cache("/nonexistent/path/that/should/not/exist.json").unwrap();
         assert!(result.is_none());
     }
 

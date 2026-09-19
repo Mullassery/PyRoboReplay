@@ -1,8 +1,11 @@
 use crate::streaming::channel::StreamEvent;
-use crate::streaming::live_diagnostics::{LiveDiagnostics, DiagnosticsConfig, LiveAlert, AlertSeverity};
-use chrono::{DateTime, Utc, Duration};
+use crate::streaming::live_diagnostics::{
+    AlertSeverity, DiagnosticsConfig, LiveAlert, LiveDiagnostics,
+};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
+#[cfg(test)]
 use uuid::Uuid;
 
 /// Robot operational status
@@ -109,7 +112,8 @@ impl FleetMonitor {
     /// Register a new robot in the fleet
     pub fn register_robot(&mut self, robot_id: &str, mission_id: Option<&str>) {
         let diagnostics = LiveDiagnostics::new(self.config.diagnostics_config.clone());
-        self.per_robot_diagnostics.insert(robot_id.to_string(), diagnostics);
+        self.per_robot_diagnostics
+            .insert(robot_id.to_string(), diagnostics);
 
         let status = RobotStatus {
             robot_id: robot_id.to_string(),
@@ -285,8 +289,14 @@ impl FleetDashboard {
             HealthTrend::Stable
         };
 
-        let window_start = summaries.first().map(|s| s.timestamp).unwrap_or_else(Utc::now);
-        let window_end = summaries.last().map(|s| s.timestamp).unwrap_or_else(Utc::now);
+        let window_start = summaries
+            .first()
+            .map(|s| s.timestamp)
+            .unwrap_or_else(Utc::now);
+        let window_end = summaries
+            .last()
+            .map(|s| s.timestamp)
+            .unwrap_or_else(Utc::now);
 
         FleetDashboardWindow {
             window_start,
@@ -480,7 +490,10 @@ mod tests {
 
         let window = dashboard.current_window();
         // Score should have degraded from 1.0 to something lower
-        let score_changed = (window.summaries[0].overall_health_score - window.summaries[1].overall_health_score).abs() > 0.01;
+        let score_changed = (window.summaries[0].overall_health_score
+            - window.summaries[1].overall_health_score)
+            .abs()
+            > 0.01;
         assert!(score_changed || window.trend == HealthTrend::Degrading);
     }
 

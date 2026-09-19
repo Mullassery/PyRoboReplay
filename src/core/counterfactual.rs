@@ -1,7 +1,6 @@
 use crate::core::causality::CausalGraph;
 use crate::core::event::MissionEvent;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Counterfactual scenario: simulate mission outcome with modified events
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,7 +121,8 @@ impl CounterfactualAnalyzer {
         let affected = self._find_downstream_events(event_idx, graph);
 
         // Estimate if failure would still occur
-        let failure_prevented = self._estimate_failure_prevention(event_idx, failure_idx, &affected, graph);
+        let failure_prevented =
+            self._estimate_failure_prevention(event_idx, failure_idx, &affected, graph);
 
         // Identify new risks
         let new_risks = self._identify_new_risks(event_idx);
@@ -226,10 +226,7 @@ impl CounterfactualAnalyzer {
     }
 
     /// Identify critical causal links that would prevent failure if broken
-    pub fn identify_critical_links(
-        &self,
-        failure_idx: usize,
-    ) -> Option<Vec<CriticalCausalLink>> {
+    pub fn identify_critical_links(&self, failure_idx: usize) -> Option<Vec<CriticalCausalLink>> {
         let graph = self.causal_graph.as_ref()?;
 
         let mut critical_links = Vec::new();
@@ -248,8 +245,8 @@ impl CounterfactualAnalyzer {
                 );
 
                 // Criticality: high confidence + many downstream events + few alternatives
-                let criticality =
-                    link.confidence as f32 * (cascade_size as f32 / 10.0) / (alternative_paths.max(1) as f32);
+                let criticality = link.confidence * (cascade_size as f32 / 10.0)
+                    / (alternative_paths.max(1) as f32);
 
                 critical_links.push(CriticalCausalLink {
                     source_event_idx: link.source_event_idx,
@@ -266,7 +263,11 @@ impl CounterfactualAnalyzer {
         }
 
         // Sort by criticality
-        critical_links.sort_by(|a, b| b.criticality.partial_cmp(&a.criticality).unwrap_or(std::cmp::Ordering::Equal));
+        critical_links.sort_by(|a, b| {
+            b.criticality
+                .partial_cmp(&a.criticality)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         if critical_links.is_empty() {
             None
@@ -374,7 +375,9 @@ impl CounterfactualAnalyzer {
         graph
             .links()
             .iter()
-            .filter(|link| link.source_event_idx == source_idx && link.target_event_idx != target_idx)
+            .filter(|link| {
+                link.source_event_idx == source_idx && link.target_event_idx != target_idx
+            })
             .count()
     }
 
@@ -388,13 +391,14 @@ impl CounterfactualAnalyzer {
         let avg_cascade = if critical_links.is_empty() {
             0.0
         } else {
-            critical_links.iter().map(|l| l.cascade_size as f32).sum::<f32>() / critical_links.len() as f32
+            critical_links
+                .iter()
+                .map(|l| l.cascade_size as f32)
+                .sum::<f32>()
+                / critical_links.len() as f32
         };
 
-        let most_critical = critical_links
-            .first()
-            .map(|l| l.criticality)
-            .unwrap_or(0.0);
+        let most_critical = critical_links.first().map(|l| l.criticality).unwrap_or(0.0);
 
         // Intervention feasibility: high if we have clear prevention strategies
         let feasibility = if failure_preventable > 0 {
@@ -432,7 +436,7 @@ mod tests {
         // This is expected behavior
         let scenario = analyzer.scenario_remove_event(0, 2);
         // Test passes if it handles None gracefully
-        assert_eq!(scenario.is_none(), true);
+        assert!(scenario.is_none());
     }
 
     #[test]

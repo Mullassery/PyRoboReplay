@@ -1,5 +1,4 @@
 /// Outcome Influence Analyzer - Calculate which factors had most impact on results
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -7,10 +6,10 @@ use std::collections::HashMap;
 pub struct InfluenceScore {
     pub factor_id: String,
     pub factor_name: String,
-    pub influence_percent: f32,  // 0-100
-    pub direction: String,       // "positive", "negative", "neutral"
-    pub magnitude: f32,          // How strong the effect
-    pub confidence: f32,         // How certain (0-1)
+    pub influence_percent: f32, // 0-100
+    pub direction: String,      // "positive", "negative", "neutral"
+    pub magnitude: f32,         // How strong the effect
+    pub confidence: f32,        // How certain (0-1)
 }
 
 impl InfluenceScore {
@@ -37,7 +36,7 @@ impl InfluenceScore {
 pub struct OutcomeInfluenceAnalyzer {
     mission_id: String,
     outcome: String,
-    factors: Vec<(String, f32)>,  // (factor_name, contribution_score)
+    factors: Vec<(String, f32)>, // (factor_name, contribution_score)
 }
 
 impl OutcomeInfluenceAnalyzer {
@@ -85,7 +84,11 @@ impl OutcomeInfluenceAnalyzer {
             .collect();
 
         // Sort by influence (descending)
-        scores.sort_by(|a, b| b.influence_percent.partial_cmp(&a.influence_percent).unwrap());
+        scores.sort_by(|a, b| {
+            b.influence_percent
+                .partial_cmp(&a.influence_percent)
+                .unwrap()
+        });
 
         scores
     }
@@ -132,7 +135,14 @@ impl OutcomeInfluenceAnalyzer {
         let ranking: String = scores
             .iter()
             .enumerate()
-            .map(|(i, s)| format!("{}. {} ({}%)", i + 1, s.factor_name, s.influence_percent as i32))
+            .map(|(i, s)| {
+                format!(
+                    "{}. {} ({}%)",
+                    i + 1,
+                    s.factor_name,
+                    s.influence_percent as i32
+                )
+            })
             .collect::<Vec<_>>()
             .join(" → ");
 
@@ -148,7 +158,7 @@ impl OutcomeInfluenceAnalyzer {
         let baseline_score: f32 = self.factors.iter().map(|(_, mag)| mag.abs()).sum();
 
         for (name, magnitude) in &self.factors {
-            let remaining = baseline_score - magnitude.abs();
+            let _remaining = baseline_score - magnitude.abs();
             let impact_percent = (magnitude.abs() / baseline_score) * 100.0;
             impact.insert(name.clone(), impact_percent);
         }
@@ -178,20 +188,16 @@ mod tests {
 
     #[test]
     fn test_analyzer_creation() {
-        let analyzer = OutcomeInfluenceAnalyzer::new(
-            "mission_123".to_string(),
-            "Failed".to_string(),
-        );
+        let analyzer =
+            OutcomeInfluenceAnalyzer::new("mission_123".to_string(), "Failed".to_string());
         assert_eq!(analyzer.mission_id, "mission_123");
         assert_eq!(analyzer.outcome, "Failed");
     }
 
     #[test]
     fn test_factor_ranking() {
-        let mut analyzer = OutcomeInfluenceAnalyzer::new(
-            "mission_1".to_string(),
-            "Success".to_string(),
-        );
+        let mut analyzer =
+            OutcomeInfluenceAnalyzer::new("mission_1".to_string(), "Success".to_string());
 
         analyzer.add_factor("Good Path Planning".to_string(), 0.42);
         analyzer.add_factor("Fast Recovery".to_string(), 0.27);
@@ -206,10 +212,8 @@ mod tests {
 
     #[test]
     fn test_top_factors() {
-        let mut analyzer = OutcomeInfluenceAnalyzer::new(
-            "mission_1".to_string(),
-            "Success".to_string(),
-        );
+        let mut analyzer =
+            OutcomeInfluenceAnalyzer::new("mission_1".to_string(), "Success".to_string());
 
         for i in 0..10 {
             analyzer.add_factor(format!("Factor {}", i), (10 - i) as f32);
@@ -221,10 +225,8 @@ mod tests {
 
     #[test]
     fn test_removal_impact() {
-        let mut analyzer = OutcomeInfluenceAnalyzer::new(
-            "mission_1".to_string(),
-            "Success".to_string(),
-        );
+        let mut analyzer =
+            OutcomeInfluenceAnalyzer::new("mission_1".to_string(), "Success".to_string());
 
         analyzer.add_factor("Factor A".to_string(), 0.60);
         analyzer.add_factor("Factor B".to_string(), 0.40);
@@ -236,10 +238,8 @@ mod tests {
 
     #[test]
     fn test_critical_factors() {
-        let mut analyzer = OutcomeInfluenceAnalyzer::new(
-            "mission_1".to_string(),
-            "Success".to_string(),
-        );
+        let mut analyzer =
+            OutcomeInfluenceAnalyzer::new("mission_1".to_string(), "Success".to_string());
 
         analyzer.add_factor("Critical Factor".to_string(), 0.75);
         analyzer.add_factor("Minor Factor".to_string(), 0.25);

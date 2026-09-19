@@ -6,7 +6,6 @@
 /// - TF inconsistencies (transforms don't compose correctly)
 /// - Pose instability (estimated pose jumps discontinuously)
 /// - GPS dropout (absolute positioning unavailable)
-
 use super::{DetectedFailure, FailureDetector, FailureDomain, FailureSeverity};
 use crate::core::timeline_correlation::NormalizedEvent;
 
@@ -25,7 +24,9 @@ impl LocalizationFailureDetector {
                 ..
             } = &event.event
             {
-                if decision_type.contains("amcl_divergence") || decision_type.contains("localization_divergence") {
+                if decision_type.contains("amcl_divergence")
+                    || decision_type.contains("localization_divergence")
+                {
                     failures.push(
                         DetectedFailure::new(
                             "amcl_divergence",
@@ -79,13 +80,11 @@ impl LocalizationFailureDetector {
         let mut failures = Vec::new();
         const MAX_POSE_JUMP: f64 = 1.0; // 1 meter is suspicious
 
-        let mut poses: Vec<_> = events
+        let poses: Vec<_> = events
             .iter()
             .filter_map(|e| {
                 if let crate::core::event::MissionEvent::RobotPose {
-                    timestamp,
-                    pose,
-                    ..
+                    timestamp, pose, ..
                 } = &e.event
                 {
                     Some((e.id.clone(), *timestamp, pose.x, pose.y))

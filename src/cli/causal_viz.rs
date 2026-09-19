@@ -27,7 +27,8 @@ impl CausalViz {
     pub fn render_query(query: &CausalQuery, events: &[MissionEvent]) -> CausalFlowChart {
         let mut lines = Vec::new();
 
-        lines.push("╔════════════════════════════════════════════════════════════════╗".to_string());
+        lines
+            .push("╔════════════════════════════════════════════════════════════════╗".to_string());
         lines.push(format!(
             "║ Causal Analysis: Event #{} - {} │",
             query.target_event_idx,
@@ -36,10 +37,14 @@ impl CausalViz {
                 .map(|e| e.event_type())
                 .unwrap_or("?"),
         ));
-        lines.push("╠════════════════════════════════════════════════════════════════╣".to_string());
+        lines
+            .push("╠════════════════════════════════════════════════════════════════╣".to_string());
 
         if query.hypotheses.is_empty() {
-            lines.push("║ No causal relationships found                                      ║".to_string());
+            lines.push(
+                "║ No causal relationships found                                      ║"
+                    .to_string(),
+            );
         } else {
             for (rank, hypothesis) in query.hypotheses.iter().enumerate() {
                 lines.push(String::new());
@@ -69,7 +74,8 @@ impl CausalViz {
             }
         }
 
-        lines.push("╚════════════════════════════════════════════════════════════════╝".to_string());
+        lines
+            .push("╚════════════════════════════════════════════════════════════════╝".to_string());
 
         let diagram = lines.join("\n");
         let stats = Self::_compute_stats(query);
@@ -86,10 +92,7 @@ impl CausalViz {
         let confidence_level = Self::_confidence_to_level(confidence);
 
         for (i, &event_idx) in event_indices.iter().enumerate() {
-            let event_type = events
-                .get(event_idx)
-                .map(|e| e.event_type())
-                .unwrap_or("?");
+            let event_type = events.get(event_idx).map(|e| e.event_type()).unwrap_or("?");
 
             let event_box = Self::_create_event_box(event_type, confidence_level);
             result.push(event_box);
@@ -170,12 +173,8 @@ impl CausalViz {
             .map(|h| h.chain.length() as f32)
             .sum::<f32>()
             / total_chains as f32;
-        let avg_confidence = query
-            .hypotheses
-            .iter()
-            .map(|h| h.confidence)
-            .sum::<f32>()
-            / total_chains as f32;
+        let avg_confidence =
+            query.hypotheses.iter().map(|h| h.confidence).sum::<f32>() / total_chains as f32;
 
         let longest_time_gap = query
             .hypotheses
@@ -204,9 +203,11 @@ impl CausalViz {
     pub fn render_comparison(hypotheses: &[CausalHypothesis], events: &[MissionEvent]) -> String {
         let mut lines = Vec::new();
 
-        lines.push("╔════════════════════════════════════════════════════════════════╗".to_string());
+        lines
+            .push("╔════════════════════════════════════════════════════════════════╗".to_string());
         lines.push("║            Causal Hypothesis Comparison                       ║".to_string());
-        lines.push("╠════════════════════════════════════════════════════════════════╣".to_string());
+        lines
+            .push("╠════════════════════════════════════════════════════════════════╣".to_string());
 
         for (rank, hypothesis) in hypotheses.iter().enumerate() {
             lines.push(String::new());
@@ -234,7 +235,8 @@ impl CausalViz {
             lines.push(format!("║    {}", chain_str));
         }
 
-        lines.push("╚════════════════════════════════════════════════════════════════╝".to_string());
+        lines
+            .push("╚════════════════════════════════════════════════════════════════╝".to_string());
 
         lines.join("\n")
     }
@@ -279,11 +281,14 @@ impl CausalViz {
         for (idx, &confidence) in confidence_map.iter().enumerate() {
             if confidence > 0.0 {
                 let bar = Self::_render_confidence_bar(confidence);
-                let event_type = events
-                    .get(idx)
-                    .map(|e| e.event_type())
-                    .unwrap_or("?");
-                lines.push(format!("║ [{}] {:20} {} {:.0}%", idx, event_type, bar, confidence * 100.0));
+                let event_type = events.get(idx).map(|e| e.event_type()).unwrap_or("?");
+                lines.push(format!(
+                    "║ [{}] {:20} {} {:.0}%",
+                    idx,
+                    event_type,
+                    bar,
+                    confidence * 100.0
+                ));
             }
         }
 
@@ -296,11 +301,7 @@ impl CausalViz {
         let filled = (confidence * 20.0) as usize;
         let empty = 20 - filled;
 
-        format!(
-            "[{}{}]",
-            "█".repeat(filled),
-            "░".repeat(empty)
-        )
+        format!("[{}{}]", "█".repeat(filled), "░".repeat(empty))
     }
 }
 
@@ -339,22 +340,20 @@ mod tests {
         use chrono::Utc;
 
         let base_time = Utc::now();
-        let events = vec![
-            MissionEvent::LidarScan {
-                robot_id: "robot_1".to_string(),
-                timestamp: base_time,
-                data: crate::core::event::LidarData {
-                    ranges: vec![5.0; 360],
-                    intensities: None,
-                    frame_id: "lidar".to_string(),
-                    min_angle: 0.0,
-                    max_angle: 6.28,
-                    angle_increment: 0.01745,
-                    range_min: 0.1,
-                    range_max: 10.0,
-                },
+        let events = vec![MissionEvent::LidarScan {
+            robot_id: "robot_1".to_string(),
+            timestamp: base_time,
+            data: crate::core::event::LidarData {
+                ranges: vec![5.0; 360],
+                intensities: None,
+                frame_id: "lidar".to_string(),
+                min_angle: 0.0,
+                max_angle: 6.28,
+                angle_increment: 0.01745,
+                range_min: 0.1,
+                range_max: 10.0,
             },
-        ];
+        }];
 
         let hypothesis = CausalHypothesis {
             chain: CausalChain::new(vec![0], 0.9),

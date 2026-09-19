@@ -1,5 +1,5 @@
 use crate::core::event::MissionEvent;
-use crate::core::spatial_causality::{SpatialContext, SpatialCausalityAnalyzer};
+use crate::core::spatial_causality::{SpatialCausalityAnalyzer, SpatialContext};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -232,13 +232,14 @@ impl PyTerrainBridge {
     pub fn enrich_spatial_context(
         &mut self,
         event_idx: usize,
-        event: &MissionEvent,
+        _event: &MissionEvent,
         mut context: SpatialContext,
     ) -> SpatialContext {
         // Update traversability based on terrain data
-        let traversability =
-            self.knowledge_graph.query_traversability_at_position(context.robot_position);
-        context = context.with_traversability(traversability as f32);
+        let traversability = self
+            .knowledge_graph
+            .query_traversability_at_position(context.robot_position);
+        context = context.with_traversability(traversability);
 
         // Determine terrain type from nearby obstacles
         let nearby_obstacles = self
@@ -281,7 +282,9 @@ impl PyTerrainBridge {
     fn _extract_position(&self, event: &MissionEvent) -> Option<(f64, f64, f64)> {
         match event {
             MissionEvent::RobotPose { pose, .. } => Some((pose.x, pose.y, pose.z)),
-            MissionEvent::OdometryUpdate { data, .. } => Some((data.pose.x, data.pose.y, data.pose.z)),
+            MissionEvent::OdometryUpdate { data, .. } => {
+                Some((data.pose.x, data.pose.y, data.pose.z))
+            }
             _ => None,
         }
     }
@@ -297,7 +300,9 @@ impl PyTerrainBridge {
              Cached contexts: {}",
             self.knowledge_graph.obstacles.len(),
             self.knowledge_graph.traversability_zones.len(),
-            self.knowledge_graph.coverage_grid.total_coverage_percentage(),
+            self.knowledge_graph
+                .coverage_grid
+                .total_coverage_percentage(),
             self.spatial_cache.len()
         )
     }

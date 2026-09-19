@@ -33,7 +33,13 @@ fn create_realistic_mission() -> MissionRecord {
         timestamp: base_time + chrono::Duration::milliseconds(300),
         data: LidarData {
             ranges: (0..360)
-                .map(|i| if (i as i32 - 180).abs() < 40 { 2.5 } else { 5.0 })
+                .map(|i| {
+                    if (i as i32 - 180).abs() < 40 {
+                        2.5
+                    } else {
+                        5.0
+                    }
+                })
                 .collect(),
             intensities: None,
             frame_id: "lidar".to_string(),
@@ -179,11 +185,17 @@ fn main() {
     println!("═══════════════════════════════════════════════════════════════════\n");
 
     for (rank, corr) in correlations.iter().take(10).enumerate() {
-        let anomaly_marker = if corr.is_anomaly { "⚠️ ANOMALY" } else { "✓" };
+        let anomaly_marker = if corr.is_anomaly {
+            "⚠️ ANOMALY"
+        } else {
+            "✓"
+        };
 
         println!(
             "{:2}. {} → {}",
-            rank + 1, corr.event_a_type, corr.event_b_type
+            rank + 1,
+            corr.event_a_type,
+            corr.event_b_type
         );
         println!(
             "    Confidence: {:.0}%  │  Gap: {}ms  │  {}",
@@ -202,9 +214,18 @@ fn main() {
     let stats = analyzer.compute_stats(&correlations);
     println!("Total correlations: {}", stats.total_correlations);
     println!("Anomalies detected: {}", stats.anomalies_detected);
-    println!("Average correlation: {:.0}%", stats.avg_correlation_strength * 100.0);
-    println!("Strongest correlation: {:.0}%", stats.strongest_correlation * 100.0);
-    println!("Weakest correlation: {:.0}%\n", stats.weakest_correlation * 100.0);
+    println!(
+        "Average correlation: {:.0}%",
+        stats.avg_correlation_strength * 100.0
+    );
+    println!(
+        "Strongest correlation: {:.0}%",
+        stats.strongest_correlation * 100.0
+    );
+    println!(
+        "Weakest correlation: {:.0}%\n",
+        stats.weakest_correlation * 100.0
+    );
 
     // Anomaly patterns
     println!("═══════════════════════════════════════════════════════════════════");
@@ -217,10 +238,7 @@ fn main() {
         println!("No significant anomalies detected.");
     } else {
         for (rank, pattern) in patterns.iter().enumerate() {
-            println!(
-                "Pattern {}: {}",
-                rank + 1, pattern.pattern_type
-            );
+            println!("Pattern {}: {}", rank + 1, pattern.pattern_type);
             println!(
                 "  Occurrences: {} | Avg Severity: {:.0}%",
                 pattern.count,
@@ -241,7 +259,13 @@ fn main() {
         let event_types: Vec<&str> = chain
             .event_indices
             .iter()
-            .map(|&idx| mission.events.get(idx).map(|e| e.event_type()).unwrap_or("?"))
+            .map(|&idx| {
+                mission
+                    .events
+                    .get(idx)
+                    .map(|e| e.event_type())
+                    .unwrap_or("?")
+            })
             .collect();
 
         println!("Chain {}: {}", rank + 1, event_types.join(" → "));

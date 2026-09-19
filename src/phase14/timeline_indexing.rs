@@ -4,8 +4,8 @@
 //! logs, etc.) are indexed by synchronized time. Supports fast range queries,
 //! nearest-neighbor lookups, and per-modality filtering.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, HashMap};
 use thiserror::Error;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,10 +40,7 @@ pub enum TimelineEvent {
     },
 
     /// User annotation
-    Annotation {
-        text: String,
-        confidence: f32,
-    },
+    Annotation { text: String, confidence: f32 },
 
     /// System metric (CPU%, memory, etc.)
     SystemMetric {
@@ -142,19 +139,22 @@ impl Timeline {
         }
 
         // Insert into main event map
-        self.events.entry(timestamp)
-            .or_insert_with(Vec::new)
+        self.events
+            .entry(timestamp)
+            .or_default()
             .push((event, modality));
 
         // Update modality index
-        self.modality_index.entry(modality)
-            .or_insert_with(Vec::new)
+        self.modality_index
+            .entry(modality)
+            .or_default()
             .push(timestamp);
     }
 
     /// Get all events at exact timestamp
     pub fn get_at(&self, timestamp: i64) -> TimelineResult<Vec<&(TimelineEvent, Modality)>> {
-        self.events.get(&timestamp)
+        self.events
+            .get(&timestamp)
             .map(|v| v.iter().collect())
             .ok_or(TimelineError::TimeNotFound)
     }
@@ -185,9 +185,10 @@ impl Timeline {
     /// Query range: all events in [start, end)
     pub fn query_range(&self, start: i64, end: i64) -> TimelineResult<TimeSlice> {
         if start >= end {
-            return Err(TimelineError::InvalidRange(
-                format!("start ({}) >= end ({})", start, end),
-            ));
+            return Err(TimelineError::InvalidRange(format!(
+                "start ({}) >= end ({})",
+                start, end
+            )));
         }
 
         let mut slice_events = Vec::new();
@@ -215,7 +216,9 @@ impl Timeline {
         start: i64,
         end: i64,
     ) -> TimelineResult<Vec<(i64, TimelineEvent)>> {
-        let timestamps = self.modality_index.get(&modality)
+        let timestamps = self
+            .modality_index
+            .get(&modality)
             .ok_or(TimelineError::ModalityNotAvailable(modality.to_string()))?;
 
         let mut results = Vec::new();
@@ -240,14 +243,16 @@ impl Timeline {
 
     /// Find nearest event before timestamp
     pub fn nearest_before(&self, timestamp: i64) -> Option<(i64, &(TimelineEvent, Modality))> {
-        self.events.range(..timestamp)
+        self.events
+            .range(..timestamp)
             .next_back()
             .map(|(ts, events)| (*ts, events.first().unwrap()))
     }
 
     /// Find nearest event after timestamp
     pub fn nearest_after(&self, timestamp: i64) -> Option<(i64, &(TimelineEvent, Modality))> {
-        self.events.range(timestamp + 1..)
+        self.events
+            .range(timestamp + 1..)
             .next()
             .map(|(ts, events)| (*ts, events.first().unwrap()))
     }
@@ -272,7 +277,8 @@ impl Timeline {
 
     /// Get event count for modality
     pub fn modality_count(&self, modality: Modality) -> usize {
-        self.modality_index.get(&modality)
+        self.modality_index
+            .get(&modality)
             .map(|v| v.len())
             .unwrap_or(0)
     }
@@ -294,7 +300,8 @@ pub struct TimeSlice {
 
 impl TimeSlice {
     pub fn ros_events(&self) -> Vec<(i64, &TimelineEvent)> {
-        self.events.iter()
+        self.events
+            .iter()
             .filter_map(|(ts, event, _modality)| {
                 if matches!(event, TimelineEvent::RosEvent { .. }) {
                     Some((*ts, event))
@@ -306,7 +313,8 @@ impl TimeSlice {
     }
 
     pub fn video_frames(&self) -> Vec<(i64, &TimelineEvent)> {
-        self.events.iter()
+        self.events
+            .iter()
             .filter_map(|(ts, event, _modality)| {
                 if matches!(event, TimelineEvent::VideoFrame { .. }) {
                     Some((*ts, event))
@@ -318,7 +326,8 @@ impl TimeSlice {
     }
 
     pub fn log_entries(&self) -> Vec<(i64, &TimelineEvent)> {
-        self.events.iter()
+        self.events
+            .iter()
             .filter_map(|(ts, event, _modality)| {
                 if matches!(event, TimelineEvent::LogEntry { .. }) {
                     Some((*ts, event))
@@ -330,7 +339,8 @@ impl TimeSlice {
     }
 
     pub fn annotations(&self) -> Vec<(i64, &TimelineEvent)> {
-        self.events.iter()
+        self.events
+            .iter()
             .filter_map(|(ts, event, _modality)| {
                 if matches!(event, TimelineEvent::Annotation { .. }) {
                     Some((*ts, event))
@@ -379,14 +389,13 @@ impl EventIndex {
     }
 
     pub fn index_topic(&mut self, topic: String, timestamp: i64) {
-        self.topic_index.entry(topic)
-            .or_insert_with(Vec::new)
-            .push(timestamp);
+        self.topic_index.entry(topic).or_default().push(timestamp);
     }
 
     pub fn index_sensor(&mut self, sensor_id: String, timestamp: i64) {
-        self.sensor_index.entry(sensor_id)
-            .or_insert_with(Vec::new)
+        self.sensor_index
+            .entry(sensor_id)
+            .or_default()
             .push(timestamp);
     }
 
@@ -469,7 +478,9 @@ mod tests {
         };
 
         timeline.insert(1000, event, Modality::LinuxLogs);
-        let results = timeline.query_modality(Modality::LinuxLogs, 0, 2000).unwrap();
+        let results = timeline
+            .query_modality(Modality::LinuxLogs, 0, 2000)
+            .unwrap();
         assert_eq!(results.len(), 1);
     }
 

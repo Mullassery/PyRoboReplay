@@ -1,8 +1,8 @@
 // Phase 3: Geospatial Export Unit Tests
 // Tests GIS export formats (GeoJSON, KML, GeoTIFF, GeoPackage, Shapefile)
 
-use pyroboreplay::core::{GeospatialExporter, Failure, GeoHotspot};
 use chrono::Utc;
+use pyroboreplay::core::{Failure, GeoHotspot, GeospatialExporter};
 
 // ============================================================================
 // Test Fixtures
@@ -187,7 +187,9 @@ fn test_geopackage_metadata_generation() {
 fn test_geopackage_includes_layers() {
     let metadata = GeospatialExporter::to_geopackage_metadata(5);
 
-    assert!(metadata.contains("layer") || metadata.contains("Layer") || metadata.contains("Layers"));
+    assert!(
+        metadata.contains("layer") || metadata.contains("Layer") || metadata.contains("Layers")
+    );
 }
 
 // ============================================================================

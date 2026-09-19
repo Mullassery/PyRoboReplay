@@ -6,10 +6,8 @@
 /// - IMU data (100 Hz)
 /// - Odometry updates (20 Hz)
 /// - Simulated obstacle detection
-
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use rusqlite::{params, Connection, Result};
-use std::f32::consts::PI;
 use std::path::Path;
 
 struct MissionGenerator {
@@ -49,10 +47,7 @@ impl MissionGenerator {
         println!("✅ Generated: {}", output_path);
         println!("   Duration: 10 minutes");
         println!("   Sensors: lidar (10Hz), camera (30Hz), imu (100Hz), odom (20Hz)");
-        println!(
-            "   Total events: {}",
-            self.estimate_event_count()
-        );
+        println!("   Total events: {}", self.estimate_event_count());
 
         Ok(())
     }
@@ -100,7 +95,10 @@ impl MissionGenerator {
         Ok(())
     }
 
-    fn insert_topics(&self, conn: &Connection) -> Result<std::collections::HashMap<&'static str, i64>> {
+    fn insert_topics(
+        &self,
+        conn: &Connection,
+    ) -> Result<std::collections::HashMap<&'static str, i64>> {
         let topics = vec![
             ("/lidar/scan", "sensor_msgs/msg/LaserScan"),
             ("/camera/image_raw", "sensor_msgs/msg/Image"),
@@ -181,7 +179,7 @@ impl MissionGenerator {
         // Simulate some range data (simplified CDR encoding)
         for i in 0..360 {
             let range = 5.0 + (frame_idx / 100.0).sin() * 2.0; // 3-7m range, oscillating
-            data[i * 4] = (range as u8);
+            data[i * 4] = range as u8;
         }
 
         data

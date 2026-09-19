@@ -18,7 +18,7 @@ pub struct Relationship {
     pub from_id: String,
     pub to_id: String,
     pub relationship_type: String, // "near", "blocks", "depends_on", "contains", etc.
-    pub strength: f32, // 0.0-1.0
+    pub strength: f32,             // 0.0-1.0
 }
 
 impl KnowledgeGraph {
@@ -31,7 +31,7 @@ impl KnowledgeGraph {
     pub fn add_relationship(&mut self, relationship: Relationship) {
         self.relationships
             .entry(relationship.from_id.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(relationship);
     }
 

@@ -1,9 +1,8 @@
-/// Demonstration of camera frame export to standalone HTML
-/// Shows how to extract camera frames and generate playable HTML
-
-use pyroboreplay::core::event::{MissionRecord, MissionEvent, CameraFrame};
 use chrono::Utc;
 use pyroboreplay::cli::camera_export::export_camera_to_html;
+/// Demonstration of camera frame export to standalone HTML
+/// Shows how to extract camera frames and generate playable HTML
+use pyroboreplay::core::event::{CameraFrame, MissionEvent, MissionRecord};
 use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -15,7 +14,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("📹 Creating synthetic mission with 10 camera frames...");
     let mission = create_sample_mission();
 
-    println!("✅ Generated {} camera frames", count_camera_frames(&mission));
+    println!(
+        "✅ Generated {} camera frames",
+        count_camera_frames(&mission)
+    );
     println!("   Frame size: 640×480");
     println!("   Encoding: rgb8 (RGB JPEG)");
 
@@ -62,7 +64,7 @@ fn create_sample_mission() -> MissionRecord {
                 // Create a gradient pattern
                 let r = ((x as f32 / 640.0) * 255.0) as u8;
                 let g = ((y as f32 / 480.0) * 255.0) as u8;
-                let b = (((i as f32 / 10.0) * 255.0)) as u8;
+                let b = ((i as f32 / 10.0) * 255.0) as u8;
 
                 image_data.push(r);
                 image_data.push(g);

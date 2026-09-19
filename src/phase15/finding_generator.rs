@@ -1,6 +1,6 @@
 //! Structured finding and recommendation generation
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RootCauseFinding {
@@ -31,7 +31,7 @@ pub struct FindingGenerator;
 
 impl FindingGenerator {
     pub fn generate_finding(
-        root_cause: String,
+        _root_cause: String,
         confidence: f32,
         evidence: Vec<String>,
     ) -> RootCauseFinding {
@@ -39,15 +39,13 @@ impl FindingGenerator {
             category: "Navigation".to_string(),
             confidence,
             evidence_trail: evidence,
-            recommendations: vec![
-                Recommendation {
-                    tier: RecommendationTier::Tuning,
-                    title: "Tune planner parameters".to_string(),
-                    description: "Adjust critic weights and update frequencies".to_string(),
-                    effort_days: 1.0,
-                    impact: 0.3,
-                },
-            ],
+            recommendations: vec![Recommendation {
+                tier: RecommendationTier::Tuning,
+                title: "Tune planner parameters".to_string(),
+                description: "Adjust critic weights and update frequencies".to_string(),
+                effort_days: 1.0,
+                impact: 0.3,
+            }],
             nav2_limitation: false,
         }
     }

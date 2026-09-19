@@ -1,5 +1,5 @@
-use crate::core::event::MissionRecord;
 use crate::cli::lidar_viz::{LidarVisualization, LidarVizConfig};
+use crate::core::event::MissionRecord;
 use crossbeam_channel::{Receiver, Sender};
 use crossterm::{
     event::{self, Event, KeyCode, KeyEvent},
@@ -150,7 +150,10 @@ impl ReplayState {
         result
     }
 
-    fn ui_loop(&mut self, terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<(), Box<dyn std::error::Error>> {
+    fn ui_loop(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         loop {
             // Draw UI
             terminal.draw(|f| self.draw_ui(f))?;
@@ -202,7 +205,8 @@ impl ReplayState {
     }
 
     fn next_event(&mut self) {
-        self.current_index = (self.current_index + 1).min(self.mission.events.len().saturating_sub(1));
+        self.current_index =
+            (self.current_index + 1).min(self.mission.events.len().saturating_sub(1));
     }
 
     fn previous_event(&mut self) {
@@ -220,14 +224,18 @@ impl ReplayState {
             let warning = Paragraph::new(message)
                 .style(Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
                 .alignment(Alignment::Center)
-                .block(Block::default().borders(Borders::ALL).title("Window Too Small"));
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Window Too Small"),
+                );
             f.render_widget(warning, size);
             return;
         }
 
         // Check if current event is a lidar scan
-        let is_lidar_event = self.current_index < self.mission.events.len() &&
-            self.mission.events[self.current_index].event_type() == "LidarScan";
+        let is_lidar_event = self.current_index < self.mission.events.len()
+            && self.mission.events[self.current_index].event_type() == "LidarScan";
 
         // Main layout: header, timeline, event details/lidar, footer
         let chunks = Layout::default()
@@ -274,7 +282,11 @@ impl ReplayState {
     }
 
     fn draw_header(&self, f: &mut Frame, area: ratatui::layout::Rect) {
-        let status = if self.is_playing { "▶ Playing" } else { "⏸ Paused" };
+        let status = if self.is_playing {
+            "▶ Playing"
+        } else {
+            "⏸ Paused"
+        };
         let title = format!(
             "{}  {}x  Events: {}",
             status,
@@ -283,7 +295,11 @@ impl ReplayState {
         );
 
         let header = Paragraph::new(title)
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .alignment(Alignment::Center)
             .block(Block::default().borders(Borders::BOTTOM));
 
@@ -298,24 +314,30 @@ impl ReplayState {
             .enumerate()
             .filter(|(_, e)| {
                 e.sensor_type()
-                    .map_or(false, |st| self.selected_sensors.contains(&st.to_string()))
+                    .is_some_and(|st| self.selected_sensors.contains(&st.to_string()))
             })
             .collect();
 
         let items: Vec<ListItem> = filtered_events
             .iter()
-            .enumerate()
-            .map(|(_idx, (orig_idx, event))| {
+            .map(|(orig_idx, event)| {
                 let timestamp = event.timestamp().format("%H:%M:%S%.3f");
                 let event_type = event.event_type();
                 let is_current = *orig_idx == self.current_index;
                 let marker = if is_current { "→ " } else { "  " };
 
-                let text = format!("{}{} [{}] {}", marker, timestamp, event_type,
-                    event.robot_id().unwrap_or("?"));
+                let text = format!(
+                    "{}{} [{}] {}",
+                    marker,
+                    timestamp,
+                    event_type,
+                    event.robot_id().unwrap_or("?")
+                );
 
                 let style = if is_current {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
                 } else {
                     Style::default()
                 };
@@ -341,7 +363,9 @@ impl ReplayState {
 
         lines.push(Line::from(Span::styled(
             "Event Details",
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
         )));
 
         lines.push(Line::from(""));
@@ -374,7 +398,12 @@ impl ReplayState {
             .block(Block::default().title("Progress").borders(Borders::ALL))
             .gauge_style(Style::default().fg(Color::Green))
             .ratio(progress / 100.0)
-            .label(format!("{:.1}% ({}/{})", progress, self.current_index, self.mission.events.len()));
+            .label(format!(
+                "{:.1}% ({}/{})",
+                progress,
+                self.current_index,
+                self.mission.events.len()
+            ));
 
         f.render_widget(gauge, area);
     }
@@ -422,7 +451,11 @@ impl ReplayState {
 
         let Some(cached) = &self.lidar_cache else {
             let placeholder = Paragraph::new("Rendering lidar scan...")
-                .block(Block::default().title("Lidar Scan (2D Polar)").borders(Borders::ALL))
+                .block(
+                    Block::default()
+                        .title("Lidar Scan (2D Polar)")
+                        .borders(Borders::ALL),
+                )
                 .style(Style::default().fg(Color::DarkGray));
             f.render_widget(placeholder, area);
             return;
@@ -499,7 +532,11 @@ mod tests {
         let (req_tx, res_rx) = spawn_lidar_worker();
 
         req_tx
-            .send(LidarRenderRequest { event_index: 3, width: 50, height: 20 })
+            .send(LidarRenderRequest {
+                event_index: 3,
+                width: 50,
+                height: 20,
+            })
             .expect("worker thread should be alive to receive");
 
         let result = res_rx
@@ -518,7 +555,11 @@ mod tests {
 
         for i in 0..5 {
             req_tx
-                .send(LidarRenderRequest { event_index: i, width: 40, height: 15 })
+                .send(LidarRenderRequest {
+                    event_index: i,
+                    width: 40,
+                    height: 15,
+                })
                 .unwrap();
             let result = res_rx.recv_timeout(Duration::from_secs(2)).unwrap();
             assert_eq!(result.event_index, i);

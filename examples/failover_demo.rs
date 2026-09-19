@@ -1,7 +1,7 @@
-use pyroboreplay::storage::{
-    FailoverManager, BackupConfig, InMemoryBackend, StorageBackend, StorageError, StorageResult,
-};
 use pyroboreplay::storage::backend::StorageStats;
+use pyroboreplay::storage::{
+    BackupConfig, FailoverManager, InMemoryBackend, StorageBackend, StorageError, StorageResult,
+};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -106,7 +106,8 @@ fn main() {
     println!("DEMO 2: STORE MISSION WITH WRITE-AHEAD TO STANDBYS");
     println!("═══════════════════════════════════════════════════════════════════\n");
 
-    let mission_data = r#"{"id":"mission_001","name":"Warehouse Exploration","status":"completed"}"#;
+    let mission_data =
+        r#"{"id":"mission_001","name":"Warehouse Exploration","status":"completed"}"#;
     match failover_mgr.store_mission("mission_001", mission_data) {
         Ok(_) => {
             println!("✓ Stored mission to primary backend");
@@ -173,7 +174,10 @@ fn main() {
     for (i, event) in log.iter().enumerate() {
         println!("  {}. Type: {:?}", i + 1, event.event_type);
         println!("     Timestamp: {}", event.timestamp.format("%H:%M:%S UTC"));
-        println!("     Promoted: {} → Demoted: {}", event.promoted_backend, event.demoted_backend);
+        println!(
+            "     Promoted: {} → Demoted: {}",
+            event.promoted_backend, event.demoted_backend
+        );
     }
     println!();
 

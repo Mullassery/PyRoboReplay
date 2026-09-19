@@ -2,7 +2,9 @@
 //!
 //! Fuses multiple findings into consolidated gaps with boosted confidence.
 
-use crate::analyzers::{RealityGapFinding, Severity};
+use crate::analyzers::RealityGapFinding;
+#[cfg(test)]
+use crate::analyzers::Severity;
 use std::collections::HashMap;
 
 /// Aggregated finding from multiple detectors
@@ -31,7 +33,7 @@ impl EvidenceAggregator {
 
         for finding in findings {
             let root_cause = Self::infer_root_cause(&finding);
-            groups.entry(root_cause).or_insert_with(Vec::new).push(finding);
+            groups.entry(root_cause).or_default().push(finding);
         }
 
         // Consolidate each group
@@ -54,7 +56,9 @@ impl EvidenceAggregator {
     fn infer_root_cause(finding: &RealityGapFinding) -> String {
         match finding.category.as_str() {
             // Physical domain
-            "Mechanical Degradation" | "Structural Dynamics" => "Mechanical Degradation".to_string(),
+            "Mechanical Degradation" | "Structural Dynamics" => {
+                "Mechanical Degradation".to_string()
+            }
 
             // Thermal-related
             "Thermal Effects" => "Thermal Degradation".to_string(),
@@ -85,22 +89,14 @@ impl EvidenceAggregator {
 
         // Compute average gap score
         let avg_gap_score = if !findings.is_empty() {
-            findings
-                .iter()
-                .map(|f| f.reality_gap_score)
-                .sum::<f32>()
-                / findings.len() as f32
+            findings.iter().map(|f| f.reality_gap_score).sum::<f32>() / findings.len() as f32
         } else {
             0.5
         };
 
         // Compute average confidence
         let avg_confidence = if !findings.is_empty() {
-            findings
-                .iter()
-                .map(|f| f.confidence)
-                .sum::<f32>()
-                / findings.len() as f32
+            findings.iter().map(|f| f.confidence).sum::<f32>() / findings.len() as f32
         } else {
             0.0
         };
@@ -115,10 +111,7 @@ impl EvidenceAggregator {
         let consolidated_confidence = (avg_confidence + agreement_bonus).min(1.0);
 
         // Generate explanation from component detectors
-        let detectors: Vec<&str> = findings
-            .iter()
-            .map(|f| f.category.as_str())
-            .collect();
+        let detectors: Vec<&str> = findings.iter().map(|f| f.category.as_str()).collect();
         let explanation = Self::generate_explanation(&detectors);
 
         ConsolidatedFinding {
@@ -150,7 +143,10 @@ impl EvidenceAggregator {
     }
 
     /// Get highest-confidence findings after aggregation
-    pub fn top_findings(consolidated: &[ConsolidatedFinding], count: usize) -> Vec<&ConsolidatedFinding> {
+    pub fn top_findings(
+        consolidated: &[ConsolidatedFinding],
+        count: usize,
+    ) -> Vec<&ConsolidatedFinding> {
         consolidated.iter().take(count).collect()
     }
 

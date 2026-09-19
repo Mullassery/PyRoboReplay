@@ -4,15 +4,15 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::analyzers::{
-        RealityGapFinding, Severity, RealityDomain, Evidence, MissionAnalysisData,
-    };
     use crate::analyzers::aggregation::EvidenceAggregator;
-    use crate::cli::consolidated_output::ConsolidatedFormatter;
-    use crate::analyzers::feedback_loop::{FeedbackLoopManager, FindingFeedback, FeedbackEvent};
+    use crate::analyzers::feedback_loop::{FeedbackEvent, FeedbackLoopManager, FindingFeedback};
     use crate::analyzers::recalibration::RecalibrationEngine;
     use crate::analyzers::robot_calibration::RobotCalibrationManager;
     use crate::analyzers::scoring::RealityGapScorer;
+    use crate::analyzers::{
+        Evidence, MissionAnalysisData, RealityDomain, RealityGapFinding, Severity,
+    };
+    use crate::cli::consolidated_output::ConsolidatedFormatter;
     use std::collections::HashMap;
 
     fn create_test_mission(robot_type: &str) -> MissionAnalysisData {
@@ -36,11 +36,7 @@ mod tests {
         }
     }
 
-    fn create_test_finding(
-        category: &str,
-        confidence: f32,
-        gap_score: f32,
-    ) -> RealityGapFinding {
+    fn create_test_finding(category: &str, confidence: f32, gap_score: f32) -> RealityGapFinding {
         RealityGapFinding {
             domain: RealityDomain::Physical,
             category: category.to_string(),
@@ -233,8 +229,7 @@ mod tests {
         }
 
         // Confidence should increase with more data
-        let post_feedback_conf =
-            recal_engine.recalibration_confidence("Optical Contamination");
+        let post_feedback_conf = recal_engine.recalibration_confidence("Optical Contamination");
         assert!(post_feedback_conf > initial_conf);
 
         // Recalibrate

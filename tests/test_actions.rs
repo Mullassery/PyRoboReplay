@@ -1,8 +1,8 @@
 // Phase 1: Action Recommender Unit Tests
 // Tests prioritized action recommendations for all 8 failure types
 
-use pyroboreplay::core::{ActionRecommender, Failure};
 use chrono::Utc;
+use pyroboreplay::core::{ActionRecommender, Failure};
 
 // ============================================================================
 // Test Fixtures
@@ -16,7 +16,9 @@ fn create_collision_failure() -> Failure {
         "high".to_string(),
         "LiDAR detected obstacle at 0.3m (threshold: 0.5m)".to_string(),
     );
-    failure.evidence.insert("min_range_m".to_string(), "0.3".to_string());
+    failure
+        .evidence
+        .insert("min_range_m".to_string(), "0.3".to_string());
     failure
 }
 
@@ -28,7 +30,9 @@ fn create_perception_failure() -> Failure {
         "medium".to_string(),
         "50% of detections below confidence threshold".to_string(),
     );
-    failure.evidence.insert("low_confidence_count".to_string(), "50".to_string());
+    failure
+        .evidence
+        .insert("low_confidence_count".to_string(), "50".to_string());
     failure
 }
 
@@ -82,7 +86,7 @@ fn test_actions_have_valid_priority() {
 
     for action in &actions {
         assert!(
-            vec!["P0", "P1", "P2"].contains(&action.priority.as_str()),
+            ["P0", "P1", "P2"].contains(&action.priority.as_str()),
             "Invalid priority: {}",
             action.priority
         );
@@ -124,7 +128,7 @@ fn test_actions_have_impact() {
 
     for action in &actions {
         assert!(
-            vec!["high", "medium", "low"].contains(&action.impact.as_str()),
+            ["high", "medium", "low"].contains(&action.impact.as_str()),
             "Invalid impact: {}",
             action.impact
         );
@@ -138,7 +142,7 @@ fn test_actions_have_complexity() {
 
     for action in &actions {
         assert!(
-            vec!["easy", "medium", "hard"].contains(&action.complexity.as_str()),
+            ["easy", "medium", "hard"].contains(&action.complexity.as_str()),
             "Invalid complexity: {}",
             action.complexity
         );
@@ -151,8 +155,14 @@ fn test_actions_have_implementation() {
     let actions = ActionRecommender::recommend(&failure);
 
     for action in &actions {
-        assert!(!action.implementation.is_empty(), "Missing implementation guide");
-        assert!(action.implementation.len() > 20, "Implementation guide too short");
+        assert!(
+            !action.implementation.is_empty(),
+            "Missing implementation guide"
+        );
+        assert!(
+            action.implementation.len() > 20,
+            "Implementation guide too short"
+        );
     }
 }
 
@@ -169,15 +179,17 @@ fn test_high_severity_gets_priority_actions() {
         "critical".to_string(),
         "Critical collision imminent".to_string(),
     );
-    failure.evidence.insert("min_range_m".to_string(), "0.1".to_string());
+    failure
+        .evidence
+        .insert("min_range_m".to_string(), "0.1".to_string());
 
     let actions = ActionRecommender::recommend(&failure);
-    let p0_actions: Vec<_> = actions
-        .iter()
-        .filter(|a| a.priority == "P0")
-        .collect();
+    let p0_actions: Vec<_> = actions.iter().filter(|a| a.priority == "P0").collect();
 
-    assert!(!p0_actions.is_empty(), "Critical failures should have P0 actions");
+    assert!(
+        !p0_actions.is_empty(),
+        "Critical failures should have P0 actions"
+    );
 }
 
 #[test]
@@ -189,14 +201,8 @@ fn test_different_failures_get_different_actions() {
     let perception_actions = ActionRecommender::recommend(&perception);
 
     // Get descriptions
-    let collision_descs: Vec<_> = collision_actions
-        .iter()
-        .map(|a| &a.description)
-        .collect();
-    let perception_descs: Vec<_> = perception_actions
-        .iter()
-        .map(|a| &a.description)
-        .collect();
+    let collision_descs: Vec<_> = collision_actions.iter().map(|a| &a.description).collect();
+    let perception_descs: Vec<_> = perception_actions.iter().map(|a| &a.description).collect();
 
     // Should be different
     assert_ne!(collision_descs, perception_descs);
@@ -246,7 +252,7 @@ fn test_all_failure_types_get_actions() {
         let actions = ActionRecommender::recommend(&failure);
         assert!(!actions.is_empty(), "No actions for {}", failure_type);
         assert!(
-            actions.len() >= 1,
+            !actions.is_empty(),
             "Insufficient actions for {}",
             failure_type
         );
@@ -262,12 +268,12 @@ fn test_easy_actions_available() {
     let failure = create_collision_failure();
     let actions = ActionRecommender::recommend(&failure);
 
-    let easy_actions: Vec<_> = actions
-        .iter()
-        .filter(|a| a.complexity == "easy")
-        .collect();
+    let easy_actions: Vec<_> = actions.iter().filter(|a| a.complexity == "easy").collect();
 
-    assert!(!easy_actions.is_empty(), "Should have at least one easy action");
+    assert!(
+        !easy_actions.is_empty(),
+        "Should have at least one easy action"
+    );
 }
 
 #[test]
@@ -275,12 +281,12 @@ fn test_high_impact_actions_exist() {
     let failure = create_collision_failure();
     let actions = ActionRecommender::recommend(&failure);
 
-    let high_impact: Vec<_> = actions
-        .iter()
-        .filter(|a| a.impact == "high")
-        .collect();
+    let high_impact: Vec<_> = actions.iter().filter(|a| a.impact == "high").collect();
 
-    assert!(!high_impact.is_empty(), "Should have at least one high-impact action");
+    assert!(
+        !high_impact.is_empty(),
+        "Should have at least one high-impact action"
+    );
 }
 
 // ============================================================================
