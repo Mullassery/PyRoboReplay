@@ -34,4 +34,4 @@ jobs:
       - name: Validate markdown
         run: |
           npm install -g markdownlint-cli
-          markdownlint README.md CLAUDE.md || true
+          markdownlint README.md docs/CLAUDE.md || true

@@ -69,4 +69,4 @@ bindings = "pyo3"
 features = ["pyo3/extension-module"]
 
 [tool.maturin.sdist]
-include = ["README.md", "LICENSE", "CLAUDE.md"]
+include = ["README.md", "LICENSE", "docs/CLAUDE.md"]

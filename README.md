@@ -10,7 +10,7 @@ Includes thermal imaging analysis, motion replay, and causal inference for auton
 [![Security Audit](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml)
 [![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyPI](https://img.shields.io/badge/PyPI-2.9.2-blue.svg)](https://pypi.org/project/pyroboreplay/)
+[![PyPI](https://img.shields.io/badge/PyPI-pyroboreplay-blue.svg)](https://pypi.org/project/pyroboreplay/)
 [![Tests](https://img.shields.io/github/actions/workflow/status/Mullassery/PyRoboReplay/ci.yml?label=tests)](https://github.com/Mullassery/PyRoboReplay/actions)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/Mullassery/PyRoboReplay)
@@ -37,7 +37,7 @@ Robotics teams waste **2-16 hours debugging a single mission failure**—jumping
 
 ---
 
-## What You Get (v2.9.2)
+## What You Get (v2.10.0)
 
 ### Phase 1-4: Reality Gap Detection Foundations
 Comprehensive detection of perception mismatches between simulation and reality. Identifies where and why robot perception diverged from expectations.
@@ -79,10 +79,10 @@ AI-powered navigation failure analysis across 7 dimensions: localization (AMCL d
 ### Installation
 
 ```bash
-pip install pyroboreplay==2.9.2
+pip install pyroboreplay
 
 # or with uv
-uv pip install pyroboreplay==2.9.2
+uv pip install pyroboreplay
 
 # From source
 git clone https://github.com/Mullassery/PyRoboReplay.git
@@ -93,7 +93,7 @@ cargo build --release
 pyroboreplay --version
 ```
 
-Note: PyRoboReplay is published to PyPI (`pip install pyroboreplay`). It is **not** currently published to crates.io — build from source via `cargo build --release` if you want the Rust crate/binary directly.
+Note: PyRoboReplay is published to PyPI (`pip install pyroboreplay`). It is **not** currently published to crates.io — build from source via `cargo build --release` if you want the Rust crate/binary directly. This repository's `Cargo.toml`/`pyproject.toml` are at **2.10.0** as of this pass; whether `2.10.0` is the version actually live on PyPI right now was not verified here (no network access in this environment) — check [pypi.org/project/pyroboreplay](https://pypi.org/project/pyroboreplay/) for the real published version before pinning one in a requirements file.
 
 ### Your First Forensic Analysis
 
@@ -113,7 +113,7 @@ pyroboreplay compare mission_a.bag mission_b.bag
 pyroboreplay list mission.bag
 ```
 
-The RGB+thermal fusion, retrospective DINO/SAM detection, cross-mission learning, and Nav2 root-cause-inference capabilities described above (Phases 12-15) are implemented as internal Rust library modules with dedicated unit test coverage — they are not yet wired up as CLI subcommands or Python bindings. Use the Rust library API (`src/fusion`, `src/perception`, `src/intelligence`, `src/phase14`, `src/phase15`) directly, or track CLI/Python exposure on the [roadmap](ROADMAP.md).
+The RGB+thermal fusion, retrospective DINO/SAM detection, cross-mission learning, and Nav2 root-cause-inference capabilities described above (Phases 12-15) are implemented as internal Rust library modules with dedicated unit test coverage — they are not yet wired up as CLI subcommands or Python bindings. Use the Rust library API (`src/fusion`, `src/perception`, `src/intelligence`, `src/phase14`, `src/phase15`) directly, or track CLI/Python exposure on the [roadmap](ROADMAP_HONEST.md).
 
 Keyboard shortcuts (interactive replay):
 - **Space**: Play/Pause | **n / →**: Next event | **p / ←**: Previous event | **↑ / ↓**: Speed up/down | **?**: Help | **q / Esc**: Quit
@@ -144,7 +144,7 @@ The Python package currently exposes `Mission`, `Event`, `Failure`, `Hypothesis`
 
 ---
 
-## Feature Matrix: v0.1 to v2.9.2
+## Feature Matrix: v0.1 to v2.10.0
 
 | Feature | v0.1 | v0.5 | v0.9 | v1.0 | v2.0 | v2.1 |
 |---------|:----:|:----:|:----:|:----:|:----:|:----:|
@@ -166,7 +166,7 @@ The Python package currently exposes `Mission`, `Event`, `Failure`, `Hypothesis`
 | **Root Cause Inference Engine** | - | - | - | - | - | **A** |
 | **Nav2 Limitation Detection** | - | - | - | - | - | **A** |
 | **Semantic Gap Analysis** | - | - | - | - | - | **A** |
-| **826 Comprehensive Tests** | - | - | - | - | - | **A** |
+| **834 Comprehensive Tests** | - | - | - | - | - | **A** |
 
 ---
 
@@ -291,7 +291,7 @@ Output: Forensic Reports, Recommendations, Predictions
 | Forensic analysis (full pipeline) | <5s | Achieved |
 | Multispectral fusion | <2s per frame | Efficient |
 
-**Test Coverage:** 826 passing `cargo test --lib` unit tests (0 failing, verified 2026-08-23), plus dedicated Docker-backed integration test suites for the Postgres/S3/BigQuery storage backends and Ollama LLM integration.
+**Test Coverage:** 834 passing `cargo test --lib` unit tests (0 failing, re-verified 2026-09-20), plus dedicated Docker-backed integration test suites for the Postgres/S3/BigQuery storage backends and Ollama LLM integration (not run in this pass — they require live Docker services). `cargo fmt --check` is clean. `cargo clippy --all-targets --all-features -- -D warnings` currently fails with 96 errors (see [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the breakdown) — this is why CI's clippy job runs with `continue-on-error: true` rather than gating merges.
 
 ---
 
@@ -335,6 +335,10 @@ cargo audit
 - **[Examples](examples/)** — Working demos (replay, causal analysis, compliance reporting, and more)
 - **[API Reference](docs/API.md)** — Python & Rust APIs
 - **[Architecture Guide](docs/ARCHITECTURE.md)** — Detailed phase descriptions
+- **[Stats Dashboard](docs/STATS_DASHBOARD.md)** — `replay --stats-dashboard` opens a live metrics view in a second terminal window (real, tested feature: `src/cli/stats_dashboard.rs`)
+- **[ROADMAP_HONEST.md](ROADMAP_HONEST.md)** — What's built, partial, or missing, plus a concrete technical-debt list
+- **[CHANGELOG.md](CHANGELOG.md)** — Notable changes (Keep a Changelog format)
+- **[docs/archive/](docs/archive/)** — Superseded phase/status/planning docs, kept for history
 
 ## Cross-repo compatibility
 
@@ -374,7 +378,7 @@ If PyRoboReplay helps your research or product, please star the repo and cite:
  title={PyRoboReplay: Forensic Debugging and Multispectral Analysis for Autonomous Robots},
  author={Mullassery, Georgi},
  year={2026},
- version={2.9.2},
+ version={2.10.0},
  url={https://github.com/Mullassery/PyRoboReplay}
 }
 ```

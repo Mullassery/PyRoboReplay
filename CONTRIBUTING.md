@@ -6,7 +6,7 @@ Thanks for your interest in contributing! We welcome contributions of all kinds.
 
 ### Report Bugs 🐛
 
-Found a bug? [Open an issue](https://git.example.com/user/pyroboreplay/issues) with:
+Found a bug? [Open an issue](https://github.com/Mullassery/pyroboreplay/issues) with:
 - Clear title: "Bug: [component] description"
 - Steps to reproduce
 - Expected vs actual behavior
@@ -15,7 +15,7 @@ Found a bug? [Open an issue](https://git.example.com/user/pyroboreplay/issues) w
 
 ### Suggest Features 💡
 
-Have an idea? Start a [discussion](https://git.example.com/user/pyroboreplay/discussions) or [issue](https://git.example.com/user/pyroboreplay/issues) with:
+Have an idea? Start a [discussion](https://github.com/Mullassery/pyroboreplay/discussions) or [issue](https://github.com/Mullassery/pyroboreplay/issues) with:
 - Use case: why would this be useful?
 - Proposed solution (if you have one)
 - Alternative approaches you've considered
@@ -27,7 +27,7 @@ Have an idea? Start a [discussion](https://git.example.com/user/pyroboreplay/dis
 
 ```bash
 # Clone repo
-git clone https://git.example.com/user/pyroboreplay.git
+git clone https://github.com/Mullassery/pyroboreplay.git
 cd pyroboreplay
 
 # Install Rust (if needed)
@@ -166,23 +166,20 @@ None / Describe any perf implications
 
 ## Areas We're Looking For Help
 
-### High Priority
-- **Performance:** Optimize large mission analysis (1M+ events)
-- **Storage:** Add PostgreSQL, BigQuery adapters
-- **Streaming:** Real-time event ingestion from live robots
-- **Testing:** Integration tests for complex scenarios
-- **Documentation:** Tutorials, blog posts, video demos
-
-### Medium Priority
-- **CLI:** New commands (e.g., `export-video`, `batch-analyze`)
-- **Visualization:** Web dashboard for fleet monitoring
-- **Analysis:** Failure prediction ML models
-- **Compliance:** Additional regulatory standards (e.g., ISO 13849-1)
+See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the current, code-verified list of
+what's built, what's partial, and what's missing. As of this writing, the
+highest-leverage gap is CLI/Python exposure for Phases 12-20 (the analysis
+logic already exists in the Rust core with unit tests; it just isn't wired up
+to `src/cli/` or `src/pyroboreplay/__init__.py` yet). Note: Postgres, S3, and
+BigQuery storage backends already exist with dedicated integration test
+suites — that work is done, not needed.
 
 ### Good First Issues
-- Look for [good-first-issue](https://git.example.com/user/pyroboreplay/labels/good-first-issue) label
+
+### Good First Issues
+- Look for [good-first-issue](https://github.com/Mullassery/pyroboreplay/labels/good-first-issue) label
 - Start with documentation or small bug fixes
-- Ask questions in [discussions](https://git.example.com/user/pyroboreplay/discussions) if stuck
+- Ask questions in [discussions](https://github.com/Mullassery/pyroboreplay/discussions) if stuck
 
 ---
 
@@ -215,12 +212,12 @@ rust-gdb --args target/debug/my_binary
 # Create feature branch
 git checkout -b feat/my-feature
 
-# Keep updated with main
+# Keep updated with master (the default branch)
 git fetch origin
-git rebase origin/main
+git rebase origin/master
 
 # Before pushing, squash if needed
-git rebase -i origin/main
+git rebase -i origin/master
 
 # Push and open PR
 git push origin feat/my-feature
@@ -233,31 +230,16 @@ Workflows run automatically on push/PR:
 - **security.yml**: Vulnerability scanning, coverage
 - **release.yml**: Auto-publish on version tags
 
-Check status in [Actions](https://git.example.com/user/pyroboreplay/actions).
+Check status in [Actions](https://github.com/Mullassery/pyroboreplay/actions).
 
 ---
 
 ## Architecture & Design
 
-- **[CLAUDE.md](CLAUDE.md)** — Product vision, principles, long-term roadmap
+- **[docs/CLAUDE.md](docs/CLAUDE.md)** — Product vision, principles
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — System architecture
 - **[.github/CI_SETUP.md](.github/CI_SETUP.md)** — CI/CD architecture
-- **[Roadmap](#-roadmap)** below
-
-### Roadmap
-
-**v0.9** (Q4 2026): AI-Driven Remediation
-- Automated fix suggestions
-- Reinforcement learning for strategy optimization
-
-**v1.0** (Q4 2026): Production Scale
-- Distributed analysis across multiple machines
-- Enterprise observability integrations
-- Advanced security audit trails
-
-**v1.1+** (2027): Autonomous Systems
-- Fleet coordination layer
-- Real-time mission optimization
-- Cross-mission knowledge graphs
+- **[ROADMAP_HONEST.md](ROADMAP_HONEST.md)** — What's actually built, partial, or missing (no fabricated timelines)
 
 ---
 
@@ -274,9 +256,9 @@ Check status in [Actions](https://git.example.com/user/pyroboreplay/actions).
 
 ## Getting Help
 
-- **Questions?** Ask in [GitHub Discussions](https://git.example.com/user/pyroboreplay/discussions)
+- **Questions?** Ask in [GitHub Discussions](https://github.com/Mullassery/pyroboreplay/discussions)
 - **Stuck?** Open an issue and label it `help-wanted`
-- **Chat?** Connect via GitHub issues/discussions (we respond within 24h)
+- **Chat?** Connect via GitHub issues/discussions. This is currently maintained by one person in their spare time — there is no guaranteed response time.
 
 ---
 
