@@ -3271,7 +3271,7 @@ dependencies = [
  "gcp-bigquery-client",
  "hdrhistogram",
  "image",
- "lru 0.12.5",
+ "lru 0.18.4",
  "mcap",
  "nalgebra",
  "ndarray",
