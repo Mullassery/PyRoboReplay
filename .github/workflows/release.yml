@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: Release ${{ github.ref_name }}
           draft: false
@@ -53,7 +53,7 @@ jobs:
         run: maturin build --release
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: target/wheels/pyroboreplay-*.whl
         env:
