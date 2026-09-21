@@ -267,7 +267,7 @@ impl TimelineCorrelationEngine {
         ClockSyncState {
             clock_offset_ms: mean_offset,
             clock_skew_ppm: 0, // Could be computed from multiple anchors over time
-            sync_confidence: confidence_val.max(0.0).min(1.0),
+            sync_confidence: confidence_val.clamp(0.0, 1.0),
             last_sync_at: Utc::now(),
             anchor_count: anchors.len(),
         }

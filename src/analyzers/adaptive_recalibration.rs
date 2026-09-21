@@ -120,8 +120,7 @@ impl AdaptiveRecalibrationEngine {
         // Update model accuracy
         model.model_accuracy = (model.model_accuracy * (1.0 - learning_rate)
             + accuracy * learning_rate)
-            .max(0.0)
-            .min(1.0);
+            .clamp(0.0, 1.0);
 
         // Update gap chains based on feedback
         Self::update_gap_chains(model, feedback, learning_rate);
@@ -159,7 +158,7 @@ impl AdaptiveRecalibrationEngine {
                 for following_gaps in model.gap_chains.values_mut() {
                     for (gap_name, rate) in following_gaps.iter_mut() {
                         if gap_name == &item.predicted_gap {
-                            *rate = (*rate + confidence_boost).max(0.0).min(1.0);
+                            *rate = (*rate + confidence_boost).clamp(0.0, 1.0);
                         }
                     }
                 }
@@ -201,9 +200,8 @@ impl AdaptiveRecalibrationEngine {
 
                     // Adjust degradation rate
                     let degradation_adjustment = (avg_lead_time / 100.0) * learning_rate;
-                    curve.degradation_rate = (curve.degradation_rate + degradation_adjustment)
-                        .max(0.0)
-                        .min(0.2);
+                    curve.degradation_rate =
+                        (curve.degradation_rate + degradation_adjustment).clamp(0.0, 0.2);
                 }
             }
         }
@@ -258,14 +256,12 @@ impl AdaptiveRecalibrationEngine {
             // High failure rate → increase sensitivity
             profile.sensitivity_multiplier =
                 (profile.sensitivity_multiplier * (1.0 - learning_rate) + 1.3 * learning_rate)
-                    .max(0.8)
-                    .min(1.5);
+                    .clamp(0.8, 1.5);
         } else if failure_rate < 0.1 {
             // Low failure rate → decrease sensitivity
             profile.sensitivity_multiplier =
                 (profile.sensitivity_multiplier * (1.0 - learning_rate) + 0.9 * learning_rate)
-                    .max(0.8)
-                    .min(1.5);
+                    .clamp(0.8, 1.5);
         }
 
         // Update recency

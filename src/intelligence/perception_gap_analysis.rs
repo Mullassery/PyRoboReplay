@@ -241,7 +241,7 @@ impl PerceptionGapAnalyzer {
         // Reduce severity if evidence is scarce
         let evidence_factor = (evidence.len() as f32 * 0.1).min(0.3);
 
-        (base_severity - evidence_factor).max(0.0).min(1.0)
+        (base_severity - evidence_factor).clamp(0.0, 1.0)
     }
 
     /// Find all critical gaps that likely caused failures

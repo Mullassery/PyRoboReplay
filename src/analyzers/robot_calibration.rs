@@ -336,7 +336,7 @@ mod tests {
             .gap_frequencies
             .insert("Thermal Effects".to_string(), 0.8);
 
-        drop(profile);
+        let _ = profile;
         manager.calibrate_sensitivities();
 
         let profile = manager.get_profile("thermal_bot").unwrap();
@@ -355,7 +355,7 @@ mod tests {
         profile.record_mission(true);
         profile.record_mission(false); // 80% success rate
 
-        drop(profile);
+        let _ = profile;
         manager.learn_severity_threshold("reliable_bot");
 
         let profile = manager.get_profile("reliable_bot").unwrap();
@@ -372,7 +372,7 @@ mod tests {
         profile.thermal_sensitivity = 1.5;
         profile.learned_severity_threshold = 0.6;
 
-        drop(profile);
+        let _ = profile;
 
         // Thermal gap with high base severity
         let adjusted = manager.predict_severity("thermal_bot", "Thermal Effects", 0.8);

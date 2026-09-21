@@ -136,7 +136,7 @@ impl RecalibrationEngine {
         let observed_accuracy = metrics.current_accuracy;
         let new_prior = old_prior + self.learning_rate * (observed_accuracy - old_prior);
 
-        metrics.base_probability = new_prior.max(0.1).min(0.95); // Clamp to reasonable range
+        metrics.base_probability = new_prior.clamp(0.1, 0.95); // Clamp to reasonable range
 
         Some((old_prior, metrics.base_probability))
     }

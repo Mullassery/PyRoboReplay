@@ -122,12 +122,11 @@ impl EvidenceQualityScorer {
             + detector_agreement * 0.30
             + signal_to_noise * 0.15
             + recency * 0.10)
-            .min(1.0)
-            .max(0.0);
+            .clamp(0.0, 1.0);
 
         // Compute confidence adjustment (0.5-1.5 multiplier)
         let issue_penalty: f32 = quality_issues.iter().map(|i| i.confidence_impact).sum();
-        let confidence_adjustment = (1.0 - issue_penalty * 0.3).max(0.5).min(1.5);
+        let confidence_adjustment = (1.0 - issue_penalty * 0.3).clamp(0.5, 1.5);
 
         EvidenceQualityScore {
             overall_score,
@@ -160,7 +159,7 @@ impl EvidenceQualityScorer {
             / gaps.len() as f32
             * 0.15;
 
-        (avg_confidence - penalty).max(0.0).min(1.0)
+        (avg_confidence - penalty).clamp(0.0, 1.0)
     }
 
     /// Assess whether evidence is temporally consistent
@@ -215,7 +214,7 @@ impl EvidenceQualityScorer {
             .sum::<f32>()
             / domain_groups.len() as f32;
 
-        agreement_score.max(0.0).min(1.0)
+        agreement_score.clamp(0.0, 1.0)
     }
 
     /// Assess signal-to-noise ratio

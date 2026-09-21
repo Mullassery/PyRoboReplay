@@ -151,7 +151,7 @@ impl TrendDetector {
             0.0
         };
 
-        (slope, intercept, r_squared.max(0.0).min(1.0))
+        (slope, intercept, r_squared.clamp(0.0, 1.0))
     }
 
     /// Get all significant trends

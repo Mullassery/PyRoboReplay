@@ -206,7 +206,7 @@ impl FleetMonitor {
             }
         }
 
-        health_score = health_score.max(0.0).min(1.0);
+        health_score = health_score.clamp(0.0, 1.0);
 
         let active_count = self
             .robot_statuses

@@ -337,7 +337,7 @@ impl PredictiveGapEngine {
             .sum::<f32>()
             / failed_missions.iter().flat_map(|m| &m.gaps).count().max(1) as f32;
 
-        (50.0 - avg_gap_time).max(10.0).min(60.0)
+        (50.0 - avg_gap_time).clamp(10.0, 60.0)
     }
 }
 

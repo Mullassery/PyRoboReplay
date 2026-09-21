@@ -88,7 +88,7 @@ impl RealityGapScorer {
             }
         }
 
-        likelihood.min(1.0).max(0.0)
+        likelihood.clamp(0.0, 1.0)
     }
 
     /// Confidence in the gap score
@@ -105,7 +105,7 @@ impl RealityGapScorer {
 
         let base_confidence = (evidence_count * 0.4) + (avg_evidence_confidence * 0.6);
 
-        base_confidence.min(1.0).max(0.0)
+        base_confidence.clamp(0.0, 1.0)
     }
 
     /// Apply domain knowledge adjustments
@@ -122,7 +122,7 @@ impl RealityGapScorer {
         let robot_adjustment = self.robot_type_adjustment(category, robot_type);
         adjusted *= robot_adjustment;
 
-        adjusted.min(1.0).max(0.0)
+        adjusted.clamp(0.0, 1.0)
     }
 
     /// Robot-type specific adjustment
@@ -141,7 +141,7 @@ impl RealityGapScorer {
 
             _ => 1.0,
         };
-        adjustment.min(1.5).max(0.5) // Clamp adjustments
+        adjustment.clamp(0.5, 1.5) // Clamp adjustments
     }
 
     /// Initialize knowledge base of base probabilities

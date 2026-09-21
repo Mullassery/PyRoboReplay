@@ -501,7 +501,7 @@ impl Failure {
 }
 
 /// Python wrapper for a root cause hypothesis
-#[pyclass]
+#[pyclass(from_py_object)]
 #[derive(Clone)]
 pub struct Hypothesis {
     description: String,

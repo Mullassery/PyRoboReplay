@@ -151,13 +151,15 @@ a month before this rewrite, and a wrong date is worse than no date.
   (it lives at `docs/CLAUDE.md`), so this step has always either errored or been
   silently swallowed by the trailing `|| true`. Fixed in this pass: path updated
   to `docs/CLAUDE.md`.
-- **`release.yml` uses archived/deprecated GitHub Actions**: `actions/create-release@v1`
-  and `actions/upload-release-asset@v1` are both archived by GitHub (unmaintained
-  since 2021); the maintained replacement is `softprops/action-gh-release`. Not
-  changed in this pass — swapping the release mechanism touches how tags publish
-  real releases and can't be verified without actually cutting a release in this
-  sandbox (no network/GitHub access), so it's flagged here for a dedicated
-  follow-up rather than risked blind.
+- **`release.yml` used archived/deprecated GitHub Actions**: `actions/create-release@v1`
+  and `actions/upload-release-asset@v1` were both archived by GitHub
+  (unmaintained since 2021). **Fixed 2026-09-21**: both replaced with
+  `softprops/action-gh-release@v2` (create the release in `create-release`,
+  then attach the built wheel in each `build-and-publish` matrix leg), plus an
+  explicit `permissions: contents: write` block since default `GITHUB_TOKEN`
+  scoping can otherwise be read-only. Verified with `actionlint` (clean); not
+  exercised against a real tag push (no network/GitHub access in this
+  sandbox) — worth a close look on the next real release.
 - **`release.yml`/`ci.yml`'s `publish` jobs depend on `secrets.PYPI_TOKEN`**;
   this pass has no way to confirm that secret is actually configured on the
   GitHub repo (no network access, can't query GitHub). If it's missing or
@@ -170,29 +172,38 @@ a month before this rewrite, and a wrong date is worse than no date.
   last edit; not re-verified here.
 
 ### Code quality (large surface, needs a dedicated pass, not touched here)
-- **`cargo clippy --all-targets --all-features -- -D warnings` fails with 96
-  errors** as of this commit (re-run 2026-09-20; CI already runs this with
-  `continue-on-error: true`, so it isn't silently regressing, but README's
-  documented "Quality Checks" command (`cargo clippy --all-targets -- -D
-  warnings`) will fail if a contributor actually runs it as written). Breakdown
-  by category:
-  - 22× "clamp-like pattern without using clamp function" (mechanical, safe to
-    fix in bulk with `.clamp()`).
-  - 8× imprecise `std::f32/f64::consts::PI` literal usage instead of the
-    constant.
+- **`cargo clippy --all-targets --all-features -- -D warnings` fails with 61
+  errors** (re-run 2026-09-21, down from 96 on 2026-09-20 — CI already runs
+  this with `continue-on-error: true`, so it isn't silently regressing, but
+  README's documented "Quality Checks" command (`cargo clippy --all-targets --
+  -D warnings`) will still fail if a contributor runs it as written).
+  **Fixed 2026-09-21** (mechanical/safe categories):
+  - 22× "clamp-like pattern without using clamp function" — replaced with
+    `.clamp()` using clippy's own suggested rewrites, e.g.
+    `src/analyzers/scoring.rs:91,108,125,144`,
+    `src/analyzers/adaptive_recalibration.rs:121,162,204,260,266`.
+  - 9× imprecise `std::f32::consts::PI`/`TAU` literal usage (`3.14`, `-3.14`,
+    `6.28`) instead of the constant, in test fixtures:
+    `src/core/event.rs:392-393`, `src/core/timeline.rs:345-346,360-361,390-391`,
+    `src/cli/causal_viz.rs:351`, `tests/test_python_api_integration.rs`.
+  - 3× `drop()` called on a `&mut` reference, doing nothing:
+    `src/analyzers/robot_calibration.rs:339,358,375` — replaced with
+    `let _ = profile;` per clippy's own suggestion.
+  Remaining (not touched, real refactor/delete decisions):
   - 3× functions with too many arguments (>7): `src/knowledge/world_model.rs:272`,
     `src/phase14/video_processing.rs:448`, `src/phase14/video_processing.rs:479`.
-  - 3× `drop()` called on a `&mut` reference, doing nothing:
-    `src/analyzers/robot_calibration.rs:339,358,375`.
   - 2× `assert!(x.len() >= 0)` — always-true assertions on an unsigned length:
     `src/phase19/temporal_patterns.rs:301`, `src/phase19/trend_detector.rs:300`.
   - 2× `field_reassign_with_default` (construct-then-mutate instead of struct
     update syntax), e.g. `src/streaming/fleet_monitor.rs:391-392`.
   - **1× deprecated PyO3 API usage that will break on a future PyO3 upgrade**:
-    `src/lib.rs:504` — `#[pyclass]` on a `Clone` type relies on the
-    now-deprecated automatic `FromPyObject` derive; PyO3 is moving this to
-    opt-in via `#[pyclass(from_py_object)]`. Worth fixing proactively before
-    the next PyO3 bump breaks the build.
+    `src/lib.rs:504` — `#[pyclass]` on a `Clone` type (`Hypothesis`) relied on
+    the now-deprecated automatic `FromPyObject` derive. **Fixed 2026-09-21**:
+    migrated to explicit `#[pyclass(from_py_object)]` (the pyo3 0.29-current
+    opt-in pattern, matching the version pinned in `Cargo.toml`), preserving
+    existing behavior since nothing in this crate extracts a `Hypothesis` back
+    out of a Python argument. Verified: deprecation warning gone from `cargo
+    build --lib` / `cargo clippy`, `cargo test --lib` still 834/834.
   - ~15+ dead-code fields/methods/structs never read or constructed, spread
     across nearly every phase module, e.g.: `src/adapters/ros2.rs:20`
     (`RosMessage.data`/`.topic_id` parsed from the ROS2 bag but never used —

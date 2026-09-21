@@ -113,7 +113,7 @@ impl DetectedFailure {
             failure_type: failure_type_str,
             domain,
             timestamp,
-            confidence: confidence.max(0.0).min(1.0),
+            confidence: confidence.clamp(0.0, 1.0),
             severity,
             description: description.into(),
             evidence: Vec::new(),

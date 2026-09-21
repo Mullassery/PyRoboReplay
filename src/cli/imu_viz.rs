@@ -235,9 +235,7 @@ impl IMUVisualization {
 
                 // Normalize to range [0, 1]
                 let normalized = if actual_range > 0.01 {
-                    ((max_in_chunk - min_val.abs()) / actual_range)
-                        .max(0.0)
-                        .min(1.0)
+                    ((max_in_chunk - min_val.abs()) / actual_range).clamp(0.0, 1.0)
                 } else {
                     0.0
                 };

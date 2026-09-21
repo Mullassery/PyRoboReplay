@@ -242,9 +242,7 @@ impl FleetLearningEngine {
             most_common_gaps.iter().map(|g| g.2).sum::<f32>() / most_common_gaps.len() as f32;
 
         // Lower health if gap rate is high or confidence is high
-        (1.0 - gap_rate * 0.5 - avg_confidence * 0.2)
-            .max(0.0)
-            .min(1.0)
+        (1.0 - gap_rate * 0.5 - avg_confidence * 0.2).clamp(0.0, 1.0)
     }
 
     /// Classify overall fleet risk
