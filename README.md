@@ -293,7 +293,61 @@ Output: Forensic Reports, Recommendations, Predictions
 
 **Test Coverage:** 834 passing `cargo test --lib` unit tests (0 failing, re-verified 2026-09-20), plus dedicated Docker-backed integration test suites for the Postgres/S3/BigQuery storage backends and Ollama LLM integration (not run in this pass — they require live Docker services). `cargo fmt --check` is clean. `cargo clippy --all-targets --all-features -- -D warnings` currently fails with 96 errors (see [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the breakdown) — this is why CI's clippy job runs with `continue-on-error: true` rather than gating merges.
 
+**"Mission ingestion: 10k events/sec" needs a caveat as of this pass**: see "vs Rerun" below — the ROS2 adapter's per-message parsers don't read the real message bytes, so "ingestion" here measures reading SQLite rows and returning a hardcoded struct per event, not real deserialization. Fast is expected when the real work (CDR parsing) isn't happening.
+
 ---
+
+## vs Rerun
+
+Rerun (`rerun-sdk`) is the leading OSS multimodal robotics logging/visualization
+tool and the closest real comparison. Tested both against the same real ROS2
+bag (a genuine rosbag2/SQLite3 `.db3` file, 901 real `nav_msgs/Odometry`
+messages at 10Hz, a real constant-velocity square-path trajectory with a real,
+deliberately-injected localization-loss window: a diagonal pose-covariance
+spike from t=45s–53s, the exact real failure signature
+`detect_failures()`'s `localization_loss` category documents itself as
+looking for).
+
+**Real, decisive finding: PyRoboReplay's ROS2 adapter never reads the real
+message bytes, for any topic, at all.** `src/adapters/ros2.rs`'s
+`parse_lidar_message`, `parse_camera_message`, `parse_imu_message`,
+`parse_odometry_message`, and `parse_pose_message` (lines 152–263) all take
+`_msg: &RosMessage` — explicitly unused, confirmed via `grep`: zero uses of
+`msg.data` (the real CDR-encoded payload) anywhere in the file — and each
+returns a hardcoded, constant event (`x: 0.0, y: 0.0, z: 0.0, qw: 1.0`,
+`confidence: Some(0.95)`, empty lidar ranges, empty camera pixels)
+regardless of what the real message actually contains. Topic routing itself
+is real (by real topic-name substring matching against the real SQLite
+`topics` table), and event *counts*/*timestamps* are real (901 real rows,
+real nanosecond timestamps) — but every event's actual sensor payload is
+fabricated.
+
+| | PyRoboReplay (`Mission.detect_failures()`) | Rerun (+ `rosbags`' real CDR decoder) |
+|---|---|---|
+| Messages processed | 901 (real count, real timestamps) | 901 (real count, real timestamps, **real decoded content**) |
+| Real localization-loss frames found (of 80 real frames with an actual covariance spike injected) | **0** | **80** — exact match |
+| Real trajectory (x, y) recovered | No — every event hardcodes `(0.0, 0.0)` | Yes — genuine square-path positions logged and visualizable on Rerun's real timeline/spatial view |
+| Load time | 0.004s | 0.038s |
+
+The 0.004s vs 0.038s isn't "PyRoboReplay is faster" — it's not doing the
+work Rerun is doing. `detect_localization_loss` (`src/core/anomaly_detector.rs:340`)
+checks `RobotPose.confidence < 0.5`, which can **never** fire on any real
+bag, because `parse_pose_message` hardcodes `confidence: Some(0.95)`
+unconditionally. This is a genuine, dedicated-session-scale fix, not a
+one-liner: each sensor type needs a real CDR deserializer (correct
+`sensor_msgs`/`nav_msgs`/`geometry_msgs` binary layout, alignment, and
+encapsulation-header handling) — not attempted here rather than rushing an
+implementation that might silently get the binary layout wrong, which would
+be worse than the current honest-if-undisclosed stub. Full detail in
+`ROADMAP_HONEST.md`.
+
+**What's still genuinely real, unaffected by this:** the CLI's `list`
+command, topic/event counting, the SQLite bag-reading layer itself, the 834
+passing unit tests (which test the analysis logic against synthetic
+in-memory events, not real parsed bag content — so they don't catch this),
+and everything downstream of ingestion once real event data *is* supplied
+programmatically (e.g. via the Rust library API directly, bypassing the
+ROS2 adapter).
 
 ## Development
 

@@ -123,6 +123,45 @@ a month before this rewrite, and a wrong date is worse than no date.
 ## Technical debt (verified this pass, 2026-09-20)
 
 ### Broken / not built
+- **CRITICAL, found 2026-09-27 via real-world benchmarking against Rerun with a
+  real ROS2 bag: the ROS2 adapter never reads real message content, for any
+  sensor type.** `src/adapters/ros2.rs`'s `parse_lidar_message`,
+  `parse_camera_message`, `parse_imu_message`, `parse_odometry_message`, and
+  `parse_pose_message` (lines 152–263) all take `_msg: &RosMessage` —
+  underscore-prefixed and genuinely unused; confirmed via `grep -n "msg.data"`
+  across the whole file: zero matches. Each returns a hardcoded constant event
+  (identity pose `x=0,y=0,z=0,qw=1`, `confidence: Some(0.95)`, empty lidar
+  ranges, empty camera pixels, zero IMU readings) regardless of the real
+  CDR-encoded bytes in `RosMessage.data`. Topic routing (`parse_message`,
+  line 125) is real (matches real topic names from the real SQLite `topics`
+  table), and event counts/timestamps are real, but every event's sensor
+  payload is fabricated.
+  - **Reproduced live**: wrote a real rosbag2 (`.db3`) file with genuine
+    `nav_msgs/Odometry` messages (a real constant-velocity square-path
+    trajectory, real diagonal pose-covariance spike injected from t=45s–53s —
+    the exact signature `detect_localization_loss`
+    (`src/core/anomaly_detector.rs:340`) documents itself as checking for).
+    `Mission.detect_failures()` found **0** failures. Decoding the identical
+    bag with `rosbags`' real CDR deserializer and checking the same
+    covariance field found **80** frames with the injected spike — an exact
+    match to the real 8-second window at 10Hz. `detect_localization_loss`
+    checks `RobotPose.confidence < 0.5`; since `parse_pose_message` hardcodes
+    `confidence: Some(0.95)` unconditionally, this check **cannot ever fire
+    on any real bag**, independent of what the real data says.
+  - **Not fixed this pass**: implementing real CDR deserialization (correct
+    `sensor_msgs`/`nav_msgs`/`geometry_msgs` binary layout, byte alignment,
+    and encapsulation-header parsing) for five sensor types is genuine,
+    substantial engineering work, not a scoped bug fix — a rushed,
+    possibly-subtly-wrong parser would be worse than the current honest
+    disclosure. See README's "vs Rerun" section for the full user-facing
+    writeup.
+  - **Real, unaffected surface**: the SQLite bag-reading layer, topic/event
+    counting, the CLI's `list` command, and everything downstream of
+    ingestion when real event data is supplied directly via the Rust library
+    API (bypassing this adapter) all still work as documented. The 834
+    passing `cargo test --lib` unit tests don't catch this because they test
+    analysis logic against synthetic in-memory events, never against a real
+    parsed bag.
 - **MCP integration is dead code, not "scaffolding."** See above — `pyroboreplay/_mcp_tools.py`
   and `pyroboreplay/_mcp_connector.py` are outside `src/`, so they are never
   packaged by maturin (`python-source = "src"` in `pyproject.toml`) and are not
