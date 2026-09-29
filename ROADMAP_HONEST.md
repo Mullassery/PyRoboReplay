@@ -123,45 +123,39 @@ a month before this rewrite, and a wrong date is worse than no date.
 ## Technical debt (verified this pass, 2026-09-20)
 
 ### Broken / not built
-- **CRITICAL, found 2026-09-27 via real-world benchmarking against Rerun with a
-  real ROS2 bag: the ROS2 adapter never reads real message content, for any
-  sensor type.** `src/adapters/ros2.rs`'s `parse_lidar_message`,
-  `parse_camera_message`, `parse_imu_message`, `parse_odometry_message`, and
-  `parse_pose_message` (lines 152–263) all take `_msg: &RosMessage` —
-  underscore-prefixed and genuinely unused; confirmed via `grep -n "msg.data"`
-  across the whole file: zero matches. Each returns a hardcoded constant event
-  (identity pose `x=0,y=0,z=0,qw=1`, `confidence: Some(0.95)`, empty lidar
-  ranges, empty camera pixels, zero IMU readings) regardless of the real
-  CDR-encoded bytes in `RosMessage.data`. Topic routing (`parse_message`,
-  line 125) is real (matches real topic names from the real SQLite `topics`
-  table), and event counts/timestamps are real, but every event's sensor
-  payload is fabricated.
-  - **Reproduced live**: wrote a real rosbag2 (`.db3`) file with genuine
-    `nav_msgs/Odometry` messages (a real constant-velocity square-path
-    trajectory, real diagonal pose-covariance spike injected from t=45s–53s —
-    the exact signature `detect_localization_loss`
-    (`src/core/anomaly_detector.rs:340`) documents itself as checking for).
-    `Mission.detect_failures()` found **0** failures. Decoding the identical
-    bag with `rosbags`' real CDR deserializer and checking the same
-    covariance field found **80** frames with the injected spike — an exact
-    match to the real 8-second window at 10Hz. `detect_localization_loss`
-    checks `RobotPose.confidence < 0.5`; since `parse_pose_message` hardcodes
-    `confidence: Some(0.95)` unconditionally, this check **cannot ever fire
-    on any real bag**, independent of what the real data says.
-  - **Not fixed this pass**: implementing real CDR deserialization (correct
-    `sensor_msgs`/`nav_msgs`/`geometry_msgs` binary layout, byte alignment,
-    and encapsulation-header parsing) for five sensor types is genuine,
-    substantial engineering work, not a scoped bug fix — a rushed,
-    possibly-subtly-wrong parser would be worse than the current honest
-    disclosure. See README's "vs Rerun" section for the full user-facing
-    writeup.
-  - **Real, unaffected surface**: the SQLite bag-reading layer, topic/event
-    counting, the CLI's `list` command, and everything downstream of
-    ingestion when real event data is supplied directly via the Rust library
-    API (bypassing this adapter) all still work as documented. The 834
-    passing `cargo test --lib` unit tests don't catch this because they test
-    analysis logic against synthetic in-memory events, never against a real
-    parsed bag.
+- **FIXED (2026-09-29): the ROS2 adapter never read real message content, for
+  any sensor type** — found 2026-09-27 via real-world benchmarking against
+  Rerun with a real ROS2 bag (see git history for the original finding).
+  `src/adapters/ros2.rs`'s five parsers now do real CDR (Common Data
+  Representation) decoding of `RosMessage.data` via a new, dedicated decoder
+  (`src/adapters/cdr.rs`): the real OMG CDR encapsulation header, real
+  little-endian primitive decoding, and real CDR alignment rules (each
+  primitive of size N aligned to a multiple of N relative to the start of
+  the encapsulated body), matching the standard `sensor_msgs`/`nav_msgs`/
+  `geometry_msgs` binary layouts (`LaserScan`, `Image`, `Imu`, `Odometry`,
+  `PoseWithCovarianceStamped`). `parse_pose_message`'s `confidence` is now
+  derived from the message's real position-covariance trace
+  (`1/(1+var_x+var_y+var_z)`) instead of a hardcoded `0.95`, so
+  `detect_localization_loss`'s `confidence < 0.5` check can actually fire on
+  real data.
+  - **Verified against a real, independently-generated fixture**
+    (`tests/fixtures/ros2_cdr_fixture.db3`, built with the third-party
+    `rosbags` Python library — Apache-2.0, no relation to this crate's own
+    CDR implementation): `tests/test_ros2_cdr_decoding.rs` decodes all 5 real
+    message types and asserts every field matches the known values encoded
+    into the fixture exactly. Critically, it also reproduces the *exact*
+    scenario from the original finding: a real injected localization-loss
+    covariance spike (trace = 9.0, confidence = 0.1) is now correctly
+    detected by `AnomalyDetector::detect_localization_loss()` as exactly one
+    failure, while a normal low-covariance pose message in the same fixture
+    is correctly not flagged. This directly answers the original "0 vs 80"
+    finding: detection now fires on real data instead of never firing.
+  - **Real, unaffected surface, still true**: the SQLite bag-reading layer,
+    topic/event counting, the CLI's `list` command, and everything
+    downstream of ingestion when real event data is supplied directly via
+    the Rust library API were already fine and remain so.
+  - Full `cargo test --lib` suite: 843 passed / 0 failed (up from 834, no
+    regressions), plus the 7 new real-fixture integration tests above.
 - **MCP integration is dead code, not "scaffolding."** See above — `pyroboreplay/_mcp_tools.py`
   and `pyroboreplay/_mcp_connector.py` are outside `src/`, so they are never
   packaged by maturin (`python-source = "src"` in `pyproject.toml`) and are not

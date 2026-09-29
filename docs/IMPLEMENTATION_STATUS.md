@@ -119,22 +119,26 @@ future PyTerrainMap adapter would implement — and returns an explicit
 is a deliberate scope decision per this repo's own architecture principles, not
 unfinished work.
 
-### Legacy Ros2 adapter — real limitation, not new drift
+### Legacy Ros2 adapter — FIXED 2026-09-29, previously a real, longstanding gap
 
-Spot-checking Phase 1's "COMPLETE" claim surfaced one genuine, pre-existing gap:
-`src/adapters/ros2.rs` (the original Phase 1 `.bag`/`.db3` adapter, still live — wired
-into both the CLI (`src/cli/mod.rs`) and the PyO3 Python bindings (`src/lib.rs`), not
-dead code) correctly parses real topic/message/timestamp structure from a `.db3`
-SQLite bag, but each `parse_*_message()` function (lidar/camera/imu/odometry/pose)
-returns hardcoded default field values (empty ranges, all-zero acceleration, identity
-pose, etc.) rather than actually decoding the message payload bytes — each is
-literally commented `// Stub: return minimal ... event`. This was already noted in
-this file's old "Known Issues" section ("ROS 2 CDR deserialization: Currently stubs")
-and remains true today; it is called out explicitly here rather than silently dropped
-during this rewrite. Note this is a different code path from the new, real
-`RosBagAdapter` in `src/phase14/modality_adapters.rs` described above — that adapter
-extracts raw per-topic message bytes (format-correct, doesn't need message-type
-semantics) rather than claiming to populate typed sensor fields it doesn't decode.
+Spot-checking Phase 1's "COMPLETE" claim (in an earlier pass) surfaced one genuine,
+pre-existing gap: `src/adapters/ros2.rs` (the original Phase 1 `.bag`/`.db3` adapter,
+live — wired into both the CLI (`src/cli/mod.rs`) and the PyO3 Python bindings
+(`src/lib.rs`), not dead code) correctly parsed real topic/message/timestamp
+structure from a `.db3` SQLite bag, but each `parse_*_message()` function
+(lidar/camera/imu/odometry/pose) returned hardcoded default field values (empty
+ranges, all-zero acceleration, identity pose, etc.) rather than actually decoding
+the message payload bytes. This is now fixed: `src/adapters/cdr.rs` implements real
+CDR (Common Data Representation) decoding of the standard ROS2 message binary
+layouts, and all 5 parsers use it. Verified against a real, independently-generated
+fixture bag (`tests/fixtures/ros2_cdr_fixture.db3`, built with the third-party
+`rosbags` library) in `tests/test_ros2_cdr_decoding.rs`, and against a real
+901-message benchmark bag with an injected covariance spike (81/81 real
+localization-loss frames now correctly detected, previously 0/81) — see
+`CHANGELOG.md` and `ROADMAP_HONEST.md` for full detail. Note this is a different
+code path from the `RosBagAdapter` in `src/phase14/modality_adapters.rs` described
+above — that adapter extracts raw per-topic message bytes (format-correct, doesn't
+need message-type semantics) rather than populating typed sensor fields.
 
 ### What's still known-incomplete or deferred (by design, not oversight)
 

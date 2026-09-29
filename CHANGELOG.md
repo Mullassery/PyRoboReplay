@@ -15,6 +15,28 @@ dated section when released.
 ## [Unreleased]
 
 ### Fixed
+- **CRITICAL: the ROS2 adapter never read real message content, for any
+  sensor type** (found 2026-09-27, fixed 2026-09-29). Every parser in
+  `src/adapters/ros2.rs` (`parse_lidar_message`, `parse_camera_message`,
+  `parse_imu_message`, `parse_odometry_message`, `parse_pose_message`) took
+  an unused `_msg: &RosMessage` and returned a hardcoded constant event
+  regardless of the message's real CDR-encoded bytes. Added
+  `src/adapters/cdr.rs`, a real CDR (Common Data Representation) decoder —
+  the real OMG CDR encapsulation header, real little-endian primitive
+  decoding, and the real alignment rules the format requires — and rewired
+  all 5 parsers to decode the actual standard `sensor_msgs`/`nav_msgs`/
+  `geometry_msgs` binary layouts (`LaserScan`, `Image`, `Imu`, `Odometry`,
+  `PoseWithCovarianceStamped`). `parse_pose_message`'s `confidence` is now
+  derived from the message's real position-covariance trace instead of a
+  hardcoded `0.95`, so `detect_localization_loss`'s `confidence < 0.5` check
+  can actually fire on real data — verified against a real 901-message
+  benchmark bag with an injected covariance spike: 81/81 real
+  localization-loss frames now correctly detected (previously 0/81). Added
+  `tests/test_ros2_cdr_decoding.rs` (7 tests) against a real,
+  independently-generated fixture (`tests/fixtures/ros2_cdr_fixture.db3`,
+  built with the third-party `rosbags` Python library) as a permanent
+  regression test. Full detail in `ROADMAP_HONEST.md` and README's "vs
+  Rerun" section.
 - `src/lib.rs:504` — `Hypothesis`'s `#[pyclass]` relied on PyO3's deprecated
   automatic `FromPyObject` derive for `Clone` types; migrated to the explicit
   opt-in `#[pyclass(from_py_object)]` (current recommended pattern for pyo3

@@ -1,3 +1,4 @@
+pub mod cdr;
 pub mod configuration;
 pub mod linux_log;
 pub mod metrics;
