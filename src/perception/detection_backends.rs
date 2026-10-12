@@ -65,6 +65,7 @@ impl Default for YOLOConfig {
 /// YOLO backend (local inference stub)
 pub struct YOLOBackend {
     config: YOLOConfig,
+    #[allow(dead_code)]
     class_map: HashMap<i32, ObjectClass>,
 }
 
@@ -84,6 +85,7 @@ impl YOLOBackend {
     }
 
     /// Map YOLO class ID to ObjectClass
+    #[allow(dead_code)]
     fn map_class(&self, coco_id: i32) -> ObjectClass {
         self.class_map
             .get(&coco_id)

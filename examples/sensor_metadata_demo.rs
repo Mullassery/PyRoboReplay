@@ -59,7 +59,7 @@ fn create_sample_mission() -> MissionRecord {
             intensities: Some(vec![0.5; 360]),
             frame_id: "lidar_0".to_string(),
             min_angle: 0.0,
-            max_angle: 6.28,
+            max_angle: std::f32::consts::TAU,
             angle_increment: 0.0175,
             range_min: 0.1,
             range_max: 30.0,

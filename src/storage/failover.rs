@@ -62,6 +62,7 @@ pub enum FailoverError {
 pub struct FailoverManager {
     primary: Arc<Mutex<Box<dyn StorageBackend>>>,
     standbys: Vec<Arc<Mutex<Box<dyn StorageBackend>>>>,
+    #[allow(dead_code)]
     config: BackupConfig,
     active_idx: usize,
     failover_log: Arc<Mutex<Vec<FailoverEvent>>>,

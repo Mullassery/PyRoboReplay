@@ -22,27 +22,20 @@ pub struct ValidationSuite;
 impl ValidationSuite {
     /// Run all validation tests
     pub fn validate_all() -> Vec<ValidationResult> {
-        let mut results = Vec::new();
-
-        // Test 1: Mechanical Degradation
-        results.push(Self::validate_mechanical_degradation());
-
-        // Test 2: Optical Contamination
-        results.push(Self::validate_optical_contamination());
-
-        // Test 3: Thermal Effects
-        results.push(Self::validate_thermal_effects());
-
-        // Test 4: Clock Drift
-        results.push(Self::validate_clock_drift());
-
-        // Test 5: Detection Failure
-        results.push(Self::validate_detection_failure());
-
-        // Test 6: Healthy Mission (should have no gaps)
-        results.push(Self::validate_healthy_mission());
-
-        results
+        vec![
+            // Test 1: Mechanical Degradation
+            Self::validate_mechanical_degradation(),
+            // Test 2: Optical Contamination
+            Self::validate_optical_contamination(),
+            // Test 3: Thermal Effects
+            Self::validate_thermal_effects(),
+            // Test 4: Clock Drift
+            Self::validate_clock_drift(),
+            // Test 5: Detection Failure
+            Self::validate_detection_failure(),
+            // Test 6: Healthy Mission (should have no gaps)
+            Self::validate_healthy_mission(),
+        ]
     }
 
     fn validate_mechanical_degradation() -> ValidationResult {

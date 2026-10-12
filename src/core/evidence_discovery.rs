@@ -88,13 +88,6 @@ impl EvidenceDiscovery {
                                 .unwrap_or(false)
                             {
                                 layer1.tf_frames_log = Some(path);
-                            } else if path
-                                .file_name()
-                                .and_then(|n| n.to_str())
-                                .map(|s| s.contains("node") || s.contains("robot"))
-                                .unwrap_or(false)
-                            {
-                                layer1.node_logs.push(path);
                             } else {
                                 layer1.node_logs.push(path);
                             }

@@ -445,6 +445,7 @@ fn block_matching_flow(gray1: &[u8], gray2: &[u8], width: u32, height: u32) -> (
     (magnitude, direction)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn block_sad(
     gray1: &[u8],
     gray2: &[u8],
@@ -476,6 +477,7 @@ fn block_sad(
     Some(sad)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn best_match(
     gray1: &[u8],
     gray2: &[u8],
@@ -547,6 +549,7 @@ impl FrameCache {
         self.cache.clear();
     }
 
+    #[allow(dead_code)]
     fn size(&self) -> usize {
         self.cache.len()
     }

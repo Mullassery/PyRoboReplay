@@ -25,7 +25,7 @@ impl DecisionPattern {
         }
     }
 
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn from_name(s: &str) -> Option<Self> {
         match s {
             "sudden_obstacle" => Some(DecisionPattern::SuddenObstacle),
             "low_battery" => Some(DecisionPattern::LowBattery),

@@ -86,6 +86,7 @@ pub struct CounterfactualStats {
 /// Counterfactual analyzer
 pub struct CounterfactualAnalyzer {
     /// Mission events
+    #[allow(dead_code)]
     events: Vec<MissionEvent>,
     /// Causal graph
     causal_graph: Option<CausalGraph>,

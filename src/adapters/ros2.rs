@@ -19,6 +19,7 @@ struct RosTopic {
 struct RosMessage {
     timestamp: i64,
     data: Vec<u8>,
+    #[allow(dead_code)]
     topic_id: i64,
 }
 

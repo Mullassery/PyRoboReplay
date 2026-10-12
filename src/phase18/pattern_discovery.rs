@@ -70,7 +70,8 @@ pub struct PatternMiner {
 }
 
 #[derive(Debug, Clone)]
-struct MissionData {
+pub struct MissionData {
+    #[allow(dead_code)]
     mission_id: String,
     failure_occurred: bool,
     causal_chain: Vec<String>,

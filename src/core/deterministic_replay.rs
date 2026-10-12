@@ -95,6 +95,7 @@ pub enum DeterministicReplayError {
 pub struct DeterministicReplay {
     manifest: ReplayManifest,
     events: Vec<MissionEvent>,
+    #[allow(dead_code)]
     mission_id: String,
 }
 

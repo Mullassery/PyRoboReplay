@@ -21,8 +21,8 @@ fn generate_lidar_events(count: usize) -> Vec<MissionEvent> {
                 ranges: vec![2.0 + (i as f32 * 0.001); 360],
                 intensities: Some(vec![0.5; 360]),
                 frame_id: "lidar".to_string(),
-                min_angle: -3.14,
-                max_angle: 3.14,
+                min_angle: -std::f32::consts::PI,
+                max_angle: std::f32::consts::PI,
                 angle_increment: 0.01,
                 range_min: 0.1,
                 range_max: 10.0,
@@ -43,8 +43,8 @@ fn generate_mixed_events(count: usize) -> Vec<MissionEvent> {
                     ranges: vec![2.0; 360],
                     intensities: None,
                     frame_id: "lidar".to_string(),
-                    min_angle: -3.14,
-                    max_angle: 3.14,
+                    min_angle: -std::f32::consts::PI,
+                    max_angle: std::f32::consts::PI,
                     angle_increment: 0.01,
                     range_min: 0.1,
                     range_max: 10.0,
@@ -364,7 +364,6 @@ fn test_detector_creation_memory() {
     let _failures = detector.detect_all();
 
     // If we got here without OOM, basic memory efficiency is OK
-    assert!(true);
 }
 
 // ============================================================================

@@ -164,12 +164,12 @@ impl DecisionReconstructor {
         let mut decision_points = Vec::new();
 
         for (idx, event) in timeline.iter().enumerate() {
-            let is_decision = match event {
-                MissionEvent::NavigationDecision { .. } => true,
-                MissionEvent::ObstacleDetected { .. } => true,
-                MissionEvent::MissionLifecycle { .. } => true,
-                _ => false,
-            };
+            let is_decision = matches!(
+                event,
+                MissionEvent::NavigationDecision { .. }
+                    | MissionEvent::ObstacleDetected { .. }
+                    | MissionEvent::MissionLifecycle { .. }
+            );
 
             if is_decision {
                 decision_points.push(idx);

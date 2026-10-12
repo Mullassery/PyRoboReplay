@@ -117,6 +117,7 @@ pub struct SpatialCausalityAnalyzer {
     /// Spatial data for events (event_idx -> SpatialContext)
     spatial_data: HashMap<usize, SpatialContext>,
     /// Traversability map (region -> score)
+    #[allow(dead_code)]
     traversability_map: HashMap<String, f32>,
 }
 

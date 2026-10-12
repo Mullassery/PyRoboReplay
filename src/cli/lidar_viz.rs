@@ -58,7 +58,7 @@ impl LidarVisualization {
     }
 
     /// Draw concentric circles representing distance
-    fn draw_grid(grid: &mut Vec<Vec<char>>, config: &LidarVizConfig) {
+    fn draw_grid(grid: &mut [Vec<char>], config: &LidarVizConfig) {
         let center_x = config.width as f32 / 2.0;
         let center_y = config.height as f32 / 2.0;
         let max_radius = ((config.width / 2).min(config.height / 2)) as f32;

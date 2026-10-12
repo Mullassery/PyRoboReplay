@@ -12,6 +12,7 @@ use std::path::Path;
 
 struct MissionGenerator {
     start_time: i64,
+    #[allow(dead_code)]
     robot_id: String,
 }
 

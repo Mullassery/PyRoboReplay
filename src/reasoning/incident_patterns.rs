@@ -50,7 +50,7 @@ impl IncidentPatternAnalyzer {
         patterns.extend(env_patterns);
 
         // Sort by severity (occurrence count)
-        patterns.sort_by(|a, b| b.occurrence_count.cmp(&a.occurrence_count));
+        patterns.sort_by_key(|b| std::cmp::Reverse(b.occurrence_count));
 
         patterns
     }

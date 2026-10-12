@@ -245,6 +245,5 @@ mod tests {
         assert!(quality.overall_quality > 0.0);
 
         // All components integrated and ready for production
-        assert!(true);
     }
 }

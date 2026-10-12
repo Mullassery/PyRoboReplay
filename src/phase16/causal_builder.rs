@@ -179,10 +179,10 @@ impl EdgeDetector for TemporalProximityDetector {
     fn detect(&self, timeline: &[MissionEvent], _vertices: &[Vertex]) -> Vec<Edge> {
         let mut edges = Vec::new();
 
-        for i in 0..timeline.len() {
-            let source_time = timeline[i].timestamp();
-            for j in (i + 1)..timeline.len() {
-                let target_time = timeline[j].timestamp();
+        for (i, source) in timeline.iter().enumerate() {
+            let source_time = source.timestamp();
+            for (j, target) in timeline.iter().enumerate().skip(i + 1) {
+                let target_time = target.timestamp();
                 let time_gap = (target_time - source_time).num_milliseconds();
 
                 if time_gap > 0 && time_gap < self.threshold_ms {
@@ -271,6 +271,7 @@ impl EdgeDetector for MultiModalDetector {
 
 /// Detector 5: Historical Validation
 pub struct HistoricalDetector {
+    #[allow(dead_code)]
     fleet_data: Vec<Vec<MissionEvent>>,
 }
 
@@ -295,14 +296,13 @@ pub struct CausalGraphBuilderV2 {
 
 impl CausalGraphBuilderV2 {
     pub fn new(timeline: Vec<MissionEvent>) -> Self {
-        let mut detectors: Vec<Box<dyn EdgeDetector>> = Vec::new();
-
-        // Add all 5 detectors
-        detectors.push(Box::new(TemporalProximityDetector::new(2000)));
-        detectors.push(Box::new(MagnitudeChangeDetector));
-        detectors.push(Box::new(DecisionTriggerDetector));
-        detectors.push(Box::new(MultiModalDetector));
-        detectors.push(Box::new(HistoricalDetector::new(Vec::new())));
+        let detectors: Vec<Box<dyn EdgeDetector>> = vec![
+            Box::new(TemporalProximityDetector::new(2000)),
+            Box::new(MagnitudeChangeDetector),
+            Box::new(DecisionTriggerDetector),
+            Box::new(MultiModalDetector),
+            Box::new(HistoricalDetector::new(Vec::new())),
+        ];
 
         CausalGraphBuilderV2 {
             timeline,

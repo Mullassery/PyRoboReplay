@@ -8,6 +8,7 @@ use pyroboreplay::core::{AnomalyDetector, MissionEvent};
 // Test Fixtures
 // ============================================================================
 
+#[allow(dead_code)]
 fn create_empty_events() -> Vec<MissionEvent> {
     vec![]
 }
@@ -20,8 +21,8 @@ fn create_single_event_lidar() -> Vec<MissionEvent> {
             ranges: vec![2.0, 2.5, 3.0],
             intensities: Some(vec![0.5, 0.5, 0.5]),
             frame_id: "lidar".to_string(),
-            min_angle: -3.14,
-            max_angle: 3.14,
+            min_angle: -std::f32::consts::PI,
+            max_angle: std::f32::consts::PI,
             angle_increment: 0.01,
             range_min: 0.1,
             range_max: 10.0,
@@ -37,8 +38,8 @@ fn create_collision_lidar(min_range: f32) -> Vec<MissionEvent> {
             ranges: vec![min_range, 2.0, 3.0],
             intensities: Some(vec![0.5, 0.5, 0.5]),
             frame_id: "lidar".to_string(),
-            min_angle: -3.14,
-            max_angle: 3.14,
+            min_angle: -std::f32::consts::PI,
+            max_angle: std::f32::consts::PI,
             angle_increment: 0.01,
             range_min: 0.1,
             range_max: 10.0,

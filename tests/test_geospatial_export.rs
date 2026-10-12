@@ -138,13 +138,10 @@ fn test_raster_has_crs() {
 fn test_raster_data_values() {
     let raster = GeospatialExporter::create_coverage_raster(10, 10, 0.1, 0.0, 0.0);
 
-    // All values should be in valid range (0-255 for uint8)
-    for row in &raster.data {
-        for &value in row {
-            assert!(value >= 0);
-            assert!(value <= 255);
-        }
-    }
+    // Raster should have the requested dimensions (uint8 values are
+    // inherently within the 0-255 range enforced by their type).
+    assert_eq!(raster.data.len(), 10);
+    assert!(raster.data.iter().all(|row| row.len() == 10));
 }
 
 // ============================================================================

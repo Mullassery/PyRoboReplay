@@ -48,6 +48,12 @@ pub struct CausalGraph {
     causality_window_ms: i64,
 }
 
+impl Default for CausalGraph {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CausalGraph {
     /// Create new causal graph with default causality window (2 seconds)
     pub fn new() -> Self {

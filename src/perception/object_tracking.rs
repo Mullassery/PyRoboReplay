@@ -254,7 +254,7 @@ impl TrajectoryStatistics {
 
         let completed = engine.get_completed_tracks().len();
         let total = all_tracks.len();
-        let avg_length = if total > 0 { total_length / total } else { 0 };
+        let avg_length = total_length.checked_div(total).unwrap_or(0);
         let avg_persistence = if total > 0 {
             total_persistence / total as f32
         } else {

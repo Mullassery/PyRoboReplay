@@ -34,6 +34,7 @@ impl InfluenceScore {
 }
 
 pub struct OutcomeInfluenceAnalyzer {
+    #[allow(dead_code)]
     mission_id: String,
     outcome: String,
     factors: Vec<(String, f32)>, // (factor_name, contribution_score)

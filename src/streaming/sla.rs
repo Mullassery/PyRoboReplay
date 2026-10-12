@@ -91,11 +91,15 @@ pub enum SlaError {
 #[derive(Debug, Clone)]
 struct MissionSlaState {
     contract: SlaContract,
+    #[allow(dead_code)]
     mission_id: String,
+    #[allow(dead_code)]
     started_at: DateTime<Utc>,
     navigation_deadlock_start: Option<DateTime<Utc>>,
     sensor_dropout_start: Option<DateTime<Utc>>,
+    #[allow(dead_code)]
     emergency_stop_count: usize,
+    #[allow(dead_code)]
     speed_violation_count: usize,
     violations: Vec<SlaViolation>,
 }

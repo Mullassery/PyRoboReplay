@@ -149,19 +149,14 @@ impl StreamProcessor {
         let mut events = Vec::new();
         let timeout = std::time::Duration::from_millis(max_wait_ms);
 
-        loop {
-            match consumer.recv_timeout(timeout) {
-                Ok(event) => {
-                    if self.process_event(&event) {
-                        if let Some(max) = self.config.max_events {
-                            if events.len() >= max {
-                                break;
-                            }
-                        }
-                        events.push(event);
+        while let Ok(event) = consumer.recv_timeout(timeout) {
+            if self.process_event(&event) {
+                if let Some(max) = self.config.max_events {
+                    if events.len() >= max {
+                        break;
                     }
                 }
-                Err(_) => break,
+                events.push(event);
             }
         }
 

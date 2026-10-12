@@ -62,9 +62,8 @@ pub fn export_camera_to_html(
     // Extract camera frame metadata (not full data)
     let mut frames = Vec::new();
     let mut frame_index = 0;
-    let mut event_index = 0;
 
-    for event in &mission.events {
+    for (event_index, event) in mission.events.iter().enumerate() {
         if let MissionEvent::CameraFrame {
             timestamp, data, ..
         } = event
@@ -79,7 +78,6 @@ pub fn export_camera_to_html(
             });
             frame_index += 1;
         }
-        event_index += 1;
     }
 
     if frames.is_empty() {

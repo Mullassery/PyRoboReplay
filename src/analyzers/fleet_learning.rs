@@ -110,7 +110,7 @@ impl FleetLearningEngine {
             .into_iter()
             .map(|(name, (count, sum_conf))| (name, count, sum_conf / count as f32))
             .collect();
-        most_common_gaps.sort_by(|a, b| b.1.cmp(&a.1));
+        most_common_gaps.sort_by_key(|b| std::cmp::Reverse(b.1));
         most_common_gaps.truncate(10);
 
         // Convert robot type gaps
@@ -118,7 +118,7 @@ impl FleetLearningEngine {
             .into_iter()
             .map(|(robot_type, gaps)| {
                 let mut gap_vec: Vec<_> = gaps.into_iter().collect();
-                gap_vec.sort_by(|a, b| b.1.cmp(&a.1));
+                gap_vec.sort_by_key(|b| std::cmp::Reverse(b.1));
                 (robot_type, gap_vec)
             })
             .collect();

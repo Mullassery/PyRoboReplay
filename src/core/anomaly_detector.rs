@@ -162,33 +162,31 @@ impl AnomalyDetector {
 
         // Only report if we have actual low-confidence data
         if low_confidence_count > 0 && total_frames > 10 {
-            if let Some(last_event) = self.events.last() {
-                if let MissionEvent::CameraFrame { timestamp, .. } = last_event {
-                    let ratio = low_confidence_count as f32 / total_frames as f32;
-                    if ratio > 0.3 {
-                        let mut failure = Failure::new(
-                            "perception_failure".to_string(),
-                            *timestamp,
-                            ratio * 0.9,
-                            "medium".to_string(),
-                            format!(
-                                "{:.0}% of detections below confidence threshold ({:.0}%)",
-                                ratio * 100.0,
-                                self.perception_confidence_threshold * 100.0
-                            ),
-                        )
-                        .with_system("camera".to_string())
-                        .with_system("perception".to_string());
+            if let Some(MissionEvent::CameraFrame { timestamp, .. }) = self.events.last() {
+                let ratio = low_confidence_count as f32 / total_frames as f32;
+                if ratio > 0.3 {
+                    let mut failure = Failure::new(
+                        "perception_failure".to_string(),
+                        *timestamp,
+                        ratio * 0.9,
+                        "medium".to_string(),
+                        format!(
+                            "{:.0}% of detections below confidence threshold ({:.0}%)",
+                            ratio * 100.0,
+                            self.perception_confidence_threshold * 100.0
+                        ),
+                    )
+                    .with_system("camera".to_string())
+                    .with_system("perception".to_string());
 
-                        failure.evidence.insert(
-                            "low_confidence_count".to_string(),
-                            low_confidence_count.to_string(),
-                        );
-                        failure
-                            .evidence
-                            .insert("total_frames".to_string(), total_frames.to_string());
-                        failures.push(failure);
-                    }
+                    failure.evidence.insert(
+                        "low_confidence_count".to_string(),
+                        low_confidence_count.to_string(),
+                    );
+                    failure
+                        .evidence
+                        .insert("total_frames".to_string(), total_frames.to_string());
+                    failures.push(failure);
                 }
             }
         }

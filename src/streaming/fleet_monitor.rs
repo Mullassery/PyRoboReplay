@@ -388,8 +388,10 @@ mod tests {
 
     #[test]
     fn test_offline_after_threshold() {
-        let mut config = FleetMonitorConfig::default();
-        config.offline_threshold_ms = 100;
+        let config = FleetMonitorConfig {
+            offline_threshold_ms: 100,
+            ..Default::default()
+        };
 
         let mut monitor = FleetMonitor::new(config);
         monitor.register_robot("robot_1", None);

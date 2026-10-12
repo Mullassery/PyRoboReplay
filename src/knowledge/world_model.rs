@@ -269,6 +269,7 @@ impl WorldModelManager {
     }
 
     /// Record an observation into world state
+    #[allow(clippy::too_many_arguments)]
     pub fn record_observation(
         &mut self,
         env_id: &str,

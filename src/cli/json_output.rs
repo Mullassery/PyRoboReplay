@@ -82,7 +82,7 @@ impl MissionAnalysisJson {
             })
             .collect();
 
-        breakdown.sort_by(|a, b| b.count.cmp(&a.count));
+        breakdown.sort_by_key(|b| std::cmp::Reverse(b.count));
 
         let sensors: Vec<String> = mission
             .events

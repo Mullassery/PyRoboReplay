@@ -371,6 +371,5 @@ mod tests {
     fn test_orchestrator_creation() {
         // This is a basic test that checks orchestrator can be created
         // Full integration testing would require actual bundle data
-        assert!(true);
     }
 }

@@ -293,9 +293,9 @@ mod tests {
         }
 
         detector.detect_trends("metric".to_string());
-        let significant = detector.get_significant_trends();
-        // With steep enough slope and high confidence, should find significant trends
-        assert!(significant.len() >= 0); // May or may not be significant depending on regression
+        // With steep enough slope and high confidence, should find significant trends;
+        // may or may not be significant depending on regression.
+        let _ = detector.get_significant_trends();
     }
 
     #[test]

@@ -82,6 +82,7 @@ pub struct RootCauseAnalyzer {
     /// Detected failure modes
     failure_modes: Vec<FailureMode>,
     /// Root cause hypotheses cache
+    #[allow(dead_code)]
     hypotheses_cache: HashMap<usize, Vec<RootCauseHypothesis>>,
 }
 

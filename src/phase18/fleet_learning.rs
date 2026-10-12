@@ -81,6 +81,7 @@ impl LeaderboardEntry {
 
 pub struct FleetLearner {
     robots: Vec<RobotStats>,
+    #[allow(dead_code)]
     tip_categories: Vec<String>,
 }
 
@@ -94,9 +95,11 @@ struct RobotStats {
 
 #[derive(Debug, Clone)]
 struct MissionResult {
+    #[allow(dead_code)]
     mission_id: String,
     succeeded: bool,
     time_ms: u32,
+    #[allow(dead_code)]
     timestamp: u64,
 }
 

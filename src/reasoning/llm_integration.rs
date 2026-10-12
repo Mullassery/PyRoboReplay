@@ -104,6 +104,7 @@ fn default_ollama_base_url() -> String {
 /// LLM-based explainer for robot incidents
 pub struct LLMExplainer {
     config: LLMConfig,
+    #[allow(dead_code)]
     prompt_cache: std::collections::HashMap<String, String>,
     ollama_base_url: String,
     /// Timeout for the HTTP call to Ollama. Kept short by default so a

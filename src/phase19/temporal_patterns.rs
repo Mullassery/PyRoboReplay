@@ -297,8 +297,8 @@ mod tests {
         miner.add_event(5, "b".to_string());
         miner.discover_temporal_patterns();
 
-        let short_term = miner.get_patterns_by_window(TimeWindow::ShortTerm);
-        assert!(short_term.len() >= 0);
+        // Should not panic; may or may not return short-term patterns
+        let _ = miner.get_patterns_by_window(TimeWindow::ShortTerm);
     }
 
     #[test]

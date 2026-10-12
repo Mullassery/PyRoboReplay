@@ -20,7 +20,7 @@ fn create_realistic_mission() -> MissionRecord {
             intensities: None,
             frame_id: "lidar".to_string(),
             min_angle: 0.0,
-            max_angle: 6.28,
+            max_angle: std::f32::consts::TAU,
             angle_increment: 0.01745,
             range_min: 0.1,
             range_max: 10.0,
@@ -32,19 +32,13 @@ fn create_realistic_mission() -> MissionRecord {
         robot_id: "robot_1".to_string(),
         timestamp: base_time + chrono::Duration::milliseconds(300),
         data: LidarData {
-            ranges: (0..360)
-                .map(|i| {
-                    if (i as i32 - 180).abs() < 40 {
-                        2.5
-                    } else {
-                        5.0
-                    }
-                })
+            ranges: (0..360i32)
+                .map(|i| if (i - 180).abs() < 40 { 2.5 } else { 5.0 })
                 .collect(),
             intensities: None,
             frame_id: "lidar".to_string(),
             min_angle: 0.0,
-            max_angle: 6.28,
+            max_angle: std::f32::consts::TAU,
             angle_increment: 0.01745,
             range_min: 0.1,
             range_max: 10.0,
@@ -150,7 +144,7 @@ fn create_realistic_mission() -> MissionRecord {
             intensities: None,
             frame_id: "lidar".to_string(),
             min_angle: 0.0,
-            max_angle: 6.28,
+            max_angle: std::f32::consts::TAU,
             angle_increment: 0.01745,
             range_min: 0.1,
             range_max: 10.0,

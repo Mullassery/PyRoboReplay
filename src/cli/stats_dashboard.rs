@@ -226,6 +226,7 @@ pub struct StatsDashboard {
     mission: Arc<Mutex<MissionRecord>>,
     current_index: Arc<Mutex<usize>>,
     playback_speed: Arc<Mutex<f32>>,
+    #[allow(dead_code)]
     is_running: Arc<Mutex<bool>>,
 }
 

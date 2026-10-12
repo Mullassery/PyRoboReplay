@@ -82,8 +82,8 @@ impl ConfidenceChain {
 
     pub fn strength_summary(&self) -> String {
         format!(
-            "{} (base: {:.0}%, adjusted: {:.0}%)",
-            format!("{:?}", self.confidence_tier),
+            "{:?} (base: {:.0}%, adjusted: {:.0}%)",
+            self.confidence_tier,
             self.base_confidence * 100.0,
             self.adjusted_confidence * 100.0
         )
@@ -92,6 +92,7 @@ impl ConfidenceChain {
 
 pub struct ConfidenceScoringEngine {
     failure_scores: HashMap<String, ConfidenceChain>,
+    #[allow(dead_code)]
     all_events: Vec<MissionEvent>,
 }
 

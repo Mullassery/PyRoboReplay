@@ -34,6 +34,7 @@ pub struct TimelineComparison {
 
 pub struct AlternativeTimelineGenerator {
     baseline_timeline: Vec<TimelineEvent>,
+    #[allow(dead_code)]
     baseline_outcome: String,
 }
 
@@ -150,10 +151,10 @@ impl AlternativeTimelineGenerator {
     fn _cascade_changes(&self, events: &mut [TimelineEvent], divergence_point: usize) -> usize {
         let mut count = 0;
 
-        for i in (divergence_point + 1)..events.len() {
+        for (i, event) in events.iter_mut().enumerate().skip(divergence_point + 1) {
             // Probabilistically mark subsequent events as divergent
             if i % 3 == divergence_point % 3 {
-                events[i].is_divergent = true;
+                event.is_divergent = true;
                 count += 1;
             }
         }

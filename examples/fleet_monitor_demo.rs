@@ -130,8 +130,10 @@ fn main() {
     println!("DEMO 5: OFFLINE ROBOT DETECTION");
     println!("═══════════════════════════════════════════════════════════════════\n");
 
-    let mut config = FleetMonitorConfig::default();
-    config.offline_threshold_ms = 100;
+    let config = FleetMonitorConfig {
+        offline_threshold_ms: 100,
+        ..Default::default()
+    };
 
     let mut monitor = FleetMonitor::new(config);
     monitor.register_robot("robot_a", None);

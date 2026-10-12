@@ -30,10 +30,7 @@ fn load_fixture_events() -> Vec<MissionEvent> {
     mission.events
 }
 
-fn find_event<'a>(
-    events: &'a [MissionEvent],
-    predicate: impl Fn(&MissionEvent) -> bool,
-) -> &'a MissionEvent {
+fn find_event(events: &[MissionEvent], predicate: impl Fn(&MissionEvent) -> bool) -> &MissionEvent {
     events
         .iter()
         .find(|e| predicate(e))

@@ -92,6 +92,7 @@ impl MLRIASRecommendation {
 
 pub struct MLRIASRecommendationsEngine {
     failures: Vec<DetectedFailure>,
+    #[allow(dead_code)]
     confidence_chains: Vec<ConfidenceChain>,
 }
 

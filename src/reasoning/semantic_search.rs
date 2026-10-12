@@ -358,9 +358,11 @@ mod tests {
 
         engine.index_mission(&mission);
 
-        let mut filters = QueryFilters::default();
-        filters.outcome = Some("collision".to_string());
-        filters.objects = vec!["pedestrian".to_string()];
+        let filters = QueryFilters {
+            outcome: Some("collision".to_string()),
+            objects: vec!["pedestrian".to_string()],
+            ..Default::default()
+        };
 
         let query = SemanticQuery {
             query: "Collisions with pedestrians".to_string(),

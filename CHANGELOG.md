@@ -12,6 +12,26 @@ history of prior versions (v0.1 through v2.10.0), see `git log` and
 forward, new changes should be added here under `[Unreleased]` and moved to a
 dated section when released.
 
+## [2.10.1] - 2026-10-12
+
+### Fixed
+- CI is green again: `cargo clippy --all-targets --all-features -- -D warnings`
+  and `cargo fmt --check` now pass. Cleared all 47 pre-existing lib warnings
+  and the denials in tests/examples — unused/dead fields now carry explicit
+  `#[allow(dead_code)]` (intentional storage for future use), logic lints were
+  genuinely fixed (collapsed redundant `if`/`else if` branches in
+  `core/evidence_discovery.rs` and `phase17/counterfactual.rs`, replaced
+  `sort_by` closures with `sort_by_key`, `vec![..]` instead of
+  init-then-push, `matches!`, `checked_div`, iterator loops,
+  `format!`-in-`format!`, `Default` impl for `CausalGraph`, `&mut [_]`
+  over `&mut Vec`), and meaningless always-true assertions (`assert!(true)`,
+  `len() >= 0`, `u8 >= 0`) in tests were removed.
+- `PYRAMID`/`PI`/`TAU` literals in tests/examples now use
+  `std::f32::consts::{PI,TAU}`.
+
+### Changed
+- Added Grapify code-scan config (`.grapify.yml`), CI job, and README badge.
+
 ## [Unreleased]
 
 ### Fixed

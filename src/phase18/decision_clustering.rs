@@ -36,10 +36,12 @@ impl DecisionTemplate {
 }
 
 pub struct ClusterAnalyzer {
+    #[allow(dead_code)]
     templates: Vec<DecisionTemplate>,
     distance_threshold: f32,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct DecisionSignature {
     preconditions: Vec<String>,

@@ -65,6 +65,7 @@ pub struct CounterfactualResult {
 pub struct CounterfactualAnalyzer {
     graph: CausalGraphV2,
     baseline_outcome: String,
+    #[allow(dead_code)]
     events: Vec<MissionEvent>,
 }
 
@@ -157,9 +158,9 @@ impl CounterfactualAnalyzer {
     fn _calculate_outcome_change(&self, original: &str, alternative: &str) -> f32 {
         if original == alternative {
             0.0 // No change
-        } else if original.contains("success") && alternative.contains("failure") {
-            1.0 // Complete reversal
-        } else if original.contains("failure") && alternative.contains("success") {
+        } else if (original.contains("success") && alternative.contains("failure"))
+            || (original.contains("failure") && alternative.contains("success"))
+        {
             1.0 // Complete reversal
         } else {
             0.5 // Partial change

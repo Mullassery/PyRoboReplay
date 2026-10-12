@@ -122,8 +122,11 @@ pub struct MultiRobotCoordinationAnalyzer {
     /// Detected patterns
     patterns: Vec<CoordinationPattern>,
     /// Robot positions over time (for distance calculations)
-    robot_trajectories: HashMap<String, Vec<(chrono::DateTime<chrono::Utc>, (f64, f64, f64))>>,
+    robot_trajectories: HashMap<String, Vec<TrajectorySample>>,
 }
+
+/// A timestamped 3D position sample for a robot
+type TrajectorySample = (chrono::DateTime<chrono::Utc>, (f64, f64, f64));
 
 impl MultiRobotCoordinationAnalyzer {
     /// Create new multi-robot coordination analyzer
