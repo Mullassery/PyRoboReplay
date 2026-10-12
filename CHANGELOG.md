@@ -30,7 +30,7 @@ dated section when released.
   `std::f32::consts::{PI,TAU}`.
 
 ### Changed
-- Added Grapify code-scan config (`.grapify.yml`), CI job, and README badge.
+- Added an optional, isolated Graphify code knowledge-graph backend (`tools/graphify/`, `.graphifyignore`, optional workflow, README badge).
 
 ## [Unreleased]
 
