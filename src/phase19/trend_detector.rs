@@ -116,7 +116,6 @@ impl TrendDetector {
         let mut sum_y = 0.0f32;
         let mut sum_xy = 0.0f32;
         let mut sum_x2 = 0.0f32;
-        let mut sum_y2 = 0.0f32;
 
         for (t, v) in &self.data_points {
             let x = ((*t - first_time) as f32) / 3600.0; // Convert to hours
@@ -126,7 +125,6 @@ impl TrendDetector {
             sum_y += y;
             sum_xy += x * y;
             sum_x2 += x * x;
-            sum_y2 += y * y;
         }
 
         let slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x);

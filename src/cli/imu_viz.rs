@@ -1,5 +1,5 @@
-/// IMU data visualization for terminal replay
-/// Renders accelerometer, gyro, and magnetometer data as ASCII graphs
+//! IMU data visualization for terminal replay
+//! Renders accelerometer, gyro, and magnetometer data as ASCII graphs
 
 /// Configuration for IMU visualization
 #[derive(Debug, Clone)]

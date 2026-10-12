@@ -46,7 +46,10 @@ impl<'a> CdrReader<'a> {
                  implementation, e.g. rmw_fastrtps and rmw_cyclonedds, produces by default)"
             ));
         }
-        Ok(CdrReader { data: &data[4..], pos: 0 })
+        Ok(CdrReader {
+            data: &data[4..],
+            pos: 0,
+        })
     }
 
     fn align(&mut self, size: usize) {
@@ -209,7 +212,7 @@ mod tests {
     fn reads_f64_with_8_byte_alignment_after_u32() {
         let mut data = encode_header();
         data.extend_from_slice(&1u32.to_le_bytes()); // offset 0..4
-        // 4 bytes of padding needed before the f64 (offset 4 -> 8)
+                                                     // 4 bytes of padding needed before the f64 (offset 4 -> 8)
         data.extend_from_slice(&[0u8; 4]);
         data.extend_from_slice(&2.5f64.to_le_bytes()); // offset 8..16
         let mut r = CdrReader::new(&data).unwrap();

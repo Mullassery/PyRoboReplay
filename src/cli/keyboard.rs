@@ -1,5 +1,4 @@
-/// Keyboard shortcuts and help system for terminal replay
-/// Defines all keyboard commands and displays context-sensitive help
+//! Keyboard shortcuts and help system for terminal replay
 
 /// Category for organizing shortcuts
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

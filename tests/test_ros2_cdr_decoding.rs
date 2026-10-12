@@ -59,7 +59,10 @@ fn decodes_real_laser_scan_with_correct_values() {
     assert!((data.ranges[1] - 2.2).abs() < 1e-4);
     assert!((data.ranges[2] - 3.3).abs() < 1e-4);
     assert!((data.ranges[3] - 4.4).abs() < 1e-4);
-    let intensities = data.intensities.as_ref().expect("real intensities should be present");
+    let intensities = data
+        .intensities
+        .as_ref()
+        .expect("real intensities should be present");
     assert_eq!(intensities, &vec![10.0, 20.0, 30.0, 40.0]);
 }
 
@@ -89,7 +92,9 @@ fn decodes_real_imu_with_correct_values() {
     };
 
     assert_eq!(data.frame_id, "imu_frame_real");
-    let orientation = data.orientation.expect("real orientation should be present");
+    let orientation = data
+        .orientation
+        .expect("real orientation should be present");
     assert!((orientation[0] - 0.1).abs() < 1e-9);
     assert!((orientation[1] - 0.2).abs() < 1e-9);
     assert!((orientation[2] - 0.3).abs() < 1e-9);
@@ -107,7 +112,9 @@ fn decodes_real_imu_with_correct_values() {
 #[test]
 fn decodes_real_odometry_with_correct_values() {
     let events = load_fixture_events();
-    let event = find_event(&events, |e| matches!(e, MissionEvent::OdometryUpdate { .. }));
+    let event = find_event(&events, |e| {
+        matches!(e, MissionEvent::OdometryUpdate { .. })
+    });
     let MissionEvent::OdometryUpdate { data, .. } = event else {
         unreachable!()
     };
@@ -129,7 +136,10 @@ fn decodes_real_odometry_with_correct_values() {
 fn decodes_real_pose_and_derives_confidence_from_real_covariance() {
     let events = load_fixture_events();
     let event = find_event(&events, |e| matches!(e, MissionEvent::RobotPose { .. }));
-    let MissionEvent::RobotPose { pose, confidence, .. } = event else {
+    let MissionEvent::RobotPose {
+        pose, confidence, ..
+    } = event
+    else {
         unreachable!()
     };
 
