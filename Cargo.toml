@@ -44,14 +44,14 @@ crossterm = "0.28"
 ratatui = "0.27"
 crossbeam-channel = "0.5"
 regex = "1.10"
-lru = "0.12"
+lru = "0.18"
 nalgebra = "0.33"
 image = "0.25"
 bytes = "1.5"
 hdrhistogram = "7.5"
 num-traits = "0.2"
 tokio-postgres = "0.7.18"
-aws-sdk-s3 = "1.141.0"
+aws-sdk-s3 = { version = "1.141.0", default-features = false, features = ["behavior-version-latest", "default-https-client", "http-1x", "rt-tokio", "sigv4a"] }
 aws-config = { version = "1.10.1", features = ["behavior-version-latest"] }
 ureq = { version = "3.4.0", features = ["json"] }
 serde_norway = "0.9.42"
