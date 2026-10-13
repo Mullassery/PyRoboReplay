@@ -1,83 +1,56 @@
 # PyRoboReplay
 
-Robotics perception and replay engine. RGB+Thermal sensor fusion, invisible person detection, trajectory analysis, multi-modal training datasets. Analyze what happened, why it happened, and how to prevent it.
+Forensic debugging and mission-replay platform for autonomous robots: replay ROS 2 missions, run causal / root-cause analysis on failures, and perform multispectral (RGB + thermal) forensics. Rust core with Python bindings.
 
-Includes thermal imaging analysis, motion replay, and causal inference for autonomous systems.
-
-> **Forensic debugging platform for autonomous robot systems.** Replay missions, perform causal analysis, detect hidden objects, fuse multispectral sensors, and reconstruct what really happened—from passive replay to intelligent agent debugging.
-
-[![CI Status](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml)
-[![Graphify](https://img.shields.io/badge/Graphify-knowledge%20graph-blue)](https://github.com/Graphify-Labs/graphify)
-[![Security Audit](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/security.yml)
-[![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![PyPI](https://img.shields.io/badge/PyPI-pyroboreplay-blue.svg)](https://pypi.org/project/pyroboreplay/)
-[![Tests](https://img.shields.io/github/actions/workflow/status/Mullassery/PyRoboReplay/ci.yml?label=tests)](https://github.com/Mullassery/PyRoboReplay/actions)
+[![CI](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/pyroboreplay)](https://pypi.org/project/pyroboreplay/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/mullassery/pyroboreplay?style=social)](https://github.com/Mullassery/PyRoboReplay)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
 
----
+## What it is
 
-## Why PyRoboReplay?
+PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timeline and answers *why* and *what-if* questions rather than only *where* and *what*: which events preceded a failure, what the perception stack missed, and what the robot should have detected. The heavy lifting is a Rust core (`cdylib` + `rlib`) built with PyO3, exposed to Python through `maturin`. A CLI (`replay`, `analyze`, `compare`, `list`) and a small Python API are the supported entry points today.
 
-Robotics teams waste **2-16 hours debugging a single mission failure**—jumping between rosbags, logs, dashboards, and manually reconstructing causality.
+## Features
 
-**Old tools answer "where/what" questions:**
-- Where is the robot now?
-- What sensor data was captured?
+**Exposed via CLI / Python (verified, tested):**
+- **Mission replay** — interactive timeline scrubber with keyboard controls (`replay`).
+- **Reality-gap analysis** — probabilistic mismatch scoring, severity classification, evidence aggregation, JSON/text output (`analyze --detect-gaps`).
+- **Failure detection and diagnosis** — `Mission.detect_failures()`, `Mission.analyze_failure()` with hypotheses, confidence, and prioritized actions.
+- **Mission comparison** — side-by-side diff of two bags (`compare`).
+- **Topic listing** — inspect available topics in a bag (`list`).
+- **Real ROS 2 CDR decoding** — standard `sensor_msgs` / `nav_msgs` / `geometry_msgs` binary layouts are decoded from real message bytes (`src/adapters/cdr.rs`); pose `confidence` is derived from the real position-covariance trace, so localization-loss detection fires on real data.
 
-**PyRoboReplay 2.0 answers "why" and "what if" questions:**
-- Why did the robot fail? (Root cause analysis + causal graphs)
-- What should have been detected? (Retrospective DINO + SAM)
-- What was actually there? (RGB + thermal fusion forensics)
-- What changed in the environment? (Temporal knowledge + terrain intelligence)
-- Will this happen again? (Predictive modeling + pattern detection)
-- How do we prevent it? (Recommendations + sensor fusion analysis)
+**Implemented in the Rust core, not yet wired to CLI or Python (library API only):**
+- Causal event graphs, multi-factor causality, incident narratives, evidence-quality scoring.
+- Persistent world knowledge (entities, locations, facts across missions) and spatial grounding.
+- Multi-mission / longitudinal learning.
+- Pluggable detection backends (YOLO / SAM / template fallback).
+- Retrospective DINO + SAM open-vocabulary object discovery.
+- RGB + thermal multispectral fusion and forensic reconstruction.
+- Universal temporal fusion and the Nav2 root-cause inference engine (Phases 14-15).
 
-**Result:** Debug 10x faster, fix failures before they happen, understand reality gaps at scale.
+## Who it's for / Use cases
 
----
+- **Warehouse and logistics fleets** — reconstruct why a run failed, find missed detections and coverage gaps, compare two strategy revisions.
+- **Safety and compliance review** — produce auditable, saved JSON findings for an incident (`analyze --detect-gaps --format json --output report.json`).
+- **Perception R&D** — compare perception strategies over matched missions and quantify regressions.
+- **Field autonomy teams** — investigate localization loss, planner oscillation, and sensor disagreement from recorded missions.
 
-## What You Get (v2.10.0)
+## What it is not
 
-### Phase 1-4: Reality Gap Detection Foundations
-Comprehensive detection of perception mismatches between simulation and reality. Identifies where and why robot perception diverged from expectations.
+- **Not a real-time monitoring or fleet dashboard.** It works on recorded missions, not live streams.
+- **Most advanced modules (Phases 12-15) are not reachable from the CLI or Python.** Use the Rust library directly, or track exposure on the roadmap.
+- **Phase 11 "PyTerrainMap integration" is not real interop.** `src/.../pyterrain_bridge.rs` is self-contained, unit-tested terrain-modeling logic conceptually inspired by [PyTerrainMap](https://github.com/Mullassery/PyTerrainMap); there is no Cargo/pip dependency, no shared serialization format, and no parser for PyTerrainMap's output.
+- **Not published to crates.io** — build the Rust crate from source if you need it directly.
+- **Not a certified or safety-verified system.**
 
-### Phase 5-9: Intelligent Analysis
-Causal reasoning engine, multi-factor causality analysis, incident narratives, evidence quality scoring, and LLM-assisted root cause analysis with semantic search.
+## Project status
 
-### Phase 10: Persistent World Knowledge
-OKF-inspired temporal knowledge system. Entities persist across missions. Track location history, temporal facts, anomaly records. Enable: "Pallet moved from aisle_3 to aisle_5."
+Beta (Development Status 4). Current source version is **2.10.1**; the latest PyPI release is **2.10.0**. The CLI and Python API are the tested, supported surface. 843 `cargo test --lib` unit tests pass (re-verified 2026-09-29), plus 7 real-fixture ROS 2 CDR integration tests. `cargo fmt --check` is clean. `cargo clippy --all-targets --all-features -- -D warnings` currently reports ~96 errors, so the CI clippy job runs with `continue-on-error` and does not gate merges. See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
 
-### Phase 10.2: Spatial Grounding
-Ground entities in X,Y,Z coordinates with movement vectors and trends. Track "moved 2.3m northeast" not just "moved."
-
-### Phase 10.3: Multi-Mission Learning
-Longitudinal reasoning across mission sequences. Predict entity behavior, detect environmental evolution, enable cross-mission pattern detection.
-
-### Phase 7 Enhanced: Pluggable Detection
-Swappable detection backends (YOLO for speed, SAM for zero-shot flexibility, template fallback for offline). Automatic fallback chain ensures always-working detection.
-
-### Phase 11: Terrain-Aware Perception + Fleet Learning
-Terrain-aware perception. Track zone traversability, assess entity risk by terrain type. Multi-robot fleet consensus on zone difficulty. Anomaly detection at fleet scale. Despite the module's name (`pyterrain_bridge.rs`) and its doc comments ("from PyTerrainMap"), this is **not a real integration with the separate [PyTerrainMap](https://github.com/Mullassery/PyTerrainMap) repo** — verified by reading both codebases: there's no Cargo/pip dependency between them, no shared serialization format, and `Obstacle`/`TraversabilityZone`/`CoverageMap` here are self-contained structs with no parser for PyTerrainMap's actual output (which uses an unrelated Gaussian-splat-based `TerrainGaussian` shape). It's real, unit-tested, self-contained terrain-modeling logic conceptually inspired by PyTerrainMap's domain — not data interop with it. Like Phases 12-15 below, it's also not exposed via CLI or Python bindings.
-
-### Phase 12: Retrospective DINO + SAM Analysis
-Open-vocabulary object detection for invisible object discovery. Segment anything model for precise boundaries. Compare YOLO vs DINO to identify perception gaps. Context-aware severity scoring with terrain and historical data.
-
-### Phase 13: Multispectral Sensor Fusion & Forensic Analysis
-RGB + thermal/infrared fusion for offline forensic reconstruction. Identify invisible persons in low-light, smoke, fog, shadows, occlusions. Root cause analysis, sensor disagreement detection, recommendations for future systems.
-
-### **Phase 14: Universal Temporal Fusion Foundation** (NEW)
-Multi-modal data ingestion for heterogeneous sources: ROS 2 bags, video, Linux system logs, Nav2 exports, point clouds, operator annotations, sensor calibration. Unified timeline with automatic clock synchronization. Handles time model detection (ROS nanoseconds, wall-clock, frame numbers, sequences) and temporal alignment across all modalities.
-
-### **Phase 15: Root Cause Inference Engine** (NEW)
-AI-powered navigation failure analysis across 7 dimensions: localization (AMCL divergence, odometry drift), planner (oscillation, deadlock), costmap (inflation, conflicts), dynamic obstacles, semantic gaps, environmental context, controller stability. Distinguishes Nav2 architectural limitations from tuning/environment issues. Generates structured findings with tiered recommendations (tuning/capability/architecture) and confidence scoring (0.0-1.0) based on evidence strength.
-
----
-
-## Quick Start
-
-### Installation
+## Installation
 
 ```bash
 pip install pyroboreplay
@@ -85,362 +58,74 @@ pip install pyroboreplay
 # or with uv
 uv pip install pyroboreplay
 
-# From source
-git clone https://github.com/Mullassery/PyRoboReplay.git
-cd pyroboreplay
-cargo build --release
-
-# Verify installation
+# verify
 pyroboreplay --version
 ```
 
-Note: PyRoboReplay is published to PyPI (`pip install pyroboreplay`). It is **not** currently published to crates.io — build from source via `cargo build --release` if you want the Rust crate/binary directly. This repository's `Cargo.toml`/`pyproject.toml` are at **2.10.0** as of this pass; whether `2.10.0` is the version actually live on PyPI right now was not verified here (no network access in this environment) — check [pypi.org/project/pyroboreplay](https://pypi.org/project/pyroboreplay/) for the real published version before pinning one in a requirements file.
+Requires Python 3.10+. From source (needs a Rust toolchain):
 
-### Your First Forensic Analysis
+```bash
+git clone https://github.com/Mullassery/PyRoboReplay.git
+cd pyroboreplay
+pip install maturin
+maturin develop --release      # install the Python package
+# or, for the Rust binary/crate only:
+cargo build --release
+```
 
-The CLI currently exposes four subcommands: `replay`, `analyze`, `compare`, `list`.
+## Quick start
 
 ```bash
 # Interactive timeline scrubber
 pyroboreplay replay mission.bag
 
-# Reality-gap analysis with detailed findings, saved to a file
+# Reality-gap analysis, saved as JSON
 pyroboreplay analyze mission.bag --detect-gaps --detail --format json --output investigation.json
-
-# Compare two missions side-by-side
-pyroboreplay compare mission_a.bag mission_b.bag
-
-# List available topics in a bag file
-pyroboreplay list mission.bag
 ```
-
-The RGB+thermal fusion, retrospective DINO/SAM detection, cross-mission learning, and Nav2 root-cause-inference capabilities described above (Phases 12-15) are implemented as internal Rust library modules with dedicated unit test coverage — they are not yet wired up as CLI subcommands or Python bindings. Use the Rust library API (`src/fusion`, `src/perception`, `src/intelligence`, `src/phase14`, `src/phase15`) directly, or track CLI/Python exposure on the [roadmap](ROADMAP_HONEST.md).
-
-Keyboard shortcuts (interactive replay):
-- **Space**: Play/Pause | **n / →**: Next event | **p / ←**: Previous event | **↑ / ↓**: Speed up/down | **?**: Help | **q / Esc**: Quit
-
-### Python API
 
 ```python
 from pyroboreplay import Mission
 
-# Load mission
 mission = Mission.from_ros_bag("warehouse.bag")
 
-# Detected failures
 failures = mission.detect_failures()
 print(f"Failures detected: {len(failures)}")
 
-# Root cause analysis
 analysis = mission.analyze_failure(timestamp=1234567890.0)
 print(f"Root cause: {analysis.get_primary_hypothesis()}")
 print(f"Confidence: {analysis.get_diagnostic_confidence():.0%}")
 
-# Recommended actions
 for action in mission.recommend_actions(timestamp=1234567890.0):
     print(f"[{action.get_priority()}] {action.get_description()}")
 ```
 
-The Python package currently exposes `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCauseAnalysis`, `Action`, `FleetStatistics`, and `GeoHotspot` (see `src/pyroboreplay/__init__.py`). The RGB+thermal fusion, retrospective object discovery, persistent world knowledge, and next-mission prediction functionality described earlier in this README exists in the Rust core but is not yet exposed through the Python bindings.
+Interactive replay keys: **Space** play/pause, **n / →** next event, **p / ←** previous event, **↑ / ↓** speed, **?** help, **q / Esc** quit.
 
----
-
-## Feature Matrix: v0.1 to v2.10.0
-
-| Feature | v0.1 | v0.5 | v0.9 | v1.0 | v2.0 | v2.1 |
-|---------|:----:|:----:|:----:|:----:|:----:|:----:|
-| Sensor Replay | A | A | A | A | A | A |
-| Timeline Queries | - | A | A | A | A | A |
-| Causal Analysis | - | - | A | A | A | A |
-| Root Cause Diagnosis | - | - | A | A | A | A |
-| Cross-Mission Learning | - | - | - | A | A | A |
-| Pluggable Detection (YOLO/SAM) | - | - | - | - | A | A |
-| **Terrain Intelligence** | - | - | - | - | A | A |
-| **Persistent World Knowledge** | - | - | - | - | A | A |
-| **Retrospective Object Discovery** | - | - | - | - | A | A |
-| **Multispectral Sensor Fusion** | - | - | - | - | A | A |
-| **Forensic Investigation Reports** | - | - | - | - | A | A |
-| **Fleet Learning & Consensus** | - | - | - | - | A | A |
-| **Invisible Person Detection** | - | - | - | - | A | A |
-| **Universal Temporal Fusion** | - | - | - | - | - | **A** |
-| **Multi-Modal Data Ingestion** | - | - | - | - | - | **A** |
-| **Root Cause Inference Engine** | - | - | - | - | - | **A** |
-| **Nav2 Limitation Detection** | - | - | - | - | - | **A** |
-| **Semantic Gap Analysis** | - | - | - | - | - | **A** |
-| **834 Comprehensive Tests** | - | - | - | - | - | **A** |
-
----
-
-## Real-World Use Cases
-
-### Warehouse Operations
-Debug fleet behavior, identify missed detections, optimize coverage.
+## Usage
 
 ```bash
-# Reality-gap analysis on a warehouse mission
-pyroboreplay analyze warehouse.bag --detect-gaps --detail
+pyroboreplay compare mission_a.bag mission_b.bag        # side-by-side
+pyroboreplay list mission.bag                            # topics in a bag
+pyroboreplay analyze mission.bag --detect-gaps --detail  # findings to stdout
 ```
 
-Result: Identify missed detections and coverage gaps. (RGB+thermal invisible-person fusion is a Rust library capability today, not yet a CLI flag — see note above.)
-
-### Precision Agriculture
-Verify inspection coverage, detect missed areas, analyze sensor performance.
-
-```bash
-# Reality-gap analysis on survey coverage
-pyroboreplay analyze rgb_survey.bag --detect-gaps --detail
-```
-
-Result: Find coverage gaps in the survey. (Multispectral RGB+thermal fusion is a Rust library capability today, not yet a CLI flag — see note above.)
-
-### Research & Development
-Compare perception strategies, analyze fleet behavior, identify sim-to-reality gaps.
-
-```python
-exp_a = Mission.from_ros_bag("strategy_v1.bag")
-exp_b = Mission.from_ros_bag("strategy_v2.bag")
-
-# Compare detected failures
-failures_a = exp_a.detect_failures()
-failures_b = exp_b.detect_failures()
-
-improvement = len(failures_a) - len(failures_b)
-print(f"v2 fixes {improvement} issues vs v1")
-```
-
-Result: Data-driven strategy selection, quantified improvements.
-
-### Safety & Compliance
-Verify robot didn't miss people, generate forensic reports, audit sensor performance.
-
-```bash
-# Reality-gap analysis with full findings, saved for audit
-pyroboreplay analyze operation.bag --detect-gaps --detail --format json --output compliance_report.json
-```
-
-Result: Auditable incident investigation. (A dedicated forensic-report CLI command is not yet implemented; `analyze --detect-gaps` is today's closest equivalent — see note above.)
-
----
-
-## Architecture: 13 Integrated Phases
-
-```
-Mission Data Input (ROS 2 Bag / Gazebo / Simulation)
- |
- v
-Phases 1-4: Reality Gap Detection
- |-- Probabilistic gap scoring
- |-- Severity classification
- |-- Historical findings database
- |-- Evidence aggregation
- |
- v
-Phases 5-9: Intelligent Analysis
- |-- Causal event graphs
- |-- Multi-factor causality
- |-- Incident narratives
- |-- Evidence quality scoring
- |-- LLM-assisted root cause analysis
- |-- Semantic search
- |
- v
-Phases 10-11: Temporal Knowledge + Terrain Intelligence
- |-- Persistent world model (entities, locations, facts)
- |-- Spatial grounding (x,y,z coordinates)
- |-- Multi-mission learning (longitudinal reasoning)
- |-- Terrain zones and traversability
- |-- Fleet learning (multi-robot consensus)
- |
- v
-Phase 7 Enhanced: Pluggable Detection
- |-- YOLO backend (real-time)
- |-- SAM backend (zero-shot)
- |-- Template fallback (offline)
- |-- Orchestrator (automatic fallback)
- |
- v
-Phase 12: Retrospective DINO + SAM
- |-- Open-vocabulary object detection
- |-- Segment anything model
- |-- Invisible object discovery
- |-- Context-aware gap analysis
- |-- Recommendations engine
- |
- v
-Phase 13: Multispectral Sensor Fusion
- |-- Thermal imaging model
- |-- RGB-Thermal fusion engine
- |-- Invisible person detection (17 scenarios)
- |-- Forensic report generation
- |-- Root cause analysis
- |
- v
-Output: Forensic Reports, Recommendations, Predictions
-```
-
-**Key Innovation:** Each phase builds on prior layers. Real-time detection (Phase 7) feeds offline analysis (Phases 12-13). Offline findings improve world knowledge (Phase 10). World knowledge informs next mission (Phases 10.3, 6).
-
----
-
-## Performance
-
-| Metric | Target | v2.0 Status |
-|--------|--------|------------|
-| Mission ingestion | 10k events/sec | Tested |
-| Timeline scrubbing | <100ms latency | Optimized |
-| Large mission queries (1M events) | <1s | Passing |
-| Forensic analysis (full pipeline) | <5s | Achieved |
-| Multispectral fusion | <2s per frame | Efficient |
-
-**Test Coverage:** 843 passing `cargo test --lib` unit tests (0 failing, re-verified 2026-09-29), plus 7 real-fixture integration tests for ROS2 CDR decoding (`tests/test_ros2_cdr_decoding.rs`) and dedicated Docker-backed integration test suites for the Postgres/S3/BigQuery storage backends and Ollama LLM integration (not run in this pass — they require live Docker services). `cargo fmt --check` is clean. `cargo clippy --all-targets --all-features -- -D warnings` currently fails with 96 errors (see [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the breakdown) — this is why CI's clippy job runs with `continue-on-error: true` rather than gating merges.
-
----
-
-## vs Rerun
-
-Rerun (`rerun-sdk`) is the leading OSS multimodal robotics logging/visualization
-tool and the closest real comparison. Tested both against the same real ROS2
-bag (a genuine rosbag2/SQLite3 `.db3` file, 901 real `geometry_msgs/PoseWithCovarianceStamped`
-messages at 10Hz, a real constant-velocity square-path trajectory with a real,
-deliberately-injected localization-loss window: a diagonal pose-covariance
-spike from t=45s–53s, the exact real failure signature
-`detect_failures()`'s `localization_loss` category documents itself as
-looking for).
-
-**FIXED (2026-09-29).** PyRoboReplay's ROS2 adapter previously never read
-real message bytes for any topic at all (`src/adapters/ros2.rs`'s parsers
-all took an explicitly-unused `_msg: &RosMessage` and returned a hardcoded
-constant event regardless of input). It now does real CDR decoding
-(`src/adapters/cdr.rs`) of the standard `sensor_msgs`/`nav_msgs`/
-`geometry_msgs` binary layouts:
-
-| | PyRoboReplay (`Mission.detect_failures()`) | Rerun (+ `rosbags`' real CDR decoder) |
-|---|---|---|
-| Messages processed | 901 (real count, real timestamps, **real decoded content**) | 901 (real count, real timestamps, real decoded content) |
-| Real localization-loss frames found (of 81 real frames with an actual covariance spike injected) | **81** — exact match | **81** — exact match |
-| Real trajectory (x, y) recovered | Yes — genuine square-path positions decoded from real message bytes | Yes — genuine square-path positions logged and visualizable on Rerun's real timeline/spatial view |
-
-`detect_localization_loss` (`src/core/anomaly_detector.rs:340`) checks
-`RobotPose.confidence < 0.5`; `confidence` is now derived from the message's
-real position-covariance trace (`1/(1+var_x+var_y+var_z)`) instead of a
-hardcoded `0.95`, so it fires on real data exactly when it should. See
-`ROADMAP_HONEST.md` for full detail on the fix (`src/adapters/cdr.rs`'s real
-CDR encapsulation-header and alignment handling) and
-`tests/test_ros2_cdr_decoding.rs` for the permanent regression test against
-a real, independently-generated (`rosbags` library) fixture bag, which
-includes the exact "does a real covariance spike get detected" check this
-table demonstrates.
-
-**What's still genuinely real, unaffected by this:** the CLI's `list`
-command, topic/event counting, the SQLite bag-reading layer itself, the 843
-passing unit tests (which test the analysis logic against synthetic
-in-memory events, not real parsed bag content), and everything downstream
-of ingestion once real event data *is* supplied programmatically (e.g. via
-the Rust library API directly, bypassing the
-ROS2 adapter).
-
-## Development
-
-### Build
-```bash
-cargo build --release
-maturin develop # Install Python wheel
-```
-
-### Test (826 Passing)
-```bash
-# Unit test suite
-cargo test --lib
-
-# By module
-cargo test fusion       # Multispectral (Phase 13) fusion
-cargo test perception   # Retrospective/scene detection (Phase 12)
-cargo test knowledge    # Persistent world model (Phase 10)
-cargo test phase14      # Universal temporal fusion
-cargo test phase15      # Root cause inference engine
-
-# Examples
-cargo run --example root_cause_analysis_demo
-cargo run --example compliance_report_demo
-```
-
-### Quality Checks
-```bash
-cargo clippy --all-targets -- -D warnings
-cargo fmt --check
-cargo audit
-```
-
----
+The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCauseAnalysis`, `Action`, `FleetStatistics`, `GeoHotspot` (see `src/pyroboreplay/__init__.py`). The multispectral, retrospective-detection, world-knowledge, and prediction features live in the Rust core and are not yet exposed through these bindings.
 
 ## Documentation
 
-- **[CLAUDE.md](docs/CLAUDE.md)** — Complete product vision & architecture
-- **[Examples](examples/)** — Working demos (replay, causal analysis, compliance reporting, and more)
-- **[API Reference](docs/API.md)** — Python & Rust APIs
-- **[Architecture Guide](docs/ARCHITECTURE.md)** — Detailed phase descriptions
-- **[Stats Dashboard](docs/STATS_DASHBOARD.md)** — `replay --stats-dashboard` opens a live metrics view in a second terminal window (real, tested feature: `src/cli/stats_dashboard.rs`)
-- **[ROADMAP_HONEST.md](ROADMAP_HONEST.md)** — What's built, partial, or missing, plus a concrete technical-debt list
-- **[CHANGELOG.md](CHANGELOG.md)** — Notable changes (Keep a Changelog format)
-- **[docs/archive/](docs/archive/)** — Superseded phase/status/planning docs, kept for history
-
-## Cross-repo compatibility
-
-This repo is one of several independently-published robotics packages by
-the same author (`PyRoboSimulator`, `PyRoboFrames`, `PyRoboVision`,
-`PyTerrainMap`). Verified by reading every `Cargo.toml`/`pyproject.toml` in
-that group: this repo has **no Cargo or pip dependency on any of them**,
-and none of them depend on it. The one apparent exception — Phase 11's
-"PyTerrainMap Integration" — is not real code-level interop; see the
-corrected note under Phase 11 above.
-
----
+- [docs/CLAUDE.md](docs/CLAUDE.md) — product vision and architecture
+- [docs/API.md](docs/API.md) — Python and Rust API reference
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — phase-by-phase architecture
+- [docs/QUICKSTART.md](docs/QUICKSTART.md) — getting started
+- [docs/STATS_DASHBOARD.md](docs/STATS_DASHBOARD.md) — live metrics dashboard (`replay --stats-dashboard`)
+- [examples/](examples/) — runnable demos (`cargo run --example root_cause_analysis_demo`)
+- [ROADMAP_HONEST.md](ROADMAP_HONEST.md) — implemented vs planned, technical debt
+- [CHANGELOG.md](CHANGELOG.md) — notable changes
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding conventions, and PR guidelines.
-
-**Easiest ways to help:**
-- Report bugs or feature ideas: [GitHub Issues](https://github.com/Mullassery/PyRoboReplay/issues)
-- Share how you're using PyRoboReplay: [GitHub Discussions](https://github.com/Mullassery/PyRoboReplay/discussions)
-- Star the repo if it helps you
-
----
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, conventions, and PR guidelines. Bugs and ideas: [GitHub Issues](https://github.com/Mullassery/PyRoboReplay/issues); questions: [GitHub Discussions](https://github.com/Mullassery/PyRoboReplay/discussions).
 
 ## License
 
-This project is licensed under the [Apache License 2.0](LICENSE).
-
----
-
-## Citation
-
-If PyRoboReplay helps your research or product, please star the repo and cite:
-
-```bibtex
-@software{pyroboreplay2026,
- title={PyRoboReplay: Forensic Debugging and Multispectral Analysis for Autonomous Robots},
- author={Mullassery, Georgi},
- year={2026},
- version={2.10.0},
- url={https://github.com/Mullassery/PyRoboReplay}
-}
-```
-
----
-
-## Get Started Today
-
-New to robot debugging? Start with the quick start above.
-
-Ready for production? Check out the architecture and examples.
-
-Have questions? Open an issue or discussion.
-
----
-
-Built for robotics teams who demand understanding, not just visibility.
-
-**PyRoboReplay: Because great robots are built on knowledge, not intuition.**
-
-If this helps you, please star the repo!
+Apache License 2.0 — see [LICENSE](LICENSE).
