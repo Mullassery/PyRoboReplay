@@ -67,6 +67,7 @@ fn applescript_escape(s: &str) -> String {
 pub enum Platform {
     MacOS,
     Linux,
+    Windows,
     Unknown,
 }
 
@@ -80,7 +81,11 @@ impl Platform {
         {
             Platform::Linux
         }
-        #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+        #[cfg(target_os = "windows")]
+        {
+            Platform::Windows
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
         {
             Platform::Unknown
         }
@@ -90,6 +95,7 @@ impl Platform {
         match self {
             Platform::MacOS => "macOS",
             Platform::Linux => "Linux",
+            Platform::Windows => "Windows",
             Platform::Unknown => "Unknown",
         }
     }
@@ -134,6 +140,7 @@ impl TerminalLauncher {
         match self.platform {
             Platform::MacOS => self.launch_macos(title, command),
             Platform::Linux => self.launch_linux(title, command),
+            Platform::Windows => self.launch_windows(title, command),
             Platform::Unknown => Err("Unsupported platform for terminal launch".into()),
         }
     }
@@ -218,6 +225,60 @@ impl TerminalLauncher {
             "No suitable terminal emulator found. Install terminator, gnome-terminal, or xterm."
                 .into(),
         )
+    }
+
+    /// Launch terminal on Windows (Windows Terminal if available, then
+    /// PowerShell, then a plain `cmd` window).
+    ///
+    /// Previously `Platform` only modeled macOS/Linux, so every Windows run
+    /// reported "Unsupported platform for terminal launch" and the stats
+    /// dashboard was silently unavailable there.
+    fn launch_windows(
+        &self,
+        title: &str,
+        command: &str,
+    ) -> Result<std::process::Child, Box<dyn std::error::Error>> {
+        // Prefer Windows Terminal (ships with Windows 11, installable on 10).
+        match Command::new("wt")
+            .args(["new-tab", "--title", title, "cmd", "/K", command])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            Ok(child) => {
+                tracing::info!("Launched {} on Windows using wt", title);
+                return Ok(child);
+            }
+            Err(_) => tracing::debug!("wt not available, trying powershell"),
+        }
+
+        match Command::new("powershell")
+            .args(["-NoExit", "-Command", command])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            Ok(child) => {
+                tracing::info!("Launched {} on Windows using powershell", title);
+                return Ok(child);
+            }
+            Err(_) => tracing::debug!("powershell not available, trying cmd"),
+        }
+
+        // `cmd /C start` opens a new console; the empty string is the window
+        // title argument that `start` otherwise interprets as the command.
+        match Command::new("cmd")
+            .args(["/C", "start", "", "cmd", "/K", command])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            Ok(child) => {
+                tracing::info!("Launched {} on Windows using cmd", title);
+                Ok(child)
+            }
+            Err(e) => Err(format!("No suitable Windows terminal found: {e}").into()),
+        }
     }
 }
 
