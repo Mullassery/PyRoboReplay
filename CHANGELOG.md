@@ -12,6 +12,16 @@ history of prior versions (v0.1 through v2.10.0), see `git log` and
 forward, new changes should be added here under `[Unreleased]` and moved to a
 dated section when released.
 
+## [2.10.2] - 2026-10-18
+
+### Security
+- Upgrade `rustls` to `0.23.46`, resolving `RUSTSEC-2026-0346`, `0347`, `0348`, and `0349` (RECHECK-031).
+
+### Added
+- Native Windows terminal launcher (`wt`, `powershell`, `cmd`) for the stats dashboard (RECHECK-011).
+- `DashboardStats::export_history_json` and `DashboardStats::export_history_csv` for offline telemetry analysis (RECHECK-012).
+- Safe default `DEFAULT_MAX_STREAM_EVENTS` (`100_000`) on `ProcessorConfig::default()` to bound memory on multi-gigabyte bags unless explicitly opted out (RECHECK-013).
+
 ## [2.10.1] - 2026-10-12
 
 ### Fixed

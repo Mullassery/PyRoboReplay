@@ -5,12 +5,27 @@ use std::collections::HashMap;
 
 pub type EventFilter = Box<dyn Fn(&StreamEvent) -> bool + Send + Sync>;
 
-#[derive(Default)]
+/// Default cap on events drained per streaming session to prevent unbounded
+/// memory growth on multi-gigabyte bags (RECHECK-013). Callers that explicitly
+/// want an unbounded drain can set `max_events: None`.
+pub const DEFAULT_MAX_STREAM_EVENTS: usize = 100_000;
+
 pub struct ProcessorConfig {
     pub mission_id_filter: Option<String>,
     pub event_type_filter: Option<Vec<String>>,
     pub robot_id_filter: Option<String>,
     pub max_events: Option<usize>,
+}
+
+impl Default for ProcessorConfig {
+    fn default() -> Self {
+        Self {
+            mission_id_filter: None,
+            event_type_filter: None,
+            robot_id_filter: None,
+            max_events: Some(DEFAULT_MAX_STREAM_EVENTS),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

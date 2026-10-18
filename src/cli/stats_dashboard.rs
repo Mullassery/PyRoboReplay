@@ -102,7 +102,7 @@ impl Platform {
 }
 
 /// Stats data structure for dashboard
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DashboardStats {
     pub mission_name: String,
     pub total_events: usize,
@@ -111,6 +111,40 @@ pub struct DashboardStats {
     pub current_event_index: usize,
     pub playback_speed: f32,
     pub sensor_panel: Option<String>, // Rendered sensor stats
+}
+
+impl DashboardStats {
+    /// Export a slice of dashboard telemetry snapshots as pretty-printed JSON (RECHECK-012).
+    pub fn export_history_json(
+        history: &[DashboardStats],
+        path: &std::path::Path,
+    ) -> std::io::Result<()> {
+        let payload = serde_json::to_string_pretty(history)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        std::fs::write(path, payload)
+    }
+
+    /// Export a slice of dashboard telemetry snapshots as CSV (RECHECK-012).
+    pub fn export_history_csv(
+        history: &[DashboardStats],
+        path: &std::path::Path,
+    ) -> std::io::Result<()> {
+        let mut out = String::from(
+            "mission_name,total_events,elapsed_time,playback_progress,current_event_index,playback_speed\n",
+        );
+        for row in history {
+            let escaped_name = row.mission_name.replace('"', "\"\"");
+            out.push_str(&format!(
+                "\"{escaped_name}\",{},{:.6},{:.6},{},{:.4}\n",
+                row.total_events,
+                row.elapsed_time,
+                row.playback_progress,
+                row.current_event_index,
+                row.playback_speed
+            ));
+        }
+        std::fs::write(path, out)
+    }
 }
 
 /// Terminal launcher abstraction
