@@ -554,7 +554,9 @@ mod tests {
 
     #[test]
     fn test_dashboard_history_export_csv_and_json() {
-        let dir = tempfile::tempdir().unwrap();
+        let dir =
+            std::env::temp_dir().join(format!("pyroboreplay_export_{}", uuid::Uuid::new_v4()));
+        fs::create_dir_all(&dir).unwrap();
         let history = vec![DashboardStats {
             mission_name: "mission_alpha".to_string(),
             total_events: 42,
@@ -564,12 +566,13 @@ mod tests {
             playback_speed: 2.0,
             sensor_panel: None,
         }];
-        let json_path = dir.path().join("history.json");
-        let csv_path = dir.path().join("history.csv");
+        let json_path = dir.join("history.json");
+        let csv_path = dir.join("history.csv");
         DashboardStats::export_history_json(&history, &json_path).unwrap();
         DashboardStats::export_history_csv(&history, &csv_path).unwrap();
         let json_str = fs::read_to_string(&json_path).unwrap();
         let csv_str = fs::read_to_string(&csv_path).unwrap();
+        let _ = fs::remove_dir_all(&dir);
         assert!(json_str.contains("mission_alpha"));
         assert!(csv_str.contains("\"mission_alpha\",42,"));
     }
