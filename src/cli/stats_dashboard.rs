@@ -547,8 +547,31 @@ mod tests {
         match platform {
             Platform::MacOS => assert_eq!(platform.display(), "macOS"),
             Platform::Linux => assert_eq!(platform.display(), "Linux"),
+            Platform::Windows => assert_eq!(platform.display(), "Windows"),
             Platform::Unknown => assert_eq!(platform.display(), "Unknown"),
         }
+    }
+
+    #[test]
+    fn test_dashboard_history_export_csv_and_json() {
+        let dir = tempfile::tempdir().unwrap();
+        let history = vec![DashboardStats {
+            mission_name: "mission_alpha".to_string(),
+            total_events: 42,
+            elapsed_time: 1.25,
+            playback_progress: 0.5,
+            current_event_index: 21,
+            playback_speed: 2.0,
+            sensor_panel: None,
+        }];
+        let json_path = dir.path().join("history.json");
+        let csv_path = dir.path().join("history.csv");
+        DashboardStats::export_history_json(&history, &json_path).unwrap();
+        DashboardStats::export_history_csv(&history, &csv_path).unwrap();
+        let json_str = fs::read_to_string(&json_path).unwrap();
+        let csv_str = fs::read_to_string(&csv_path).unwrap();
+        assert!(json_str.contains("mission_alpha"));
+        assert!(csv_str.contains("\"mission_alpha\",42,"));
     }
 
     #[test]
