@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "outputs": {
+    "md": [
+      "analyzers.5.2.md",
+      "core.5.4.md",
+      "docs.1.md",
+      "overview.md",
+      "src.5.md",
+      "tests.6.md",
+      "tools.7.md"
+    ],
+    "html": [
+      "analyzers.5.2.html",
+      "core.5.4.html",
+      "docs.1.html",
+      "overview.html",
+      "src.5.html",
+      "tests.6.html",
+      "tools.7.html"
+    ]
+  }
+}

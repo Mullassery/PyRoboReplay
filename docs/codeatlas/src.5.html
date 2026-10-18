@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CodeAtlas</title>
+<script src="https://unpkg.com/cytoscape@3.23.0/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://unpkg.com/cytoscape-dagre@2.4.0/cytoscape-dagre.js"></script>
+<style>
+  body { margin: 0; font-family: -apple-system, sans-serif; }
+  #cy { width: 100vw; height: 100vh; }
+  header { padding: 12px 16px; border-bottom: 1px solid #eee; }
+</style>
+</head>
+<body>
+<header>
+  <strong>CodeAtlas</strong>
+  <p>Owns 74 symbols across 2 file(s).</p>
+</header>
+<div id="cy"></div>
+<script>
+const data = {"nodes": [{"data": {"id": "adapters", "label": "adapters", "description": "Owns 97 symbols across 6 file(s)."}}, {"data": {"id": "analyzers", "label": "analyzers", "description": "Owns 434 symbols across 24 file(s).", "linkUrl": "./analyzers.html"}}, {"data": {"id": "cli", "label": "cli", "description": "Owns 214 symbols across 14 file(s)."}}, {"data": {"id": "core", "label": "core", "description": "Owns 606 symbols across 26 file(s).", "linkUrl": "./core.html"}}, {"data": {"id": "fusion", "label": "fusion", "description": "Owns 68 symbols across 5 file(s)."}}, {"data": {"id": "intelligence", "label": "intelligence", "description": "Owns 68 symbols across 6 file(s)."}}, {"data": {"id": "knowledge", "label": "knowledge", "description": "Owns 147 symbols across 10 file(s)."}}, {"data": {"id": "perception", "label": "perception", "description": "Owns 172 symbols across 9 file(s)."}}, {"data": {"id": "phase14", "label": "phase14", "description": "Owns 329 symbols across 7 file(s)."}}, {"data": {"id": "phase15", "label": "phase15", "description": "Owns 80 symbols across 10 file(s)."}}, {"data": {"id": "phase16", "label": "phase16", "description": "Owns 96 symbols across 5 file(s)."}}, {"data": {"id": "phase17", "label": "phase17", "description": "Owns 50 symbols across 4 file(s)."}}, {"data": {"id": "phase18", "label": "phase18", "description": "Owns 63 symbols across 4 file(s)."}}, {"data": {"id": "phase19", "label": "phase19", "description": "Owns 71 symbols across 4 file(s)."}}, {"data": {"id": "phase20", "label": "phase20", "description": "Owns 77 symbols across 4 file(s)."}}, {"data": {"id": "pyroboreplay", "label": "pyroboreplay", "description": "Owns 0 symbols across 1 file(s)."}}, {"data": {"id": "reasoning", "label": "reasoning", "description": "Owns 67 symbols across 5 file(s)."}}, {"data": {"id": "storage", "label": "storage", "description": "Owns 198 symbols across 7 file(s)."}}, {"data": {"id": "streaming", "label": "streaming", "description": "Owns 133 symbols across 7 file(s)."}}], "edges": [{"data": {"id": "edge_0", "source": "src", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_1", "source": "src", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_2", "source": "src", "target": "core", "label": "calls"}}, {"data": {"id": "edge_3", "source": "adapters", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_4", "source": "adapters", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_5", "source": "adapters", "target": "core", "label": "calls"}}, {"data": {"id": "edge_6", "source": "adapters", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_7", "source": "phase15", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_8", "source": "phase16", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_9", "source": "phase16", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_10", "source": "phase16", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_11", "source": "phase17", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_12", "source": "phase17", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_13", "source": "phase17", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_14", "source": "phase18", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_15", "source": "phase18", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_16", "source": "phase18", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_17", "source": "phase19", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_18", "source": "phase19", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_19", "source": "phase19", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_20", "source": "phase20", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_21", "source": "phase20", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_22", "source": "reasoning", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_23", "source": "reasoning", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_24", "source": "storage", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_25", "source": "storage", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_26", "source": "storage", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_27", "source": "storage", "target": "phase14", "label": "calls"}}, {"data": {"id": "edge_28", "source": "streaming", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_29", "source": "streaming", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_30", "source": "streaming", "target": "phase14", "label": "calls"}}, {"data": {"id": "edge_31", "source": "analyzers", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_32", "source": "analyzers", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_33", "source": "analyzers", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_34", "source": "analyzers", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_35", "source": "analyzers", "target": "phase14", "label": "calls"}}, {"data": {"id": "edge_36", "source": "cli", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_37", "source": "cli", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_38", "source": "cli", "target": "analyzers", "label": "calls"}}, {"data": {"id": "edge_39", "source": "cli", "target": "core", "label": "calls"}}, {"data": {"id": "edge_40", "source": "cli", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_41", "source": "cli", "target": "phase14", "label": "calls"}}, {"data": {"id": "edge_42", "source": "core", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_43", "source": "core", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_44", "source": "core", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_45", "source": "core", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_46", "source": "fusion", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_47", "source": "fusion", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_48", "source": "fusion", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_49", "source": "fusion", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_50", "source": "fusion", "target": "phase14", "label": "calls"}}, {"data": {"id": "edge_51", "source": "intelligence", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_52", "source": "intelligence", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_53", "source": "knowledge", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_54", "source": "perception", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_55", "source": "perception", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_56", "source": "perception", "target": "knowledge", "label": "calls"}}, {"data": {"id": "edge_57", "source": "perception", "target": "phase14", "label": "calls"}}, {"data": {"id": "edge_58", "source": "phase14", "target": "adapters", "label": "calls"}}, {"data": {"id": "edge_59", "source": "phase14", "target": "streaming", "label": "calls"}}, {"data": {"id": "edge_60", "source": "phase14", "target": "cli", "label": "calls"}}, {"data": {"id": "edge_61", "source": "phase14", "target": "core", "label": "calls"}}, {"data": {"id": "edge_62", "source": "phase14", "target": "knowledge", "label": "calls"}}]};
+const cy = cytoscape({
+  container: document.getElementById('cy'),
+  elements: data,
+  style: [
+    { selector: 'node', style: {
+      'label': 'data(label)',
+      'shape': 'round-rectangle',
+      'background-color': '#eef2ff',
+      'border-color': '#6366f1',
+      'border-width': 1,
+      'width': 'label',
+      'padding': '10px',
+      'text-valign': 'center',
+      'text-halign': 'center',
+      'font-size': '12px',
+    }},
+    { selector: 'edge', style: {
+      'label': 'data(label)',
+      'curve-style': 'bezier',
+      'target-arrow-shape': 'triangle',
+      'font-size': '10px',
+      'text-rotation': 'autorotate',
+    }}
+  ],
+  layout: { name: 'dagre', rankDir: 'LR' }
+});
+cy.on('tap', 'node', evt => {
+  const node = evt.target;
+  if (node.data('linkUrl')) { window.location.href = node.data('linkUrl'); }
+});
+</script>
+</body>
+</html>
