@@ -70,3 +70,7 @@ features = ["pyo3/extension-module"]
 
 [tool.maturin.sdist]
 include = ["README.md", "LICENSE", "docs/CLAUDE.md"]
+
+[project.optional-dependencies]
+# Embedded architecture/knowledge-graph engine behind tools/codeatlas.
+architecture = ["codeatlas-rs>=0.3.0"]
