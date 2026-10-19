@@ -12,6 +12,14 @@ history of prior versions (v0.1 through v2.10.0), see `git log` and
 forward, new changes should be added here under `[Unreleased]` and moved to a
 dated section when released.
 
+## [2.11.0] - 2026-10-19
+
+### Added
+- Optional MCAP mission export with event/failure JSON messages and original timestamps.
+- Optional Rerun mission playback for events and detected failures.
+- Alpamayo forensic reporting for JSON/JSONL/NPZ/NPY artifacts, including
+  minADE/minFDE, reasoning traces, mission-failure correlation, and JSON/Markdown output.
+
 ## [2.10.2] - 2026-10-18
 
 ### Security

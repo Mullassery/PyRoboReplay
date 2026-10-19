@@ -41,9 +41,9 @@ try:
     try:
         __version__ = _package_version("pyroboreplay")
     except PackageNotFoundError:  # running from a source checkout, not installed
-        __version__ = "2.10.2"
+        __version__ = "2.11.0"
 except ImportError:  # pragma: no cover - importlib.metadata ships with Python >=3.8
-    __version__ = "2.10.2"
+    __version__ = "2.11.0"
 
 __all__ = [
     "Mission",

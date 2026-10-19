@@ -3168,7 +3168,7 @@ dependencies = [
 
 [[package]]
 name = "pyroboreplay"
-version = "2.10.2"
+version = "2.11.0"
 dependencies = [
  "anyhow",
  "async-trait",
