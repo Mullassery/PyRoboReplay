@@ -5,6 +5,7 @@ Demonstrates sensor replay, filtering, and analysis
 """
 
 import sys
+from pathlib import Path
 
 try:
     from pyroboreplay import Mission
@@ -12,13 +13,17 @@ except ImportError:
     print("ERROR: PyRoboReplay not installed. Build with: pip install -e .")
     sys.exit(1)
 
+# Use the sample bag that ships with the repository so the demo runs from any
+# working directory (and under pytest collection).
+BAG = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "ros2_cdr_fixture.db3"
+
 
 def test_mission_loading():
     """Test loading a mission from a bag file"""
     print("\n📂 Test 1: Loading mission from bag file")
     print("━" * 50)
 
-    mission = Mission.from_ros_bag("warehouse_exploration_v1.db3")
+    mission = Mission.from_ros_bag(str(BAG))
 
     print(f"✅ Mission loaded successfully")
     print(f"   ID: {mission.mission_id()}")
@@ -32,7 +37,7 @@ def test_sensor_discovery():
     print("\n📡 Test 2: Sensor discovery")
     print("━" * 50)
 
-    mission = Mission.from_ros_bag("warehouse_exploration_v1.db3")
+    mission = Mission.from_ros_bag(str(BAG))
     sensors = mission.get_available_sensors()
 
     print(f"✅ Found {len(sensors)} sensors:")
@@ -45,7 +50,7 @@ def test_sensor_frames():
     print("\n🎥 Test 3: Get sensor frames")
     print("━" * 50)
 
-    mission = Mission.from_ros_bag("warehouse_exploration_v1.db3")
+    mission = Mission.from_ros_bag(str(BAG))
 
     # Get lidar frames
     lidar_frames = mission.get_sensor_frames("lidar")
@@ -71,7 +76,7 @@ def test_multi_sensor():
     print("\n🔀 Test 4: Multi-sensor filtering")
     print("━" * 50)
 
-    mission = Mission.from_ros_bag("warehouse_exploration_v1.db3")
+    mission = Mission.from_ros_bag(str(BAG))
 
     # Get lidar and camera frames
     frames = mission.get_multi_sensor_frames(["lidar", "camera"])
@@ -83,7 +88,7 @@ def test_event_statistics():
     print("\n📊 Test 5: Event statistics")
     print("━" * 50)
 
-    mission = Mission.from_ros_bag("warehouse_exploration_v1.db3")
+    mission = Mission.from_ros_bag(str(BAG))
 
     event_counts = mission.get_event_counts()
     print(f"✅ Event type breakdown:")
@@ -97,7 +102,7 @@ def test_all_events():
     print("\n📋 Test 6: Get all events")
     print("━" * 50)
 
-    mission = Mission.from_ros_bag("warehouse_exploration_v1.db3")
+    mission = Mission.from_ros_bag(str(BAG))
 
     all_events = mission.get_all_events()
     print(f"✅ Total events: {len(all_events)}")
