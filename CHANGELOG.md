@@ -14,6 +14,15 @@ dated section when released.
 
 ## [Unreleased]
 
+### Fixed
+- Declared `numpy` as a runtime dependency so `import pyroboreplay` works from
+  a clean install; previously it failed with `ModuleNotFoundError: numpy`.
+- Added a `pyroboreplay` console script backed by the Rust CLI (via PyO3
+  `run_cli`), and verified the built wheel ships both `pyroboreplay` and
+  `pyroboreplay-export` in `entry_points.txt`.
+- Replaced the `Operating System :: OS Independent` classifier with the actual
+  Linux/macOS wheel coverage.
+
 ### Added
 - CLI subcommands `terrain`, `forensics`, `nav2`, `session`, and `export`
   (`--format mcap`).

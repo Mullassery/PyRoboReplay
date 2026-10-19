@@ -808,6 +808,26 @@ fn analyze_nav2_diagnostics(input_json: &str) -> PyResult<String> {
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
 
+/// Run the PyRoboReplay CLI with the given argv (excluding the program name).
+///
+/// Returns the process exit code. Used by the `pyroboreplay` console script so
+/// that `pip install pyroboreplay` provides the same command as the Rust
+/// binary. `--help` and clap parse errors exit the process, matching normal
+/// CLI behavior.
+#[pyfunction]
+fn run_cli(args: Vec<String>) -> PyResult<i32> {
+    let mut argv = Vec::with_capacity(args.len() + 1);
+    argv.push("pyroboreplay".to_string());
+    argv.extend(args);
+    match crate::cli::run_with_args(argv) {
+        Ok(()) => Ok(0),
+        Err(e) => {
+            eprintln!("Error: {e}");
+            Ok(1)
+        }
+    }
+}
+
 /// Build a Phase 14 navigation session from recorded on-disk sources.
 #[pyfunction(name = "build_navigation_session")]
 #[pyo3(signature = (bag_path, logs_path=None, log_type="syslog", nav2_export=None))]
@@ -861,6 +881,7 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Action>()?;
     m.add_class::<FleetStatistics>()?;
     m.add_class::<GeoHotspot>()?;
+    m.add_function(wrap_pyfunction!(run_cli, m)?)?;
     m.add_function(wrap_pyfunction!(load_pyterrainmap_grid, m)?)?;
     m.add_function(wrap_pyfunction!(analyze_detection_gaps, m)?)?;
     m.add_function(wrap_pyfunction!(fuse_rgb_thermal, m)?)?;

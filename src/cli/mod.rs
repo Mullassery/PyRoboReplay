@@ -24,12 +24,26 @@ use std::error::Error;
 use tracing_subscriber;
 
 pub fn run() -> Result<(), Box<dyn Error>> {
-    // Initialize logging
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
+    run_with_args(std::env::args())
+}
 
-    let cli = Cli::parse();
+/// Run the CLI from an explicit argument iterator (first item is argv[0]).
+///
+/// The standalone binary uses [`run`]; Python's console entry point passes
+/// `sys.argv` here through the `run_cli` PyO3 function.
+pub fn run_with_args<I, T>(args: I) -> Result<(), Box<dyn Error>>
+where
+    I: IntoIterator<Item = T>,
+    T: Into<std::ffi::OsString> + Clone,
+{
+    // `try_init` (not `init`) so an in-process second invocation — e.g. the
+    // Python entry point called twice — does not panic on a duplicate global
+    // tracing subscriber.
+    let _ = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .try_init();
+
+    let cli = Cli::parse_from(args);
 
     match cli.command {
         Commands::Replay {
