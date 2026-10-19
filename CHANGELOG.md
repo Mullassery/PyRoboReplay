@@ -38,6 +38,12 @@ dated section when released.
   `docs/ADVANCED_OPS.md`.
 - Ten Rust unit tests and ten Python public-surface tests for the bridge,
   including unknown-op and malformed-JSON handling.
+- Release wheel matrix for Linux x86_64/aarch64 (manylinux), macOS arm64/x86_64,
+  and Windows x86_64 across Python 3.10–3.13. Existing Linux/macOS legs are
+  retained; Linux aarch64 and macOS x86_64 use `PyO3/maturin-action` cross
+  builds.
+- Installed-wheel smoke tests (version import, `Mission` import, and `ops()`
+  listing) on native runners before release assets or PyPI uploads proceed.
 
 ### Fixed
 - `SessionBuilder` now keeps every selected modality, not just the first.
@@ -47,6 +53,12 @@ dated section when released.
 ### Changed
 - Repositioned package/repo metadata as offline mission forensics; removed
   fleet-monitoring/SLA keywords and the monitoring classifier.
+- Tag publishing now runs only from the release workflow, after all wheel
+  smoke tests pass. The CI workflow still builds and smokes native wheels but
+  no longer publishes on tags.
+- Documented that the expanded wheel matrix is configured but unpublished:
+  PyPI 2.11.0 still has only Linux x86_64 and macOS arm64 wheels, and a new
+  `v*` tag is required to produce the additional platforms.
 
 ## [2.11.0] - 2026-10-19
 

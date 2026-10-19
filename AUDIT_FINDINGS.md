@@ -69,6 +69,12 @@ Addressed in the 2026-10-19 implementation pass:
   counterfactual query, fleet learning, temporal patterns, trend detection,
   decision tree). They are not typed Python APIs, and the rest of the Phase
   16–20 library types remain Rust-only.
+- **Wheel coverage — configured, not yet published (2026-10-20).** The release
+  workflow now builds Linux x86_64/aarch64, macOS arm64/x86_64, and Windows
+  x86_64 for Python 3.10–3.13, with installed-wheel smoke tests before
+  publishing. PyPI 2.11.0 still has only Linux x86_64 and macOS arm64; a new
+  `v*` tag is required.
 - **Still open:** typed Python APIs / CLI commands for the remaining Phase
-  16–20 types; Linux/Windows wheel builds; real-customer validation. Live fleet
-  dashboard remains explicitly out of scope.
+  16–20 types; verifying the first tagged run of the expanded wheel matrix;
+  real-customer validation. Live fleet dashboard remains explicitly out of
+  scope.

@@ -15,6 +15,9 @@ This file records what was shipped, what is blocked/failed, and what is rejected
 - Real PyTerrainMap `pyterrainmap-gridmap` v1 JSON reader (`terrain` CLI,
   `load_pyterrainmap_grid`).
 - Clippy gate fixed; `-D warnings` is clean and gates CI.
+- Release workflow wheel matrix expanded to Linux x86_64/aarch64
+  (manylinux), macOS arm64/x86_64, and Windows x86_64 for Python 3.10–3.13,
+  with installed-wheel smoke tests before publishing.
 - Earlier in the day: audit/bundle docs (no code changes).
 
 ## Blocked / deferred
@@ -22,7 +25,10 @@ This file records what was shipped, what is blocked/failed, and what is rejected
   types (decision reconstruction, clustering, scenario analysis, rule
   extraction, window analysis).
 - Full PyTerrainMap runtime integration (H2 store, ROS bridge).
-- Linux/Windows wheel builds.
+- Publishing the expanded wheel set. The matrix is configured, but PyPI
+  2.11.0 still only has Linux x86_64 and macOS arm64; a new `v*` tag is
+  required. The first tagged run must be watched for cross-build/platform
+  failures before the coverage is treated as real.
 
 ## Rejected
 - Live fleet dashboard.

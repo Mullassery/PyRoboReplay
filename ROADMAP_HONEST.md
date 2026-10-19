@@ -189,17 +189,25 @@ a month before this rewrite, and a wrong date is worse than no date.
 - **`release.yml` used archived/deprecated GitHub Actions**: `actions/create-release@v1`
   and `actions/upload-release-asset@v1` were both archived by GitHub
   (unmaintained since 2021). **Fixed 2026-09-21**: both replaced with
-  `softprops/action-gh-release@v2` (create the release in `create-release`,
-  then attach the built wheel in each `build-and-publish` matrix leg), plus an
-  explicit `permissions: contents: write` block since default `GITHUB_TOKEN`
-  scoping can otherwise be read-only. Verified with `actionlint` (clean); not
-  exercised against a real tag push (no network/GitHub access in this
-  sandbox) — worth a close look on the next real release.
-- **`release.yml`/`ci.yml`'s `publish` jobs depend on `secrets.PYPI_TOKEN`**;
-  this pass has no way to confirm that secret is actually configured on the
-  GitHub repo (no network access, can't query GitHub). If it's missing or
-  expired, tag-triggered publishes silently fail at the `twine upload` step.
-  Verify manually in repo Settings → Secrets.
+  `softprops/action-gh-release@v2`, plus an explicit
+  `permissions: contents: write` block since default `GITHUB_TOKEN` scoping can
+  otherwise be read-only. Verified with `actionlint` (clean); not exercised
+  against a real tag push (no network/GitHub access in this sandbox) — worth a
+  close look on the next real release.
+- **Wheel coverage and smoke tests (2026-10-20):** `release.yml` now builds
+  Linux x86_64/aarch64 (manylinux via `PyO3/maturin-action`), macOS
+  arm64/x86_64 (x86_64 cross-compiled via the action), and Windows x86_64 for
+  Python 3.10–3.13. Each wheel is downloaded to a matching native runner,
+  installed (not editable), and smoke-tested (`import pyroboreplay`,
+  `Mission`, `ops()`) before assets or PyPI uploads. `ci.yml` builds/smokes
+  Linux x86_64, macOS arm64, and Windows x86_64; tag publishing now lives only
+  in `release.yml`, after the smoke job. None of the new wheels exist on PyPI
+  until a new `v*` tag is pushed.
+- **`release.yml`'s publish job depends on `secrets.PYPI_TOKEN`**; this pass has
+  no way to confirm that secret is actually configured on the GitHub repo (no
+  network access, can't query GitHub). If it's missing or expired,
+  tag-triggered publishes fail at the `twine upload` step. Verify manually in
+  repo Settings → Secrets.
 - **`cargo audit` / `cargo outdated` could not be run** in this sandbox (no
   network access to crates.io). `security.yml`'s existing `--ignore` list for
   RUSTSEC-2026-0258/-0104/-0098/-0099 (all from `aws-smithy-http-client`'s

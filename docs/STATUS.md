@@ -33,13 +33,14 @@ These fixes are committed/pushed but are **not** in the 2.11.0 PyPI wheel:
 | `pyroboreplay` console script | Wheel now ships `entry_points.txt` with `pyroboreplay` (Rust CLI via PyO3) and `pyroboreplay-export`. Verified by building and installing a wheel. |
 | `numpy` dependency | Declared in `pyproject.toml`; clean install now imports the package without manual installs. |
 | OS classifiers | Replaced "OS Independent" with Linux/macOS to match wheel coverage. |
+| Release wheel matrix | Added Linux aarch64 (manylinux), macOS x86_64, and Windows x86_64 builds for Python 3.10–3.13, plus installed-wheel import/API smoke tests. Not published until the next `v*` tag. |
 
 ## Known gaps
 
 | Gap | Impact | Status |
 |---|---|---|
 | 2.11.0 wheel has no CLI and no `numpy` dependency | First-run failures on PyPI | Fixed in source; ships next release |
-| Windows and macOS Intel wheels | Those users must build from source | Open |
+| Windows, macOS Intel, and Linux aarch64 wheels | Those users must build from source until the next release | Build matrix + smoke configured; publication requires a new `v*` tag |
 | PyPI summary and GitHub description/topics are stale | Public positioning contradicts the forensics focus | Open (metadata refresh) |
 | PyPI license metadata `None` | License scanners/trust signals | Open |
 | Release workflow uses `PYPI_TOKEN` + twine | Not OIDC Trusted Publishing | Open |

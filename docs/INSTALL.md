@@ -73,14 +73,35 @@ prerequisites.
 `pyroboreplay-export` uses the same packaging and is available from a source
 install / the next release.
 
-## Platform matrix (2.11.0)
+## Platform matrix
+
+### Published on PyPI (2.11.0)
+
+Verified 2026-10-20. These are the only wheels that currently exist.
 
 | Platform | Python 3.10 | 3.11 | 3.12 | 3.13 |
 |---|---|---|---|---|
-| Linux x86_64 (manylinux_2_38) | ✅ | ✅ | ✅ | ✅ |
-| macOS arm64 (11.0+) | ✅ | ✅ | ✅ | ✅ |
-| Windows | — | — | — | — |
-| macOS Intel | — | — | — | — |
+| Linux x86_64 (manylinux_2_38) | yes | yes | yes | yes |
+| macOS arm64 (11.0+) | yes | yes | yes | yes |
+| Linux aarch64 | — | — | — | — |
+| macOS x86_64 (Intel) | — | — | — | — |
+| Windows x86_64 | — | — | — | — |
+
+### Next release (configured, not yet published)
+
+The release workflow builds the targets below for every Python 3.10–3.13.
+They do **not** exist on PyPI until a new `v*` tag is pushed and the release
+completes. Before publishing, the workflow installs each wheel on a matching
+native runner (not editable) and runs `import pyroboreplay`,
+`from pyroboreplay import Mission`, and `ops()`.
+
+| Target | Build | Status |
+|---|---|---|
+| Linux x86_64 (manylinux) | `maturin-action` (manylinux container) | configured |
+| Linux aarch64 (manylinux) | `maturin-action` cross build (manylinux) | configured |
+| macOS arm64 (11.0+) | `maturin-action` (native) | configured |
+| macOS x86_64 (Intel) | `maturin-action` cross build | configured |
+| Windows x86_64 | `maturin-action` (native) | configured |
 
 No wheel for your platform? Build from source.
 

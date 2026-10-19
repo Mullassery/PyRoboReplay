@@ -27,13 +27,77 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-and-publish:
-    name: Build and Publish Wheel
+  build-linux-wheels:
+    name: Build Linux wheel (${{ matrix.label }} · py${{ matrix.python-version }})
     needs: create-release
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+        include:
+          - target: x86_64-unknown-linux-gnu
+            label: linux-x86_64
+          - target: aarch64-unknown-linux-gnu
+            label: linux-aarch64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: auto
+          args: --release --out dist -i python${{ matrix.python-version }}
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.label }}-py${{ matrix.python-version }}
+          path: dist/*.whl
+          if-no-files-found: error
+
+  build-macos-wheels:
+    name: Build macOS wheel (${{ matrix.label }} · py${{ matrix.python-version }})
+    needs: create-release
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+        include:
+          - target: aarch64-apple-darwin
+            label: macos-arm64
+          - target: x86_64-apple-darwin
+            label: macos-x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.label }}-py${{ matrix.python-version }}
+          path: dist/*.whl
+          if-no-files-found: error
+
+  build-windows-wheels:
+    name: Build Windows wheel (windows-x86_64 · py${{ matrix.python-version }})
+    needs: create-release
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
       - uses: actions/checkout@v4
@@ -43,28 +107,98 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install maturin
-        run: pip install maturin
-
       - name: Build wheel
-        run: maturin build --release
+        uses: PyO3/maturin-action@v1
+        with:
+          target: x86_64-pc-windows-msvc
+          args: --release --out dist
 
-      - name: Upload Release Asset
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-x86_64-py${{ matrix.python-version }}
+          path: dist/*.whl
+          if-no-files-found: error
+
+  smoke-wheels:
+    name: Smoke wheel (${{ matrix.label }} · py${{ matrix.python-version }})
+    needs: [build-linux-wheels, build-macos-wheels, build-windows-wheels]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+        include:
+          - os: ubuntu-latest
+            label: linux-x86_64
+          - os: ubuntu-24.04-arm
+            label: linux-aarch64
+          - os: macos-latest
+            label: macos-arm64
+          - os: macos-15-intel
+            label: macos-x86_64
+          - os: windows-latest
+            label: windows-x86_64
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-${{ matrix.label }}-py${{ matrix.python-version }}
+          path: ${{ runner.temp }}/dist
+
+      - name: Install wheel (not editable)
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --force-reinstall dist/*.whl
+
+      - name: Smoke test installed wheel
+        shell: bash
+        working-directory: ${{ runner.temp }}
+        run: |
+          python -c "import pyroboreplay; print(pyroboreplay.__version__)"
+          python -c "from pyroboreplay import Mission, ops; assert Mission is not None; entries = ops(); assert entries; print(f'ops(): {len(entries)} operations')"
+
+  publish:
+    name: Publish release wheels
+    needs: smoke-wheels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+
+      - name: List wheels
+        run: ls -l dist
+
+      - name: Attach wheels to GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/wheels/pyroboreplay-*.whl
+          files: dist/*.whl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: pip install twine
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-      - name: Publish to PyPI
+      - name: Install twine
+        run: python -m pip install twine
+
+      - name: Check and publish to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
-          twine upload target/wheels/pyroboreplay-*.whl --skip-existing
+          twine check dist/*.whl
+          twine upload dist/*.whl --skip-existing

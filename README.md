@@ -61,6 +61,12 @@ Beta (Development Status 4). Current source version is **2.11.0**; the latest Py
 > Python API, or build from source for the CLI. Both are fixed in the
 > repository for the next release. See [Install](docs/INSTALL.md).
 
+> **Wheel coverage:** PyPI 2.11.0 has wheels only for Linux x86_64 and macOS
+> arm64. The release workflow now builds Linux x86_64/aarch64, macOS
+> arm64/x86_64, and Windows x86_64 for Python 3.10–3.13, with an installed-wheel
+> smoke test, but those wheels do not exist until a new `v*` tag is pushed and
+> the release publishes successfully. See the [platform matrix](docs/INSTALL.md#platform-matrix).
+
 ```bash
 pip install pyroboreplay
 
