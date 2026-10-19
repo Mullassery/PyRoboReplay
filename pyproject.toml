@@ -70,3 +70,7 @@ features = ["pyo3/extension-module"]
 
 [tool.maturin.sdist]
 include = ["README.md", "LICENSE", "docs/CLAUDE.md"]
+
+[project.optional-dependencies]
+mcap = ["mcap>=1.1"]
+rerun = ["rerun-sdk>=0.20"]

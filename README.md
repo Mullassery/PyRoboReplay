@@ -48,7 +48,7 @@ PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timelin
 
 ## Project status
 
-Beta (Development Status 4). Current source version is **2.10.1**; the latest PyPI release is **2.10.0**. The CLI and Python API are the tested, supported surface. 843 `cargo test --lib` unit tests pass (re-verified 2026-09-29), plus 7 real-fixture ROS 2 CDR integration tests. `cargo fmt --check` is clean. `cargo clippy --all-targets --all-features -- -D warnings` currently reports ~96 errors, so the CI clippy job runs with `continue-on-error` and does not gate merges. See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
+Beta (Development Status 4). Current source version is **2.10.2**; the latest PyPI release is **2.10.0**. The CLI and Python API are the tested, supported surface. 843 `cargo test --lib` unit tests pass (re-verified 2026-09-29), plus 7 real-fixture ROS 2 CDR integration tests. `cargo fmt --check` is clean. `cargo clippy --all-targets --all-features -- -D warnings` currently reports ~96 errors, so the CI clippy job runs with `continue-on-error` and does not gate merges. See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
 
 ## Installation
 
@@ -100,6 +100,67 @@ for action in mission.recommend_actions(timestamp=1234567890.0):
 ```
 
 Interactive replay keys: **Space** play/pause, **n / →** next event, **p / ←** previous event, **↑ / ↓** speed, **?** help, **q / Esc** quit.
+
+## MCAP export
+
+Export a mission timeline to the indexed MCAP robotics log format:
+
+```bash
+pip install "pyroboreplay[mcap]"
+```
+
+```python
+from pyroboreplay import Mission, export_mcap
+
+mission = Mission.from_ros_bag("mission.db3")
+export_mcap(mission, "mission.mcap")
+```
+
+Events are written to `/events/<sensor>` and failures to `/failures` as JSON
+messages with their original timestamps, so Foxglove/Rerun and other MCAP
+readers can open the recording. MCAP (MIT) is an optional dependency.
+
+## Rerun mission playback
+
+Export a mission timeline and detected failures to a Rerun recording:
+
+```bash
+pip install "pyroboreplay[rerun]"
+```
+
+```python
+from pyroboreplay import Mission, export_mission
+
+mission = Mission.from_ros_bag("mission.db3")
+export_mission(mission, "mission.rrd")
+# rerun mission.rrd
+```
+
+Events are logged under `events/<sensor>` on a `time` timeline; failures are
+logged under `failures` with severity/confidence text. Rerun is an optional
+Apache-2.0 viewer dependency, not a vendored component.
+
+## Alpamayo forensic reports
+
+Turn an offline Alpamayo run (`.json`, `.jsonl`, `.npz`, or a mapping) into a
+trajectory and reasoning report. Run timestamps are matched against failures
+already detected in the mission:
+
+```python
+from pyroboreplay import (
+    build_alpamayo_report,
+    load_alpamayo_run,
+    write_alpamayo_report,
+)
+
+run = load_alpamayo_run("alpamayo-run.json")
+report = build_alpamayo_report(run, mission=mission, ground_truth=ego_future_xyz)
+write_alpamayo_report(report, "alpamayo-report.md")
+```
+
+The report includes minADE/minFDE per run, per-sample reasoning traces, and
+correlated failures. No `torch` or model weights are required; generate the
+artifacts with the external Alpamayo inference stack.
 
 ## Usage
 
