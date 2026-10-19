@@ -1,0 +1,42 @@
+{
+  "format": "pyterrainmap-gridmap",
+  "version": 1,
+  "cell_size_m": 10,
+  "cells": [
+    {
+      "x": -74.006092,
+      "y": 40.71272,
+      "elevation_m": 12.5,
+      "confidence": 0.95,
+      "observations": 1
+    },
+    {
+      "x": -74.006211,
+      "y": 40.7129,
+      "elevation_m": 12.8,
+      "confidence": 0.9,
+      "observations": 1
+    },
+    {
+      "x": -74.005263,
+      "y": 40.713439,
+      "elevation_m": 13.1,
+      "confidence": 0.72,
+      "observations": 1
+    },
+    {
+      "x": -74.004078,
+      "y": 40.713978,
+      "elevation_m": 11.9,
+      "confidence": 0.88,
+      "observations": 1
+    },
+    {
+      "x": -74.004196,
+      "y": 40.714068,
+      "elevation_m": null,
+      "confidence": 0.66,
+      "observations": 1
+    }
+  ]
+}

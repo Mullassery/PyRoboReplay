@@ -7,7 +7,7 @@ This document outlines recommended GitHub settings for maximum discoverability a
 ### Repository Settings → General
 
 - **Repository name:** PyRoboReplay ✅
-- **Description:** `Time-travel debugger for autonomous robot systems. Replay, inspect, and understand mission failures with root cause analysis, fleet monitoring, and SLA enforcement.`
+- **Description:** `Offline mission-replay and forensic root-cause analysis for recorded autonomous-robot missions.`
 - **Website:** (optional, if you have one)
 - **Make this repository private:** No ✅
 - **Default branch:** main
@@ -20,16 +20,14 @@ Add these topics for discovery:
 - `robotics` — Core domain
 - `debugging` — Primary use case
 - `fault-analysis` — Root cause analysis
-- `mission-planning` — Robot coordination
+- `mission-replay` — Core feature
 - `event-replay` — Core feature
 - `time-travel-debugging` — Unique positioning
 - `autonomous-systems` — Market segment
-- `fleet-management` — Use case
-- `monitoring` — Feature category
+- `mission-forensics` — Use case
 - `rust` — Primary language
 - `python` — Language support
-- `compliance` — Regulatory feature
-- `sla-enforcement` — Feature
+- `ros2` — Input format
 - `observability` — Category
 
 ### Repository Settings → Social Preview

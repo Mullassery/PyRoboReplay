@@ -2,7 +2,10 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(name = "PyRoboReplay")]
-#[command(about = "Time-travel debugger for robot fleets", long_about = None)]
+#[command(
+    about = "Offline mission replay and forensic analysis for recorded robot missions",
+    long_about = None
+)]
 #[command(version)]
 pub struct Cli {
     #[command(subcommand)]
@@ -94,5 +97,104 @@ pub enum Commands {
         /// Output as JSON (for AI-agent integration)
         #[arg(long)]
         json: bool,
+    },
+
+    /// Load a PyTerrainMap grid-map JSON export
+    Terrain {
+        /// Path to a `write_grid_map()` JSON export
+        #[arg(value_name = "GRID_MAP")]
+        grid_map: String,
+
+        /// Output format: text or json
+        #[arg(long, default_value = "text")]
+        format: String,
+
+        /// Save results to file
+        #[arg(long, value_name = "OUTPUT_FILE")]
+        output: Option<String>,
+    },
+
+    /// Analyze external RGB/thermal and retrospective DINO artifacts
+    Forensics {
+        /// JSON array of the robot's YOLO detections
+        #[arg(long, value_name = "JSON_FILE")]
+        yolo: Option<String>,
+
+        /// JSON array of retrospective DINO detections
+        #[arg(long, value_name = "JSON_FILE")]
+        dino: Option<String>,
+
+        /// JSON array of RGB detections for thermal fusion
+        #[arg(long, value_name = "JSON_FILE")]
+        rgb: Option<String>,
+
+        /// JSON thermal frame for fusion
+        #[arg(long, value_name = "JSON_FILE")]
+        thermal: Option<String>,
+
+        /// Output format: text or json
+        #[arg(long, default_value = "text")]
+        format: String,
+
+        /// Save results to file
+        #[arg(long, value_name = "OUTPUT_FILE")]
+        output: Option<String>,
+    },
+
+    /// Run Phase 15 Nav2 root-cause heuristics on a measurements document
+    Nav2 {
+        /// JSON document of Nav2 measurements (see docs/API.md)
+        #[arg(value_name = "JSON_FILE")]
+        input: String,
+
+        /// Output format: text or json
+        #[arg(long, default_value = "text")]
+        format: String,
+
+        /// Save results to file
+        #[arg(long, value_name = "OUTPUT_FILE")]
+        output: Option<String>,
+    },
+
+    /// Build a Phase 14 navigation session from recorded sources
+    Session {
+        /// ROS 2 bag file (.db3 or .mcap)
+        #[arg(value_name = "BAG_FILE")]
+        bag_file: Option<String>,
+
+        /// Linux log file (syslog, dmesg, or journalctl output)
+        #[arg(long, value_name = "LOG_FILE")]
+        logs: Option<String>,
+
+        /// Log format: syslog, dmesg, or journalctl
+        #[arg(long, default_value = "syslog")]
+        log_type: String,
+
+        /// Directory containing a Nav2 map/diagnostics export
+        #[arg(long, value_name = "DIRECTORY")]
+        nav2_export: Option<String>,
+
+        /// Output format: text or json
+        #[arg(long, default_value = "text")]
+        format: String,
+
+        /// Save results to file
+        #[arg(long, value_name = "OUTPUT_FILE")]
+        output: Option<String>,
+    },
+
+    /// Export a recorded mission to an interchange format
+    Export {
+        /// ROS 2 bag file (.db3 or .mcap)
+        #[arg(value_name = "BAG_FILE")]
+        bag_file: String,
+
+        /// Output path
+        #[arg(value_name = "OUTPUT_FILE")]
+        output: String,
+
+        /// Format: mcap (native) or rerun (Python API; see docs)
+        #[arg(long, default_value = "mcap")]
+        format: String,
     },
 }

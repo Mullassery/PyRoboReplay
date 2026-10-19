@@ -278,8 +278,102 @@ For very large missions (>10M events), consider:
 
 ---
 
+## Phase 12-15 / interop functions
+
+These functions take and return JSON strings so they can be used without any
+extra Python classes. All of them are backed by Rust core modules.
+
+### `load_pyterrainmap_grid(path) -> str`
+
+Read a `pyterrain_map.gridmap.write_grid_map()` export. Returns a JSON object
+`{"document": ..., "summary": ...}`. Only `format == "pyterrainmap-gridmap"`
+and `version == 1` are accepted.
+
+### `analyze_detection_gaps(yolo_detections_json, dino_detections_json) -> str`
+
+Compare externally generated DINO detections with the robot's YOLO detections.
+Inputs are JSON arrays of `DetectedObject` and `DINODetection` respectively.
+Returns `{stats, gaps}`.
+
+### `fuse_rgb_thermal(rgb_detections_json, thermal_frame_json) -> str`
+
+Fuse a JSON array of `DetectedObject` with a JSON `ThermalFrame`. Returns
+`{stats, fused_detections, thermal_only, disagreements}`.
+
+### `analyze_nav2_diagnostics(input_json) -> str`
+
+Run Phase 15's heuristics on a measurements document:
+
+```json
+{
+  "localization": {
+    "particle_spread_before": 0.3,
+    "particle_spread_after": 1.8,
+    "odometry_error_rate": 0.02,
+    "distance_traveled": 20.0,
+    "detected_features": 3,
+    "features_threshold": 50,
+    "lighting_conditions": "low_light",
+    "confidence": 0.3,
+    "estimated_error": 0.9,
+    "map_matches_per_scan": 4
+  },
+  "planner": {
+    "replanning_frequency": 1.0,
+    "time_since_goal_update": 10.0,
+    "plan_divergence": 0.4,
+    "oscillation_magnitude": 0.8,
+    "plan_attempts": 10,
+    "failed_attempts": 8,
+    "distance_to_goal": 4.0
+  },
+  "costmap": {
+    "inflation_radius": 0.5,
+    "robot_footprint": 0.2,
+    "static_layer_size": 100,
+    "dynamic_layer_size": 0
+  },
+  "dynamic_obstacle": {"human_detected": true, "distance_to_human": 1.2},
+  "semantic": {"failure_near_door": true, "door_detected": true},
+  "classification": {
+    "failure_type": "door_crossing",
+    "environment_type": "office",
+    "scale_meters": 50.0
+  },
+  "hypothesis": {
+    "localization_confidence": 0.3,
+    "planner_quality": 0.9,
+    "costmap_validity": 0.9
+  }
+}
+```
+
+Every section is optional; an analyzer runs only when its required fields are
+present. Returns localization/planner/costmap/dynamic/semantic findings,
+optional classification and root cause, and text summaries.
+
+### `build_navigation_session(bag_path, logs_path=None, log_type="syslog", nav2_export=None) -> str`
+
+Build a Phase 14 session from recorded sources and return its summary
+(event counts, modalities, completeness, first error timestamp). `log_type` is
+one of `syslog`, `dmesg`, or `journalctl`.
+
+## CLI additions
+
+```
+pyroboreplay terrain GRID_MAP [--format json] [--output FILE]
+pyroboreplay forensics [--yolo F] [--dino F] [--rgb F] [--thermal F] [--format json]
+pyroboreplay nav2 INPUT [--format json]
+pyroboreplay session [BAG_FILE] [--logs F] [--log-type syslog] [--nav2-export DIR]
+pyroboreplay export BAG_FILE OUTPUT [--format mcap]
+```
+
+Rerun export is available as `pyroboreplay-export BAG OUTPUT --format rerun`
+(requires `pip install "pyroboreplay[rerun]"`) or the `export_mission` Python
+function.
+
 ## Version Info
 
-- **PyRoboReplay**: v0.1.0 (Phase 1)
+- **PyRoboReplay**: v2.11.0
 - **Python**: 3.10+ required
-- **Supported bag formats**: ROS 2 .db3 (SQLite)
+- **Supported bag formats**: ROS 2 .db3 (SQLite) and .mcap

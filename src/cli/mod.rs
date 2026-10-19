@@ -2,6 +2,7 @@ pub mod args;
 pub mod camera_export;
 pub mod causal_viz;
 pub mod consolidated_output;
+pub mod export;
 pub mod gap_analysis;
 pub mod imu_viz;
 pub mod json_output;
@@ -190,6 +191,188 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
         }
 
+        Commands::Terrain {
+            grid_map,
+            format,
+            output,
+        } => {
+            use crate::core::pyterrainmap::GridMapDocument;
+
+            let document = GridMapDocument::from_path(&grid_map)?;
+            let summary = document.summary();
+            let text = if format == "json" {
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "document": document,
+                    "summary": summary,
+                }))?
+            } else {
+                format!(
+                    "PyTerrainMap grid: {} cells, {} observations\n\
+                     Cell size: {:?} m | elevation cells: {}\n\
+                     Elevation: {:?} .. {:?} m (mean {:?})\n\
+                     Mean confidence: {:?}\n",
+                    summary.cells,
+                    summary.total_observations,
+                    summary.cell_size_m,
+                    summary.elevation_cells,
+                    summary.min_elevation_m,
+                    summary.max_elevation_m,
+                    summary.mean_elevation_m,
+                    summary.mean_confidence
+                )
+            };
+            write_output(output, &text)?;
+        }
+
+        Commands::Forensics {
+            yolo,
+            dino,
+            rgb,
+            thermal,
+            format,
+            output,
+        } => {
+            use crate::forensics;
+            use crate::fusion::thermal_model::ThermalFrame;
+            use crate::perception::object_detection::DetectedObject;
+            use crate::perception::retrospective_detection::DINODetection;
+
+            if yolo.is_none() && dino.is_none() && rgb.is_none() && thermal.is_none() {
+                return Err(
+                    "forensics requires at least one of --yolo, --dino, --rgb, --thermal".into(),
+                );
+            }
+
+            let yolo_detections: Vec<DetectedObject> = match yolo {
+                Some(path) => read_json(&path)?,
+                None => Vec::new(),
+            };
+            let dino_detections: Vec<DINODetection> = match dino {
+                Some(path) => read_json(&path)?,
+                None => Vec::new(),
+            };
+            let rgb_detections: Vec<DetectedObject> = match rgb {
+                Some(path) => read_json(&path)?,
+                None => Vec::new(),
+            };
+            let thermal_frame: Option<ThermalFrame> = match thermal {
+                Some(path) => Some(read_json(&path)?),
+                None => None,
+            };
+
+            let gap_analysis = forensics::analyze_detection_gaps(yolo_detections, dino_detections);
+            let fusion_analysis =
+                thermal_frame.map(|frame| forensics::fuse_rgb_thermal(rgb_detections, frame));
+
+            let text = if format == "json" {
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "detection_gaps": gap_analysis,
+                    "fusion": fusion_analysis,
+                }))?
+            } else {
+                let mut text = forensics::gap_analysis_text(&gap_analysis);
+                if let Some(fusion) = &fusion_analysis {
+                    text.push('\n');
+                    text.push_str(&forensics::fusion_analysis_text(fusion));
+                }
+                text
+            };
+            write_output(output, &text)?;
+        }
+
+        Commands::Nav2 {
+            input,
+            format,
+            output,
+        } => {
+            let diagnostics: crate::phase15::Nav2Diagnostics = read_json(&input)?;
+            let report = crate::phase15::analyze_nav2_diagnostics(&diagnostics);
+            let text = if format == "json" {
+                serde_json::to_string_pretty(&report)?
+            } else {
+                crate::phase15::nav2_report_text(&report)
+            };
+            write_output(output, &text)?;
+        }
+
+        Commands::Session {
+            bag_file,
+            logs,
+            log_type,
+            nav2_export,
+            format,
+            output,
+        } => {
+            use crate::phase14::modality_adapters::LogType;
+            use crate::phase14::session_report::{build_navigation_session, SessionSources};
+            use std::path::Path;
+
+            let log_type = match log_type.to_ascii_lowercase().as_str() {
+                "syslog" => LogType::Syslog,
+                "dmesg" => LogType::Dmesg,
+                "journalctl" => LogType::Journalctl,
+                other => {
+                    return Err(format!(
+                        "unknown log type {other:?}; expected syslog, dmesg, or journalctl"
+                    )
+                    .into())
+                }
+            };
+            let sources = SessionSources {
+                bag: bag_file.as_deref().map(Path::new),
+                log_file: logs.as_deref().map(Path::new),
+                log_type: Some(log_type),
+                nav2_export_dir: nav2_export.as_deref().map(Path::new),
+            };
+            let session = build_navigation_session("cli-session", &sources)?;
+            let summary = session.public_summary();
+            let text = if format == "json" {
+                serde_json::to_string_pretty(&summary)?
+            } else {
+                let mut text = format!(
+                    "Navigation session: {} events, {:.1}s, {:.0}% complete\nModalities: {}\n",
+                    summary.stats.total_events,
+                    summary.stats.duration_seconds,
+                    summary.stats.data_completeness * 100.0,
+                    summary.modalities.join(", ")
+                );
+                if let Some(ts) = summary.first_error_time_ns {
+                    text.push_str(&format!("First error timestamp (ns): {ts}\n"));
+                }
+                for (topic, count) in &summary.topic_event_counts {
+                    text.push_str(&format!("  {topic}: {count}\n"));
+                }
+                text
+            };
+            write_output(output, &text)?;
+        }
+
+        Commands::Export {
+            bag_file,
+            output,
+            format,
+        } => {
+            let adapter = Ros2Adapter::new();
+            let mission = adapter.read(&bag_file)?;
+            match format.to_ascii_lowercase().as_str() {
+                "mcap" => {
+                    export::export_mcap(&mission, &output)?;
+                    println!("✅ MCAP export saved to: {}", output);
+                }
+                "rerun" => {
+                    return Err("rerun export is available through the Python API: \
+                         `from pyroboreplay import export_mission`. The native binary \
+                         exports MCAP only."
+                        .into())
+                }
+                other => {
+                    return Err(
+                        format!("unknown export format {other:?}; expected mcap or rerun").into(),
+                    )
+                }
+            }
+        }
+
         Commands::List {
             bag_file,
             json: output_json,
@@ -243,5 +426,24 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    Ok(())
+}
+
+fn read_json<T: serde::de::DeserializeOwned>(path: &str) -> Result<T, Box<dyn Error>> {
+    let content =
+        std::fs::read_to_string(path).map_err(|e| format!("failed to read {path}: {e}"))?;
+    let parsed =
+        serde_json::from_str(&content).map_err(|e| format!("invalid JSON in {path}: {e}"))?;
+    Ok(parsed)
+}
+
+fn write_output(output: Option<String>, text: &str) -> Result<(), Box<dyn Error>> {
+    match output {
+        Some(path) => {
+            std::fs::write(&path, text).map_err(|e| format!("failed to write {path}: {e}"))?;
+            println!("✅ Saved to: {path}");
+        }
+        None => println!("{text}"),
+    }
     Ok(())
 }

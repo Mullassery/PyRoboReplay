@@ -209,6 +209,18 @@ impl Timeline {
         })
     }
 
+    /// Iterate every event in timestamp order.
+    pub fn all_events(&self) -> Vec<(i64, TimelineEvent, Modality)> {
+        self.events
+            .iter()
+            .flat_map(|(ts, events)| {
+                events
+                    .iter()
+                    .map(move |(event, modality)| (*ts, event.clone(), *modality))
+            })
+            .collect()
+    }
+
     /// Get events for specific modality within time range
     pub fn query_modality(
         &self,

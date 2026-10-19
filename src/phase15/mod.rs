@@ -18,6 +18,7 @@
 
 pub mod costmap_analyzer;
 pub mod dynamic_obstacle_analyzer;
+pub mod exposure;
 pub mod failure_detector;
 pub mod finding_generator;
 pub mod localization_analyzer;
@@ -29,6 +30,11 @@ pub mod semantic_gap_analyzer;
 // Re-exports for public API
 pub use costmap_analyzer::{CostmapAnalyzer, CostmapIssue};
 pub use dynamic_obstacle_analyzer::{DynamicObstacleAnalyzer, ObstacleIssue};
+pub use exposure::{
+    analyze_nav2_diagnostics, nav2_report_text, ClassificationMetrics, CostmapMetrics,
+    DynamicObstacleMetrics, HypothesisMetrics, LocalizationMetrics, Nav2Diagnostics, Nav2Report,
+    Nav2Summaries, PlannerMetrics, SemanticMetrics,
+};
 pub use failure_detector::{FailureDetector, FailurePattern, FailureType};
 pub use finding_generator::{FindingGenerator, Recommendation, RootCauseFinding};
 pub use localization_analyzer::{LocalizationAnalyzer, LocalizationIssue};

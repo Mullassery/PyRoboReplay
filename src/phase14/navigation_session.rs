@@ -154,9 +154,8 @@ impl SessionBuilder {
     pub fn build(self) -> SessionResult<NavigationSession> {
         let available = self
             .data_sources
-            .keys()
-            .filter(|_| self.data_sources[self.data_sources.keys().next().unwrap()])
-            .copied()
+            .iter()
+            .filter_map(|(source, present)| present.then_some(*source))
             .collect::<HashSet<_>>();
 
         let modality_set: HashSet<Modality> = available
@@ -356,6 +355,21 @@ mod tests {
             .unwrap();
 
         assert_eq!(session.metadata.robot_name, Some("robot_a".to_string()));
+    }
+
+    #[test]
+    fn test_builder_keeps_all_selected_modalities() {
+        let session = SessionBuilder::new("test".to_string())
+            .with_ros_bag()
+            .with_linux_logs()
+            .with_video()
+            .build()
+            .unwrap();
+
+        assert!(session.has_modality(Modality::RosBag));
+        assert!(session.has_modality(Modality::LinuxLogs));
+        assert!(session.has_modality(Modality::Video));
+        assert!((session.data_completeness - 0.5).abs() < f32::EPSILON);
     }
 
     #[test]

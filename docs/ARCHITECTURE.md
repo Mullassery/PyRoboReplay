@@ -384,6 +384,10 @@ Multi-user, collaborative replay
 
 ## Future Architecture (v1.0+)
 
+> **Aspirational, not implemented.** The shipped product is an offline,
+> file-based tool for recorded missions. Real-time streaming, the service
+> layer, and distributed storage below are design sketches only.
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  Web UI  │  CLI  │  Jupyter  │  Real-Time Streaming API     │

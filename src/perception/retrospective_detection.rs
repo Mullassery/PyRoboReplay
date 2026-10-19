@@ -190,6 +190,17 @@ impl RetrospectiveDetectionEngine {
         self.yolo_detections = detections;
     }
 
+    /// Load DINO detections produced by an external open-vocabulary model.
+    ///
+    /// This is the supported path for real retrospective analysis: run DINO
+    /// (or any compatible open-vocabulary detector) outside this crate, then
+    /// feed its detections in here for gap analysis against the robot's own
+    /// YOLO detections. [`Self::run_dino_detection`] remains a deterministic
+    /// stub for tests and demos, not a model runner.
+    pub fn load_dino_detections(&mut self, detections: Vec<DINODetection>) {
+        self.dino_detections = detections;
+    }
+
     /// Simulate DINO detection (stub - real would use model)
     pub fn run_dino_detection(&mut self, _image_data: &[u8], _width: u32, _height: u32) {
         // Stub: in reality this would run DINO model

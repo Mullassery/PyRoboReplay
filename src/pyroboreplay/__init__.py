@@ -33,6 +33,11 @@ from ._core import (  # noqa: F401
     Action,
     FleetStatistics,
     GeoHotspot,
+    analyze_detection_gaps,
+    analyze_nav2_diagnostics,
+    build_navigation_session,
+    fuse_rgb_thermal,
+    load_pyterrainmap_grid,
 )
 
 try:
@@ -54,6 +59,11 @@ __all__ = [
     "Action",
     "FleetStatistics",
     "GeoHotspot",
+    "load_pyterrainmap_grid",
+    "analyze_detection_gaps",
+    "fuse_rgb_thermal",
+    "analyze_nav2_diagnostics",
+    "build_navigation_session",
     "RerunUnavailable",
     "export_mission",
     "export_mcap",

@@ -22,6 +22,8 @@ oauth_tokens.json
 # Python
 __pycache__/
 *.py[cod]
+*.so
+*.pyd
 *.egg-info/
 dist/
 build/

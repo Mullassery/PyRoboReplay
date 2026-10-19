@@ -16,6 +16,7 @@
 pub mod analyzer_capabilities;
 pub mod modality_adapters;
 pub mod navigation_session;
+pub mod session_report;
 pub mod temporal_sync;
 pub mod timeline_indexing;
 pub mod video_processing;
@@ -27,6 +28,7 @@ pub use modality_adapters::{
     RosBagAdapter, VideoAdapter,
 };
 pub use navigation_session::{DataSource as SessionDataSource, NavigationSession, SessionBuilder};
+pub use session_report::{build_navigation_session, NavigationSessionSummary, SessionSources};
 pub use temporal_sync::{ClockOffset, SyncReport, TemporalSyncEngine, TimeModel};
 pub use timeline_indexing::{
     EventIndex, Modality, TimeSlice, TimeSliceQuery, Timeline, TimelineEvent,

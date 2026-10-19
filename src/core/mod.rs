@@ -18,6 +18,7 @@ pub mod incident_analysis;
 pub mod incident_bundle;
 pub mod multi_robot;
 pub mod pyterrain_bridge;
+pub mod pyterrainmap;
 pub mod recommendation;
 pub mod recommendations_engine;
 pub mod root_cause;
@@ -81,6 +82,10 @@ pub use multi_robot::{
 pub use pyterrain_bridge::{
     CoverageEvolution, CoverageMap, Obstacle, PyTerrainBridge, TerrainKnowledgeGraph,
     TraversabilityZone,
+};
+pub use pyterrainmap::{
+    GridCell, GridMapDocument, GridMapSummary, PyTerrainMapError, PYTERRAINMAP_FORMAT,
+    PYTERRAINMAP_VERSION,
 };
 pub use recommendation::{
     Recommendation, RecommendationEngine, RecommendationSet, RecommendationStats,

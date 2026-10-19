@@ -67,22 +67,20 @@ the Phase 11 and CLI-exposure caveats there).
 
 ## What's partially built or scaffolding
 
-- **Phases 12–15 (retrospective DINO/SAM detection, RGB+thermal fusion,
-  universal temporal fusion, Nav2 root-cause inference) exist as internal Rust
-  library modules with real unit tests, but are not wired up to the CLI or
-  Python bindings** — confirmed by README's own notes under each phase and in
-  "Your First Forensic Analysis." The same gap likely extends to Phases 16–20
-  (causal graphs, counterfactual analysis, decision trees), which are newer and
-  not yet mentioned in the CLI/Python-exposure notes at all — treat them as
-  Rust-internal-only until confirmed otherwise.
-- **Phase 11's "PyTerrainMap Integration" naming is misleading**: despite the
-  module name (`pyterrain_bridge.rs`) and doc comments referencing PyTerrainMap,
-  it is self-contained terrain-modeling logic with no actual dependency on or
-  data compatibility with the separate PyTerrainMap repo (verified: no
-  Cargo/pip dependency between them, incompatible data shapes). This is already
-  corrected in README; flagging it here so the roadmap doesn't imply real
-  interop work remains to "finish" that integration — there is no integration
-  to finish, only a naming cleanup that could still be done.
+- **Phases 12–15 are now exposed through the CLI and Python bindings.** Added
+  in the 2026-10-19 pass: `forensics`/`analyze_detection_gaps`/`fuse_rgb_thermal`
+  (12–13), `session`/`build_navigation_session` (14), and
+  `nav2`/`analyze_nav2_diagnostics` (15). Note the honest limits: Phase 12 ingests
+  detections from an *external* open-vocabulary run — it does not run DINO/SAM
+  itself (`run_dino_detection` stays a test stub). **Phases 16–20 (causal graphs,
+  counterfactual analysis, decision trees) remain Rust-internal-only.**
+- **Phase 11 now has real file-level PyTerrainMap interop**, added 2026-10-19:
+  `src/core/pyterrainmap.rs` + `terrain`/`load_pyterrainmap_grid` read the
+  documented `pyterrainmap-gridmap` v1 JSON that PyTerrainMap's
+  `gridmap.write_grid_map()` emits. This is deliberate file-based interop, not a
+  runtime dependency: there is still no Cargo/pip dependency, no H3-store access,
+  and no ROS bridge. `pyterrain_bridge.rs` remains separate, self-contained
+  terrain-modeling logic and its name is still arguably misleading.
 - **No crates.io publication** — the Rust crate is source-build-only
   (`cargo build --release`); only the Python wheel is published to PyPI. This
   is stated plainly in README and isn't a gap so much as a scope decision, but
@@ -94,10 +92,8 @@ Given what's actually shipped versus exposed, the highest-leverage next steps
 are closing the CLI/binding gap on work that already exists, not adding new
 analysis phases:
 
-1. **Expose Phases 12–15 (and audit 16–20) through the CLI or Python bindings.**
-   The analysis logic and its unit tests already exist; the gap is purely
-   plumbing. This directly resolves the caveat repeated four times in README's
-   "Quick Start" and "Real-World Use Cases" sections.
+1. ~~**Expose Phases 12–15 (and audit 16–20) through the CLI or Python bindings.**~~
+   **Done for 12–15 (2026-10-19).** Phases 16–20 still need exposure.
 2. **Fix or remove the orphaned MCP module.** Either move `pyroboreplay/_mcp_tools.py`
    and `_mcp_connector.py` into `src/pyroboreplay/` so they actually ship in the
    wheel (then verify each of the 13 handlers calls real Rust-core analysis
@@ -204,12 +200,11 @@ a month before this rewrite, and a wrong date is worse than no date.
   hyper-0.14 compat path) is documented in-workflow as still current as of the
   last edit; not re-verified here.
 
-### Code quality (large surface, needs a dedicated pass, not touched here)
-- **`cargo clippy --all-targets --all-features -- -D warnings` fails with 61
-  errors** (re-run 2026-09-21, down from 96 on 2026-09-20 — CI already runs
-  this with `continue-on-error: true`, so it isn't silently regressing, but
-  README's documented "Quality Checks" command (`cargo clippy --all-targets --
-  -D warnings`) will still fail if a contributor runs it as written).
+### Code quality
+- **`cargo clippy --all-targets --all-features -- -D warnings` is clean** as of
+  2026-10-19 (EXIT 0), and the CI clippy job now gates merges instead of running
+  with `continue-on-error`. The historical failure (96 → 61 errors) and its
+  fixes are recorded below for context.
   **Fixed 2026-09-21** (mechanical/safe categories):
   - 22× "clamp-like pattern without using clamp function" — replaced with
     `.clamp()` using clippy's own suggested rewrites, e.g.

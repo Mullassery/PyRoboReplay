@@ -48,4 +48,20 @@ Invest; reliability gates first, then expose the forensic differentiators.
 
 ## Implementation status
 
-No code changes in this pass.
+Addressed in the 2026-10-19 implementation pass:
+
+- **P1 clippy gate — done.** `cargo clippy --all-targets --all-features -- -D
+  warnings` exits 0 and the CI clippy job gates merges.
+- **P2 expose phases 12–15 + rerun/MCAP export — done.**
+  - Phase 12/13: `forensics` CLI + `analyze_detection_gaps` / `fuse_rgb_thermal`.
+  - Phase 14: `session` CLI + `build_navigation_session` (real bag/logs/Nav2).
+  - Phase 15: `nav2` CLI + `analyze_nav2_diagnostics`.
+  - MCAP export in the native CLI (`export --format mcap`); Rerun export via
+    `pyroboreplay-export` / `export_mission`.
+  - Covered by 5 new public-surface integration tests plus 859 lib tests.
+- **PyTerrainMap interop — partial, now real at the file level.**
+  `src/core/pyterrainmap.rs` reads the documented `pyterrainmap-gridmap` v1 JSON
+  and is exposed as `terrain` / `load_pyterrainmap_grid`. Still no runtime
+  dependency, H3 store access, or ROS bridge.
+- **Still open:** Phases 16–20 CLI/Python exposure; Linux/Windows wheel builds;
+  real-customer validation. Live fleet dashboard remains explicitly out of scope.

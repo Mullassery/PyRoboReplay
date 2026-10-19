@@ -12,6 +12,27 @@ history of prior versions (v0.1 through v2.10.0), see `git log` and
 forward, new changes should be added here under `[Unreleased]` and moved to a
 dated section when released.
 
+## [Unreleased]
+
+### Added
+- CLI subcommands `terrain`, `forensics`, `nav2`, `session`, and `export`
+  (`--format mcap`).
+- Python functions `load_pyterrainmap_grid`, `analyze_detection_gaps`,
+  `fuse_rgb_thermal`, `analyze_nav2_diagnostics`, and `build_navigation_session`.
+- Real PyTerrainMap `pyterrainmap-gridmap` v1 JSON reader (`src/core/pyterrainmap.rs`).
+- `pyroboreplay-export` console script for MCAP/Rerun export from a bag.
+- `RetrospectiveDetectionEngine::load_dino_detections` for external DINO detections.
+- Five public-surface integration tests (`tests/test_exposure_integration.rs`).
+
+### Fixed
+- `SessionBuilder` now keeps every selected modality, not just the first.
+- `cargo clippy --all-targets --all-features -- -D warnings` is clean; the CI
+  clippy job now gates merges instead of running with `continue-on-error`.
+
+### Changed
+- Repositioned package/repo metadata as offline mission forensics; removed
+  fleet-monitoring/SLA keywords and the monitoring classifier.
+
 ## [2.11.0] - 2026-10-19
 
 ### Added

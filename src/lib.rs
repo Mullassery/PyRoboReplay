@@ -2,6 +2,7 @@ pub mod adapters;
 pub mod analyzers;
 pub mod cli;
 pub mod core;
+pub mod forensics;
 pub mod fusion;
 pub mod intelligence;
 pub mod knowledge;
@@ -746,6 +747,102 @@ impl GeoHotspot {
     }
 }
 
+/// Load a real PyTerrainMap grid-map JSON export and return its parsed
+/// document plus derived summary statistics.
+#[pyfunction]
+fn load_pyterrainmap_grid(path: &str) -> PyResult<String> {
+    use crate::core::pyterrainmap::GridMapDocument;
+
+    let document = GridMapDocument::from_path(path)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+    let summary = document.summary();
+    serde_json::to_string(&serde_json::json!({
+        "document": document,
+        "summary": summary,
+    }))
+    .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Compare external DINO detections against the robot's YOLO detections.
+#[pyfunction]
+fn analyze_detection_gaps(
+    yolo_detections_json: &str,
+    dino_detections_json: &str,
+) -> PyResult<String> {
+    use crate::forensics;
+    use crate::perception::object_detection::DetectedObject;
+    use crate::perception::retrospective_detection::DINODetection;
+
+    let yolo: Vec<DetectedObject> = serde_json::from_str(yolo_detections_json)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+    let dino: Vec<DINODetection> = serde_json::from_str(dino_detections_json)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+    let analysis = forensics::analyze_detection_gaps(yolo, dino);
+    serde_json::to_string(&analysis)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Fuse external RGB detections with an external thermal frame.
+#[pyfunction]
+fn fuse_rgb_thermal(rgb_detections_json: &str, thermal_frame_json: &str) -> PyResult<String> {
+    use crate::forensics;
+    use crate::fusion::thermal_model::ThermalFrame;
+    use crate::perception::object_detection::DetectedObject;
+
+    let rgb: Vec<DetectedObject> = serde_json::from_str(rgb_detections_json)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+    let thermal: ThermalFrame = serde_json::from_str(thermal_frame_json)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+    let analysis = forensics::fuse_rgb_thermal(rgb, thermal);
+    serde_json::to_string(&analysis)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Run Phase 15's Nav2 root-cause heuristics on a measurements document.
+#[pyfunction]
+fn analyze_nav2_diagnostics(input_json: &str) -> PyResult<String> {
+    let input: crate::phase15::Nav2Diagnostics = serde_json::from_str(input_json)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+    let report = crate::phase15::analyze_nav2_diagnostics(&input);
+    serde_json::to_string(&report)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
+/// Build a Phase 14 navigation session from recorded on-disk sources.
+#[pyfunction(name = "build_navigation_session")]
+#[pyo3(signature = (bag_path, logs_path=None, log_type="syslog", nav2_export=None))]
+fn build_navigation_session_py(
+    bag_path: Option<&str>,
+    logs_path: Option<&str>,
+    log_type: &str,
+    nav2_export: Option<&str>,
+) -> PyResult<String> {
+    use crate::phase14::modality_adapters::LogType;
+    use crate::phase14::session_report::{build_navigation_session, SessionSources};
+    use std::path::Path;
+
+    let log_type = match log_type.to_ascii_lowercase().as_str() {
+        "syslog" => LogType::Syslog,
+        "dmesg" => LogType::Dmesg,
+        "journalctl" => LogType::Journalctl,
+        other => {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                "unknown log_type {other:?}; expected syslog, dmesg, or journalctl"
+            )))
+        }
+    };
+    let sources = SessionSources {
+        bag: bag_path.map(Path::new),
+        log_file: logs_path.map(Path::new),
+        log_type: Some(log_type),
+        nav2_export_dir: nav2_export.map(Path::new),
+    };
+    let session = build_navigation_session("python-session", &sources)
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
+    serde_json::to_string(&session.public_summary())
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+}
+
 // Named `_core` (not `pyroboreplay`) because this compiles to the compiled
 // submodule `pyroboreplay._core` that `src/pyroboreplay/__init__.py`
 // re-exports from (`from ._core import *`) — see `[tool.maturin]` in
@@ -764,6 +861,11 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Action>()?;
     m.add_class::<FleetStatistics>()?;
     m.add_class::<GeoHotspot>()?;
+    m.add_function(wrap_pyfunction!(load_pyterrainmap_grid, m)?)?;
+    m.add_function(wrap_pyfunction!(analyze_detection_gaps, m)?)?;
+    m.add_function(wrap_pyfunction!(fuse_rgb_thermal, m)?)?;
+    m.add_function(wrap_pyfunction!(analyze_nav2_diagnostics, m)?)?;
+    m.add_function(wrap_pyfunction!(build_navigation_session_py, m)?)?;
 
     // Module docstring
     m.setattr(

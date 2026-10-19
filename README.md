@@ -21,15 +21,18 @@ PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timelin
 - **Mission comparison** — side-by-side diff of two bags (`compare`).
 - **Topic listing** — inspect available topics in a bag (`list`).
 - **Real ROS 2 CDR decoding** — standard `sensor_msgs` / `nav_msgs` / `geometry_msgs` binary layouts are decoded from real message bytes (`src/adapters/cdr.rs`); pose `confidence` is derived from the real position-covariance trace, so localization-loss detection fires on real data.
+- **Retrospective detection gaps (Phase 12)** — ingest externally generated DINO detections and compare them with the robot's YOLO detections (`forensics --dino`, `analyze_detection_gaps()`).
+- **RGB + thermal fusion (Phase 13)** — ingest RGB detections and a thermal frame, then fuse them (`forensics --rgb --thermal`, `fuse_rgb_thermal()`).
+- **Navigation sessions (Phase 14)** — build a unified timeline from a recorded ROS 2 bag plus optional Linux logs and Nav2 exports (`session`, `build_navigation_session()`).
+- **Nav2 root-cause heuristics (Phase 15)** — run localization/planner/costmap/obstacle/semantic analyzers and classification on a measurements document (`nav2`, `analyze_nav2_diagnostics()`).
+- **Recorded-mission exports** — native MCAP (`export --format mcap`) plus optional Rerun `.rrd` export through the Python API or `pyroboreplay-export`.
+- **PyTerrainMap grid interop** — read the documented `pyterrainmap-gridmap` v1 JSON export directly (`terrain`, `load_pyterrainmap_grid()`).
 
 **Implemented in the Rust core, not yet wired to CLI or Python (library API only):**
-- Causal event graphs, multi-factor causality, incident narratives, evidence-quality scoring.
+- Causal event graphs, multi-factor causality, incident narratives, evidence-quality scoring (Phases 16-20).
 - Persistent world knowledge (entities, locations, facts across missions) and spatial grounding.
 - Multi-mission / longitudinal learning.
-- Pluggable detection backends (YOLO / SAM / template fallback).
-- Retrospective DINO + SAM open-vocabulary object discovery.
-- RGB + thermal multispectral fusion and forensic reconstruction.
-- Universal temporal fusion and the Nav2 root-cause inference engine (Phases 14-15).
+- Pluggable detection backends (YOLO / SAM / template fallback). Phase 12 accepts external DINO detections; it does not run a model itself.
 
 ## Who it's for / Use cases
 
@@ -40,15 +43,16 @@ PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timelin
 
 ## What it is not
 
-- **Not a real-time monitoring or fleet dashboard.** It works on recorded missions, not live streams.
-- **Most advanced modules (Phases 12-15) are not reachable from the CLI or Python.** Use the Rust library directly, or track exposure on the roadmap.
-- **Phase 11 "PyTerrainMap integration" is not real interop.** `src/.../pyterrain_bridge.rs` is self-contained, unit-tested terrain-modeling logic conceptually inspired by [PyTerrainMap](https://github.com/Mullassery/PyTerrainMap); there is no Cargo/pip dependency, no shared serialization format, and no parser for PyTerrainMap's output.
+- **Not a real-time monitoring or fleet dashboard.** It works on recorded missions, not live streams. The `streaming` modules are internal building blocks, not a supported live fleet product.
+- **Phases 16-20 remain library-only.** Causal graphs, counterfactual analysis, decision trees, fleet learning, and temporal patterns are implemented and unit-tested in Rust but are not exposed through the CLI or Python yet.
+- **Phase 12 does not run DINO/SAM models.** It ingests detections produced by an external open-vocabulary run and performs gap analysis; the in-crate `run_dino_detection` method remains a deterministic test stub.
+- **PyTerrainMap interop is file-based, not a runtime dependency.** PyRoboReplay reads the documented `pyterrainmap-gridmap` v1 JSON export; there is still no Cargo/pip dependency, H3 store integration, or ROS bridge. `src/core/pyterrain_bridge.rs` remains self-contained terrain-modeling logic.
 - **Not published to crates.io** — build the Rust crate from source if you need it directly.
 - **Not a certified or safety-verified system.**
 
 ## Project status
 
-Beta (Development Status 4). Current source version is **2.11.0**; the latest PyPI release is **2.10.2**. The CLI and Python API are the tested, supported surface. 843 `cargo test --lib` unit tests pass (re-verified 2026-09-29), plus 7 real-fixture ROS 2 CDR integration tests. `cargo fmt --check` is clean. `cargo clippy --all-targets --all-features -- -D warnings` currently reports ~96 errors, so the CI clippy job runs with `continue-on-error` and does not gate merges. See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
+Beta (Development Status 4). Current source version is **2.11.0**; the latest PyPI release is also **2.11.0** (published 2026-10-19, before the phase-exposure work in this branch). The CLI and Python API are the tested, supported surface. 859 `cargo test --lib` unit tests pass plus 5 new public-surface integration tests and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-19). See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
 
 ## Installation
 
@@ -103,7 +107,12 @@ Interactive replay keys: **Space** play/pause, **n / →** next event, **p / ←
 
 ## MCAP export
 
-Export a mission timeline to the indexed MCAP robotics log format:
+Export a mission timeline to the indexed MCAP robotics log format. The native
+CLI needs no extra dependency; the Python helper needs `mcap`.
+
+```bash
+pyroboreplay export mission.db3 mission.mcap --format mcap
+```
 
 ```bash
 pip install "pyroboreplay[mcap]"
@@ -126,6 +135,10 @@ Export a mission timeline and detected failures to a Rerun recording:
 
 ```bash
 pip install "pyroboreplay[rerun]"
+```
+
+```bash
+pyroboreplay-export mission.db3 mission.rrd --format rerun
 ```
 
 ```python
@@ -168,9 +181,23 @@ artifacts with the external Alpamayo inference stack.
 pyroboreplay compare mission_a.bag mission_b.bag        # side-by-side
 pyroboreplay list mission.bag                            # topics in a bag
 pyroboreplay analyze mission.bag --detect-gaps --detail  # findings to stdout
+pyroboreplay export mission.bag mission.mcap --format mcap
+
+# Phase 12/13: ingest external detections and a thermal frame
+pyroboreplay forensics --yolo detections.json --dino dino.json \
+  --rgb rgb.json --thermal thermal.json --format json
+
+# Phase 15: Nav2 root-cause heuristics from a measurements document
+pyroboreplay nav2 nav2-measurements.json --format json
+
+# Phase 14: unified session from recorded sources
+pyroboreplay session mission.bag --logs system.log --log-type syslog
+
+# PyTerrainMap grid-map JSON export
+pyroboreplay terrain terrain-grid.json --format json
 ```
 
-The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCauseAnalysis`, `Action`, `FleetStatistics`, `GeoHotspot` (see `src/pyroboreplay/__init__.py`). The multispectral, retrospective-detection, world-knowledge, and prediction features live in the Rust core and are not yet exposed through these bindings.
+The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCauseAnalysis`, `Action`, `FleetStatistics`, `GeoHotspot`, plus `load_pyterrainmap_grid`, `analyze_detection_gaps`, `fuse_rgb_thermal`, `analyze_nav2_diagnostics`, and `build_navigation_session` (see `src/pyroboreplay/__init__.py`). World-knowledge and prediction features still live in the Rust core only.
 
 ## Documentation
 
@@ -185,8 +212,15 @@ The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCau
 
 ## Known issues and deferred work
 
-**Blocked / failed:**
-- Expose phases 12–15; rerun/MCAP export; clippy gate.
+**Shipped:**
+- Phases 12-15 exposed through the CLI and Python (`forensics`, `session`, `nav2`).
+- MCAP export in the native CLI; Rerun export via `pyroboreplay-export`.
+- Clippy is clean and gates CI (`-D warnings`).
+- PyTerrainMap `pyterrainmap-gridmap` v1 JSON reader.
+
+**Blocked / deferred:**
+- Phases 16-20 CLI/Python exposure.
+- Full PyTerrainMap runtime integration (H3 store, ROS bridge).
 
 **Rejected / deferred:**
 - Live fleet dashboard.

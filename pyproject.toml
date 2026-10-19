@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "pyroboreplay"
 version = "2.11.0"
-description = "Forensic debugging platform for autonomous robots: causal analysis, multispectral sensor fusion, invisible object detection, and persistent world knowledge"
+description = "Offline forensic debugging for recorded robot missions: causal analysis, multispectral sensor fusion, and mission replay"
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = "Apache-2.0"
 readme = "README.md"
@@ -28,8 +28,6 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Software Development :: Debuggers",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: System :: Monitoring",
-    "Topic :: System :: Networking",
 ]
 keywords = [
     "robotics",
@@ -40,10 +38,12 @@ keywords = [
     "observability",
     "fault-diagnosis",
     "autonomous-systems",
-    "fleet-monitoring",
-    "sla-enforcement",
+    "mission-forensics",
     "time-travel-debugging",
 ]
+
+[project.scripts]
+pyroboreplay-export = "pyroboreplay.export_cli:main"
 
 [project.urls]
 Homepage = "https://github.com/mullassery/pyroboreplay"

@@ -247,6 +247,9 @@ Goal is understanding, not just visualization. Every replay event answers: What 
 - Not a path planner
 - Not a navigation stack
 - Not a terrain database
+- **Not a real-time monitoring or fleet dashboard.** This is a vision document;
+  the shipped tool works on recorded missions. Real-time streaming, SLAs, and
+  multi-tenant fleet operations (v1.0+) are aspirational and not implemented.
 
 Those systems remain responsible for generating world knowledge. PyRoboReplay helps humans understand how that knowledge was created over time.
 
