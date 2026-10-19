@@ -215,7 +215,7 @@ pyroboreplay replay mission.bag --sensor Lidar  # ❌ wrong
 
 - [Python API Reference](API.md) - Full class and method documentation
 - [Architecture Guide](ARCHITECTURE.md) - How PyRoboReplay works internally
-- [Roadmap](../ROADMAP.md) - What's coming in v0.2+
+- [Roadmap](../ROADMAP_HONEST.md) — implemented vs planned
 
 ## 💡 Tips
 

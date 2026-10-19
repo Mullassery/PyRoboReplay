@@ -240,6 +240,6 @@ None currently, but the following could be added:
 
 ## See Also
 
-- [PyRoboReplay Architecture](ARCHITECTURE_COMPLETE.md)
-- [Sensor Stats Panel](src/cli/sensor_stats.rs)
-- [Replay UI](src/cli/replay_ui.rs)
+- [PyRoboReplay Architecture](ARCHITECTURE.md)
+- [Sensor Stats Panel](../src/cli/sensor_stats.rs)
+- [Replay UI](../src/cli/replay_ui.rs)

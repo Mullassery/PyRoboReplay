@@ -10,7 +10,7 @@ Forensic debugging and mission-replay platform for autonomous robots: replay ROS
 
 ## What it is
 
-PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timeline and answers *why* and *what-if* questions rather than only *where* and *what*: which events preceded a failure, what the perception stack missed, and what the robot should have detected. The heavy lifting is a Rust core (`cdylib` + `rlib`) built with PyO3, exposed to Python through `maturin`. A CLI (`replay`, `analyze`, `compare`, `list`) and a small Python API are the supported entry points today.
+PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timeline and answers *why* and *what-if* questions rather than only *where* and *what*: which events preceded a failure, what the perception stack missed, and what the robot should have detected. The heavy lifting is a Rust core (`cdylib` + `rlib`) built with PyO3, exposed to Python through `maturin`. The supported entry points are the Python API and a Rust CLI with `replay`, `compare`, `analyze`, `list`, `terrain`, `forensics`, `nav2`, `session`, and `export`.
 
 ## Features
 
@@ -56,6 +56,11 @@ Beta (Development Status 4). Current source version is **2.11.0**; the latest Py
 
 ## Installation
 
+> **2.11.0 packaging note:** the published 2.11.0 wheel does not ship the CLI
+> and does not declare `numpy`. Use `pip install pyroboreplay numpy` for the
+> Python API, or build from source for the CLI. Both are fixed in the
+> repository for the next release. See [Install](docs/INSTALL.md).
+
 ```bash
 pip install pyroboreplay
 
@@ -78,6 +83,9 @@ cargo build --release
 ```
 
 ## Quick start
+
+> CLI commands require a source build (or the next release) because the
+> 2.11.0 wheel does not include the CLI. See [Install](docs/INSTALL.md).
 
 ```bash
 # Interactive timeline scrubber
@@ -201,6 +209,10 @@ The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCau
 
 ## Documentation
 
+- [Documentation index](docs/README.md) — start here
+- [Install](docs/INSTALL.md) — Python API vs CLI and platform matrix
+- [Project status](docs/STATUS.md) — current gaps and fixes
+- [Alternatives](docs/ALTERNATIVES.md) — Foxglove/Rerun comparison
 - [docs/CLAUDE.md](docs/CLAUDE.md) — product vision and architecture
 - [docs/API.md](docs/API.md) — Python and Rust API reference
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — phase-by-phase architecture
