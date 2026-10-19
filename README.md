@@ -122,6 +122,16 @@ The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCau
 - [ROADMAP_HONEST.md](ROADMAP_HONEST.md) — implemented vs planned, technical debt
 - [CHANGELOG.md](CHANGELOG.md) — notable changes
 
+## Known issues and deferred work
+
+**Blocked / failed:**
+- Expose phases 12–15; rerun/MCAP export; clippy gate.
+
+**Rejected / deferred:**
+- Live fleet dashboard.
+
+Full shipped/blocked/rejected detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
+
 ## Queue status
 
 Shipped, blocked/failed, and rejected work for this repository is documented in
