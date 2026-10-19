@@ -58,10 +58,17 @@ Addressed in the 2026-10-19 implementation pass:
   - Phase 15: `nav2` CLI + `analyze_nav2_diagnostics`.
   - MCAP export in the native CLI (`export --format mcap`); Rerun export via
     `pyroboreplay-export` / `export_mission`.
-  - Covered by 5 new public-surface integration tests plus 859 lib tests.
+  - Covered by 5 new public-surface integration tests plus 859 lib tests at the
+    time (869 including the later Phase 16-20 bridge tests).
 - **PyTerrainMap interop — partial, now real at the file level.**
   `src/core/pyterrainmap.rs` reads the documented `pyterrainmap-gridmap` v1 JSON
   and is exposed as `terrain` / `load_pyterrainmap_grid`. Still no runtime
   dependency, H3 store access, or ROS bridge.
-- **Still open:** Phases 16–20 CLI/Python exposure; Linux/Windows wheel builds;
-  real-customer validation. Live fleet dashboard remains explicitly out of scope.
+- **Phases 16–20 — JSON operation bridge done (2026-10-20).** `ops()` and
+  `run_op()` expose six real, allowlisted Rust operations (causal graph,
+  counterfactual query, fleet learning, temporal patterns, trend detection,
+  decision tree). They are not typed Python APIs, and the rest of the Phase
+  16–20 library types remain Rust-only.
+- **Still open:** typed Python APIs / CLI commands for the remaining Phase
+  16–20 types; Linux/Windows wheel builds; real-customer validation. Live fleet
+  dashboard remains explicitly out of scope.

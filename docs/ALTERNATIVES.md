@@ -58,5 +58,8 @@ absence).
 - Live/fleet monitoring (offline recorded missions only).
 - General-purpose visualization (use a viewer).
 - Hosted storage/search.
-- Phases 16–20 causal-graph features are library-only in this release. See
-  [Project status](STATUS.md) and [Limitations in the README](../README.md#what-it-is-not).
+- Phases 16–20 are reachable only through a JSON operation bridge (six
+  allowlisted operations), not typed Python APIs. See
+  [Advanced operations](ADVANCED_OPS.md),
+  [Project status](STATUS.md), and
+  [Limitations in the README](../README.md#what-it-is-not).

@@ -6,6 +6,7 @@ pub mod forensics;
 pub mod fusion;
 pub mod intelligence;
 pub mod knowledge;
+pub mod ops;
 pub mod perception;
 pub mod phase14;
 pub mod phase15;
@@ -863,6 +864,44 @@ fn build_navigation_session_py(
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
 
+/// Run one allowlisted Phase 16-20 operation with a JSON payload.
+///
+/// Args:
+///     op (str): Operation name from :func:`ops`, e.g. ``"phase16.causal_graph"``.
+///     payload_json (str): A JSON object matching that operation's schema.
+///
+/// Returns:
+///     str: The operation result encoded as a JSON object.
+///
+/// Raises:
+///     ValueError: If ``op`` is unknown or ``payload_json`` is malformed/invalid.
+///     RuntimeError: If the Rust operation fails to produce a result.
+///
+/// Example:
+///     result = pyroboreplay.run_op("phase18.fleet_learning", '{"robots": {}}')
+#[pyfunction]
+fn run_op(op: &str, payload_json: &str) -> PyResult<String> {
+    crate::ops::run_op_json(op, payload_json).map_err(|e| match e {
+        crate::ops::OpError::UnknownOp(_) | crate::ops::OpError::InvalidPayload(_) => {
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string())
+        }
+        crate::ops::OpError::Execution(_) => {
+            PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string())
+        }
+    })
+}
+
+/// List the Phase 16-20 operations exposed by :func:`run_op`.
+///
+/// Returns:
+///     list[tuple[str, str, str]]: ``(name, description, schema_json)`` for
+///     each allowlisted operation. ``schema_json`` is a JSON Schema-style
+///     document describing the payload object.
+#[pyfunction(name = "ops")]
+fn ops_py() -> Vec<(String, String, String)> {
+    crate::ops::ops()
+}
+
 // Named `_core` (not `pyroboreplay`) because this compiles to the compiled
 // submodule `pyroboreplay._core` that `src/pyroboreplay/__init__.py`
 // re-exports from (`from ._core import *`) — see `[tool.maturin]` in
@@ -887,6 +926,8 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(fuse_rgb_thermal, m)?)?;
     m.add_function(wrap_pyfunction!(analyze_nav2_diagnostics, m)?)?;
     m.add_function(wrap_pyfunction!(build_navigation_session_py, m)?)?;
+    m.add_function(wrap_pyfunction!(run_op, m)?)?;
+    m.add_function(wrap_pyfunction!(ops_py, m)?)?;
 
     // Module docstring
     m.setattr(

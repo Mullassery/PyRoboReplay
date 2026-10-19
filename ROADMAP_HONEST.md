@@ -72,8 +72,12 @@ the Phase 11 and CLI-exposure caveats there).
   (12–13), `session`/`build_navigation_session` (14), and
   `nav2`/`analyze_nav2_diagnostics` (15). Note the honest limits: Phase 12 ingests
   detections from an *external* open-vocabulary run — it does not run DINO/SAM
-  itself (`run_dino_detection` stays a test stub). **Phases 16–20 (causal graphs,
-  counterfactual analysis, decision trees) remain Rust-internal-only.**
+  itself (`run_dino_detection` stays a test stub). **Phases 16–20 are now
+  reachable through a JSON operation bridge (2026-10-20):** `ops()` and
+  `run_op()` expose six real operations (causal graph, counterfactual query,
+  fleet learning, temporal patterns, trend detection, decision tree). They are
+  not typed Python APIs; the remaining Phase 16–20 library types stay
+  Rust-internal.
 - **Phase 11 now has real file-level PyTerrainMap interop**, added 2026-10-19:
   `src/core/pyterrainmap.rs` + `terrain`/`load_pyterrainmap_grid` read the
   documented `pyterrainmap-gridmap` v1 JSON that PyTerrainMap's
@@ -93,7 +97,9 @@ are closing the CLI/binding gap on work that already exists, not adding new
 analysis phases:
 
 1. ~~**Expose Phases 12–15 (and audit 16–20) through the CLI or Python bindings.**~~
-   **Done for 12–15 (2026-10-19).** Phases 16–20 still need exposure.
+   **Done for 12–15 (2026-10-19).** Six Phase 16–20 operations were exposed
+   through the JSON `run_op` bridge on 2026-10-20; typed Python APIs and the
+   remaining library types are still open.
 2. **Fix or remove the orphaned MCP module.** Either move `pyroboreplay/_mcp_tools.py`
    and `_mcp_connector.py` into `src/pyroboreplay/` so they actually ship in the
    wheel (then verify each of the 13 handlers calls real Rust-core analysis

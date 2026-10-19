@@ -16,6 +16,7 @@ Start here depending on what you need.
 | Document | What it covers |
 |---|---|
 | [API](API.md) | Python and Rust API reference |
+| [Advanced operations](ADVANCED_OPS.md) | Phase 16-20 JSON operation bridge (`ops()` / `run_op()`) |
 | [Architecture](ARCHITECTURE.md) | Phase-by-phase architecture and data flow |
 | [Implementation status](IMPLEMENTATION_STATUS.md) | Phase-by-phase engineering status (historical detail) |
 

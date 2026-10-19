@@ -83,6 +83,7 @@ impl TreeNode {
     }
 }
 
+#[derive(Debug, Clone, Serialize)]
 pub struct DecisionTree {
     pub tree_id: String,
     pub root: TreeNode,

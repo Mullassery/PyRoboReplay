@@ -6,7 +6,9 @@ built from src/lib.rs's `#[pymodule] fn _core` (see `[tool.maturin]` in
 pyproject.toml) and re-exported here so `from pyroboreplay import Mission`
 works directly, matching the classes `src/lib.rs`'s `#[pymodule]` actually
 registers: Mission, Event, Failure, Hypothesis, RootCauseAnalysis, Action,
-FleetStatistics, GeoHotspot.
+FleetStatistics, GeoHotspot. Phase 16-20 Rust libraries are reachable through
+the JSON operation bridge (`ops()` and `run_op()`); they are not typed Python
+classes.
 """
 
 from .alpamayo import (
@@ -38,6 +40,8 @@ from ._core import (  # noqa: F401
     build_navigation_session,
     fuse_rgb_thermal,
     load_pyterrainmap_grid,
+    ops,
+    run_op,
 )
 
 try:
@@ -64,6 +68,8 @@ __all__ = [
     "fuse_rgb_thermal",
     "analyze_nav2_diagnostics",
     "build_navigation_session",
+    "run_op",
+    "ops",
     "RerunUnavailable",
     "export_mission",
     "export_mcap",

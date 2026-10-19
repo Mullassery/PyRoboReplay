@@ -358,6 +358,41 @@ Build a Phase 14 session from recorded sources and return its summary
 (event counts, modalities, completeness, first error timestamp). `log_type` is
 one of `syslog`, `dmesg`, or `journalctl`.
 
+## Phase 16-20 JSON operation bridge
+
+Phases 16-20 are not exposed as typed Python APIs. Six real Rust operations
+are available through a JSON allowlist instead. See
+[Advanced operations](ADVANCED_OPS.md) for payload and response examples.
+
+### `ops() -> list[tuple[str, str, str]]`
+
+Returns `(name, description, schema_json)` for each allowlisted operation.
+`schema_json` is a JSON-Schema-style payload description.
+
+### `run_op(op, payload_json) -> str`
+
+Runs one operation and returns a JSON object as a string. Raises `ValueError`
+for an unknown operation or malformed/invalid payload, and `RuntimeError` if
+the Rust operation fails. Registered operations:
+
+- `phase16.causal_graph`
+- `phase17.counterfactual`
+- `phase18.fleet_learning`
+- `phase19.temporal_patterns`
+- `phase19.trend_detection`
+- `phase20.decision_tree`
+
+```python
+import json
+import pyroboreplay
+
+schema = dict((name, schema) for name, _, schema in pyroboreplay.ops())
+result = json.loads(pyroboreplay.run_op(
+    "phase18.fleet_learning",
+    json.dumps({"robots": {"r1": [{"succeeded": True, "time_ms": 1000}]}}),
+))
+```
+
 ## CLI additions
 
 ```

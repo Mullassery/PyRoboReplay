@@ -32,6 +32,12 @@ dated section when released.
 - `pyroboreplay-export` console script for MCAP/Rerun export from a bag.
 - `RetrospectiveDetectionEngine::load_dino_detections` for external DINO detections.
 - Five public-surface integration tests (`tests/test_exposure_integration.rs`).
+- Phase 16-20 JSON operation bridge: `ops()` and `run_op()` expose six real,
+  allowlisted operations (causal graph, counterfactual query, fleet learning,
+  temporal patterns, trend detection, decision tree). See
+  `docs/ADVANCED_OPS.md`.
+- Ten Rust unit tests and ten Python public-surface tests for the bridge,
+  including unknown-op and malformed-JSON handling.
 
 ### Fixed
 - `SessionBuilder` now keeps every selected modality, not just the first.

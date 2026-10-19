@@ -1,7 +1,7 @@
 # Project status
 
-**PyPI version:** 2.11.0 · **Source version:** 2.11.0 (packaging fixes
-unreleased) · **Updated:** 2026-10-19
+**PyPI version:** 2.11.0 · **Source version:** 2.11.0 (packaging and
+operation-bridge fixes unreleased) · **Updated:** 2026-10-20
 
 For the long engineering snapshot, see
 [`ROADMAP_HONEST.md`](../ROADMAP_HONEST.md),
@@ -10,13 +10,18 @@ For the long engineering snapshot, see
 
 ## Verified working
 
-- Rust core: 859 `cargo test --lib` tests pass; clippy gated in CI.
-- Python public surface: `Mission`, failure detection/analysis, export helpers;
-  5 public-surface integration tests pass.
+- Rust core: 869 `cargo test --lib` tests pass; clippy gated in CI.
+- Python public surface: `Mission`, failure detection/analysis, export helpers,
+  and the Phase 16-20 JSON bridge; public-surface Python tests pass (10 for the
+  bridge alone).
 - CLI (from source): `replay`, `compare`, `analyze`, `list`, `terrain`,
   `forensics`, `nav2`, `session`, `export`.
 - ROS 2 CDR decoding, failure hypotheses, detection-gap analysis, RGB+thermal
   fusion, Nav2 heuristics, mission comparison.
+- Phase 16-20 JSON operation bridge: `ops()` and `run_op()` expose six real
+  Rust operations (causal graph, counterfactual query, fleet learning, temporal
+  patterns, trend detection, decision tree). See
+  [Advanced operations](ADVANCED_OPS.md).
 - MCAP and Rerun export (optional extras).
 
 ## Fixed in the repository (unreleased)
@@ -39,7 +44,7 @@ These fixes are committed/pushed but are **not** in the 2.11.0 PyPI wheel:
 | PyPI license metadata `None` | License scanners/trust signals | Open |
 | Release workflow uses `PYPI_TOKEN` + twine | Not OIDC Trusted Publishing | Open |
 | Docs CI uses `\|\| true` and lints only README + CLAUDE.md | Broken links/lint can merge | Open |
-| Phases 16–20 library-only | Causal graphs/counterfactuals not exposed | Planned |
+| Phases 16–20 not typed | Only six allowlisted operations are reachable, through JSON (`run_op`); other library types remain Rust-only | Mitigated (JSON bridge) |
 | No live/fleet monitoring | Offline recorded missions only | By design |
 | Documentation sprawl (54 md files) | Discovery/onboarding cost | Mitigated by [docs index](README.md); consolidation ongoing |
 
