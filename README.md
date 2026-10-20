@@ -214,6 +214,7 @@ The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCau
 - [Documentation index](docs/README.md) — start here
 - [Install](docs/INSTALL.md) — Python API vs CLI and platform matrix
 - [Advanced operations](docs/ADVANCED_OPS.md) — Phase 16-20 JSON bridge
+- [Alpamayo and AlpaSim workflow](docs/ALPASIM_WORKFLOW.md) — trajectory evidence and ASL logs
 - [Project status](docs/STATUS.md) — current gaps and fixes
 - [Alternatives](docs/ALTERNATIVES.md) — Foxglove/Rerun comparison
 - [docs/CLAUDE.md](docs/CLAUDE.md) — product vision and architecture
