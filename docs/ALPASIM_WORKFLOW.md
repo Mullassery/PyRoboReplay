@@ -101,6 +101,17 @@ pytest tests/test_asl_integration.py
 
 The ASL tests use synthetic protobuf-like entries and framed bytes; they do not need AlpaSim, gRPC, Docker, or a GPU. Live validation still requires a Linux host with Docker and an AlpaSim rollout. Record a short rollout, verify message counts, timestamps, actor IDs, and ego pose continuity, then inspect the generated JSON report.
 
+Opt-in checks against real artifacts:
+
+```bash
+ALPAMAYO_ARTIFACT=/data/alpamayo/run.json \
+  pytest tests/test_live_artifacts.py
+ALPASIM_LOG=/data/alpasim/rollout.asl \
+  pytest tests/test_live_artifacts.py
+```
+
+Both tests skip unless their environment variable is set. The ASL test also requires the upstream `alpasim_grpc` reader.
+
 ## Licensing
 
 - Alpamayo source: Apache-2.0; weights are non-commercial unless separately licensed.
