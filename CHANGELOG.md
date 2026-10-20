@@ -14,6 +14,13 @@ dated section when released.
 
 ## [Unreleased]
 
+### Added
+- `pyroboreplay.asl`: CPU-only AlpaSim ASL framing checks, decoded-entry
+  mapping, and JSON/Markdown rollout reports. The upstream `alpasim_grpc`
+  reader is imported lazily and remains an external dependency.
+- Synthetic Alpamayo 1.5 and 2 contract fixtures with `model_version`
+  provenance and 64-waypoint/10 Hz trajectories.
+
 ## [2.12.1] - 2026-10-20
 
 ### Changed
