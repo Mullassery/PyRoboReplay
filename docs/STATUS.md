@@ -21,6 +21,9 @@ For the long engineering snapshot, see
   Rust operations (causal graph, counterfactual query, fleet learning, temporal
   patterns, trend detection, decision tree). See
   [Advanced operations](ADVANCED_OPS.md).
+- Alpamayo 1.5/2 synthetic contract fixtures and AlpaSim ASL framing,
+  decoded-entry mapping, and JSON/Markdown reports (CPU-only; no live AlpaSim
+  rollout has been run here).
 - MCAP and Rerun export (optional extras).
 
 ## Fixed and released in 2.12.x

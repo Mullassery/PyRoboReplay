@@ -28,6 +28,7 @@ Start here depending on what you need.
 - [Sensor metadata](SENSOR_METADATA.md)
 - [Keyboard shortcuts](KEYBOARD_SHORTCUTS.md)
 - [Stats dashboard](STATS_DASHBOARD.md)
+- [Alpamayo and AlpaSim workflow](ALPASIM_WORKFLOW.md)
 
 ## Interop
 
