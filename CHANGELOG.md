@@ -20,6 +20,8 @@ dated section when released.
   reader is imported lazily and remains an external dependency.
 - Synthetic Alpamayo 1.5 and 2 contract fixtures with `model_version`
   provenance and 64-waypoint/10 Hz trajectories.
+- Opt-in live artifact tests for `ALPAMAYO_ARTIFACT` and `ALPASIM_LOG`;
+  both skip by default.
 
 ## [2.12.1] - 2026-10-20
 
