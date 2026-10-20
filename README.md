@@ -52,20 +52,19 @@ PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timelin
 
 ## Project status
 
-Beta (Development Status 4). Current source version is **2.11.0**; the latest PyPI release is also **2.11.0** (published 2026-10-19, before the operation-bridge work in this branch). The CLI and Python API are the tested, supported surface. 869 `cargo test --lib` unit tests pass plus public-surface Python tests (including 10 for the Phase 16-20 bridge) and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-20). See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
+Beta (Development Status 4). Current source version is **2.12.1**; the latest PyPI release is also **2.12.1** (published 2026-10-20) and includes the Phase 16-20 operation bridge. The CLI and Python API are the tested, supported surface. 869 `cargo test --lib` unit tests pass plus public-surface Python tests (including 10 for the Phase 16-20 bridge) and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-20). See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
 
 ## Installation
 
-> **2.11.0 packaging note:** the published 2.11.0 wheel does not ship the CLI
-> and does not declare `numpy`. Use `pip install pyroboreplay numpy` for the
-> Python API, or build from source for the CLI. Both are fixed in the
-> repository for the next release. See [Install](docs/INSTALL.md).
+> **Packaging:** the 2.12.x wheel ships both the `pyroboreplay` and
+> `pyroboreplay-export` console scripts and declares `numpy`, so installing
+> the package is enough for both the Python API and the CLI.
 
-> **Wheel coverage:** PyPI 2.11.0 has wheels only for Linux x86_64 and macOS
-> arm64. The release workflow now builds Linux x86_64/aarch64, macOS
-> arm64/x86_64, and Windows x86_64 for Python 3.10–3.13, with an installed-wheel
-> smoke test, but those wheels do not exist until a new `v*` tag is pushed and
-> the release publishes successfully. See the [platform matrix](docs/INSTALL.md#platform-matrix).
+> **Wheel coverage:** PyPI 2.12.x publishes a macOS arm64 wheel plus an sdist;
+> the sdist builds on other platforms. Release CI is configured to build and
+> smoke-test Linux x86_64/aarch64, macOS arm64/x86_64, and Windows x86_64 for
+> Python 3.10–3.13, and those wheels are produced when the release workflow's
+> upload job runs. See the [platform matrix](docs/INSTALL.md#platform-matrix).
 
 ```bash
 pip install pyroboreplay
@@ -89,9 +88,6 @@ cargo build --release
 ```
 
 ## Quick start
-
-> CLI commands require a source build (or the next release) because the
-> 2.11.0 wheel does not include the CLI. See [Install](docs/INSTALL.md).
 
 ```bash
 # Interactive timeline scrubber

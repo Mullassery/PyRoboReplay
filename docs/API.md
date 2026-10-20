@@ -409,6 +409,6 @@ function.
 
 ## Version Info
 
-- **PyRoboReplay**: v2.11.0
+- **PyRoboReplay**: v2.12.1
 - **Python**: 3.10+ required
 - **Supported bag formats**: ROS 2 .db3 (SQLite) and .mcap

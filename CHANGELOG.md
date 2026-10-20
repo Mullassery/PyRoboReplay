@@ -14,14 +14,15 @@ dated section when released.
 
 ## [Unreleased]
 
-### Fixed
-- Declared `numpy` as a runtime dependency so `import pyroboreplay` works from
-  a clean install; previously it failed with `ModuleNotFoundError: numpy`.
-- Added a `pyroboreplay` console script backed by the Rust CLI (via PyO3
-  `run_cli`), and verified the built wheel ships both `pyroboreplay` and
-  `pyroboreplay-export` in `entry_points.txt`.
-- Replaced the `Operating System :: OS Independent` classifier with the actual
-  Linux/macOS wheel coverage.
+## [2.12.1] - 2026-10-20
+
+### Changed
+- Refreshed the README/PyPI description for 2.12.x: the wheel ships the
+  `pyroboreplay` and `pyroboreplay-export` console scripts, declares `numpy`,
+  and the wheel-coverage note now reflects what is actually published.
+  Metadata-only release; no code changes.
+
+## [2.12.0] - 2026-10-20
 
 ### Added
 - CLI subcommands `terrain`, `forensics`, `nav2`, `session`, and `export`
@@ -46,6 +47,13 @@ dated section when released.
   listing) on native runners before release assets or PyPI uploads proceed.
 
 ### Fixed
+- Declared `numpy` as a runtime dependency so `import pyroboreplay` works from
+  a clean install; previously it failed with `ModuleNotFoundError: numpy`.
+- Added a `pyroboreplay` console script backed by the Rust CLI (via PyO3
+  `run_cli`), and verified the built wheel ships both `pyroboreplay` and
+  `pyroboreplay-export` in `entry_points.txt`.
+- Replaced the `Operating System :: OS Independent` classifier with the actual
+  Linux/macOS wheel coverage.
 - `SessionBuilder` now keeps every selected modality, not just the first.
 - `cargo clippy --all-targets --all-features -- -D warnings` is clean; the CI
   clippy job now gates merges instead of running with `continue-on-error`.

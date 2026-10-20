@@ -1,22 +1,12 @@
 # Install
 
-PyRoboReplay has two entry points: a **Python API** and a **CLI**. They are
-packaged together from source; the published 2.11.0 wheel has a known
-packaging gap.
+PyRoboReplay has two entry points: a **Python API** and a **CLI**, packaged
+together. The 2.12.x wheel ships both console scripts and declares `numpy`.
 
-> **PyPI 2.11.0 packaging (verified 2026-10-19):** the published 2.11.0 wheel
-> ships the Python package but **no console scripts**, and it does not declare
-> `numpy`, so `import pyroboreplay` fails without a manual `pip install numpy`.
-> Both issues are fixed in the repository (a `pyroboreplay` entry point backed
-> by the Rust CLI, and a `numpy` dependency) and will ship in the next release.
-> Until then, use the workaround below or build from source.
-
-## Python API
-
-**2.11.0 workaround** (manual dependency):
+## Install
 
 ```bash
-pip install pyroboreplay numpy
+pip install pyroboreplay
 ```
 
 Verify:
@@ -70,30 +60,26 @@ cargo run --release -- analyze mission.db3 --detect-gaps
 Requirements: Python 3.10+, a stable Rust toolchain, and the usual Rust build
 prerequisites.
 
-`pyroboreplay-export` uses the same packaging and is available from a source
-install / the next release.
+`pyroboreplay-export` is included in the same wheel and sdist.
 
 ## Platform matrix
 
-### Published on PyPI (2.11.0)
+### Published on PyPI (2.12.1)
 
-Verified 2026-10-20. These are the only wheels that currently exist.
+Verified 2026-10-20. PyPI 2.12.1 ships a macOS arm64 wheel and an sdist.
 
-| Platform | Python 3.10 | 3.11 | 3.12 | 3.13 |
-|---|---|---|---|---|
-| Linux x86_64 (manylinux_2_38) | yes | yes | yes | yes |
-| macOS arm64 (11.0+) | yes | yes | yes | yes |
-| Linux aarch64 | — | — | — | — |
-| macOS x86_64 (Intel) | — | — | — | — |
-| Windows x86_64 | — | — | — | — |
+| Platform | Availability |
+|---|---|
+| macOS arm64 (11.0+) | wheel |
+| Linux x86_64 / aarch64 | sdist (build from source) |
+| macOS x86_64 (Intel) | sdist (build from source) |
+| Windows x86_64 | sdist (build from source) |
 
-### Next release (configured, not yet published)
+### Native wheel matrix (configured in the release workflow)
 
-The release workflow builds the targets below for every Python 3.10–3.13.
-They do **not** exist on PyPI until a new `v*` tag is pushed and the release
-completes. Before publishing, the workflow installs each wheel on a matching
-native runner (not editable) and runs `import pyroboreplay`,
-`from pyroboreplay import Mission`, and `ops()`.
+The release workflow builds the targets below for every Python 3.10–3.13 and
+installs each wheel on a matching native runner (not editable), running
+`import pyroboreplay`, `from pyroboreplay import Mission`, and `ops()`.
 
 | Target | Build | Status |
 |---|---|---|
@@ -107,10 +93,6 @@ No wheel for your platform? Build from source.
 
 ## Troubleshooting
 
-- **`ModuleNotFoundError: numpy` on 2.11.0** — `pip install numpy` (fixed in
-  the next release).
-- **`pyroboreplay: command not found` on 2.11.0** — expected; the wheel ships
-  no CLI. Build from source or upgrade once the next release is published.
 - **`ModuleNotFoundError: pyroboreplay._core`** — the compiled extension is
   missing or built for another Python/architecture. Reinstall the matching
   wheel or build from source.
