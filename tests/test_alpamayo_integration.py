@@ -190,3 +190,29 @@ def test_rejects_non_finite_and_bad_shapes():
 
     with pytest.raises(mod.AlpamayoInputError, match="expected 64 waypoints"):
         mod.parse_alpamayo_output({"pred_xyz": np.zeros((10, 3))})
+
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "alpamayo"
+
+
+@pytest.mark.parametrize(
+    ("filename", "model_version"),
+    [
+        ("alpamayo_1_5_synthetic.json", "alpamayo-1.5"),
+        ("alpamayo_2_synthetic.json", "alpamayo-2"),
+    ],
+)
+def test_load_model_version_fixtures_preserve_metadata(filename, model_version):
+    path = FIXTURE_DIR / filename
+    payload = json.loads(path.read_text())
+
+    record = mod.load_alpamayo_run(path)
+    report = mod.build_alpamayo_report(record)
+
+    assert record.num_samples == 2
+    assert record.best().xyz.shape == (64, 3)
+    assert record.metadata["model_version"] == model_version
+    assert record.metadata["model"] == payload["model"]
+    assert record.metadata["clip_id"] == payload["clip_id"]
+    assert record.reasoning == tuple(payload["cot"])
+    assert report["records"][0]["metadata"]["model_version"] == model_version

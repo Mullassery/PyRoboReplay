@@ -1,8 +1,8 @@
 # Alpamayo and AlpaSim Replay Workflow
 
-Status: **Alpamayo ingestion implemented; AlpaSim ASL ingestion planned.**
+Status: **Alpamayo ingestion and AlpaSim ASL ingestion implemented.**
 
-PyRoboReplay turns Alpamayo artifacts into trajectory evidence on CPU-only machines. AlpaSim is a separate closed-loop simulator that writes `.asl` protobuf logs; its adapter is not implemented yet.
+PyRoboReplay turns Alpamayo artifacts into trajectory evidence on CPU-only machines. AlpaSim is a separate closed-loop simulator that writes `.asl` protobuf logs; PyRoboReplay now provides an optional, CPU-only boundary adapter for those logs.
 
 ## Alpamayo ingestion
 
@@ -36,6 +36,8 @@ metrics = compare_trajectories(pred_xyz, ground_truth_xyz)
 
 The adapter accepts `(T,3)`, `(S,T,3)`, `(B,S,T,3)`, and `(B,sets,S,T,3)` trajectories with `T = 64` and `dt = 0.1 s`. It does not import Torch or Alpamayo and never loads weights.
 
+Synthetic Alpamayo 1.5 and 2 contract fixtures live in `tests/fixtures/alpamayo/`. They exercise the 64-waypoint/10 Hz contract, `model_version` provenance, and Chain-of-Causation ingestion without model weights.
+
 ## AlpaSim ASL workflow
 
 Run AlpaSim upstream, in its own Docker Compose environment:
@@ -61,27 +63,43 @@ Relevant message families:
 - `ActorPoses`
 - microservice request/response entries
 
-### Planned PyRoboReplay adapter
+### PyRoboReplay adapter
 
-The planned boundary adapter will:
+`pyroboreplay.asl` provides:
 
-1. Accept an `.asl` path or an iterable of decoded protobuf entries.
-2. Extract ego poses, actor poses, timestamps, and rollout metadata.
-3. Build the existing Alpamayo-style run/report structures.
-4. Keep AlpaSim and gRPC dependencies out of PyRoboReplay.
-5. Fail clearly on truncated or unsupported logs.
+- `inspect_asl()`: validates size-delimited framing and counts frames without decoding protobuf.
+- `parse_alpasim_entries()`: maps decoded entries into `ASLRollout`, actor poses, provenance, and ground truth.
+- `read_asl()`: async ingestion through AlpaSim's own `async_read_pb_log` reader.
+- `build_asl_report()` / `write_asl_report()`: JSON or Markdown reports.
 
-It will not vendor AlpaSim, infer safety outcomes from actor poses alone, or require a GPU.
+```python
+import asyncio
+
+from pyroboreplay.asl import (
+    build_asl_report,
+    inspect_asl,
+    read_asl,
+    write_asl_report,
+)
+
+info = inspect_asl("rollout.asl")
+rollout = asyncio.run(read_asl("rollout.asl"))
+report = build_asl_report(rollout)
+write_asl_report(report, "alpasim-report.json")
+```
+
+The upstream `alpasim_grpc` package is imported lazily by `read_asl()`; it is not a hard PyRoboReplay dependency. If the package is unavailable, pass decoded entries to `parse_alpasim_entries()` or run the reader in an environment where AlpaSim is installed. The adapter does not vendor AlpaSim, load model weights, require a GPU, or infer safety outcomes from actor poses alone. Microservice request/response entries are counted but not interpreted yet.
 
 ## Validation
 
-CPU-only Alpamayo tests:
+CPU-only tests:
 
 ```bash
 pytest tests -k alpamayo
+pytest tests/test_asl_integration.py
 ```
 
-AlpaSim validation requires a Linux host with Docker. Record a short rollout, verify message counts, timestamps, actor IDs, and ego pose continuity, then replay the extracted run through the Alpamayo report path.
+The ASL tests use synthetic protobuf-like entries and framed bytes; they do not need AlpaSim, gRPC, Docker, or a GPU. Live validation still requires a Linux host with Docker and an AlpaSim rollout. Record a short rollout, verify message counts, timestamps, actor IDs, and ego pose continuity, then inspect the generated JSON report.
 
 ## Licensing
 

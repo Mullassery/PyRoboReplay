@@ -185,6 +185,30 @@ The report includes minADE/minFDE per run, per-sample reasoning traces, and
 correlated failures. No `torch` or model weights are required; generate the
 artifacts with the external Alpamayo inference stack.
 
+## AlpaSim ASL reports
+
+Turn an AlpaSim rollout (`.asl`) into a provenance-rich JSON or Markdown report:
+
+```python
+import asyncio
+
+from pyroboreplay.asl import (
+    build_asl_report,
+    inspect_asl,
+    read_asl,
+    write_asl_report,
+)
+
+info = inspect_asl("rollout.asl")
+rollout = asyncio.run(read_asl("rollout.asl"))
+write_asl_report(build_asl_report(rollout), "alpasim-report.json")
+```
+
+`read_asl()` imports AlpaSim's upstream reader lazily; `inspect_asl()` validates
+the size-delimited framing with the standard library only. The adapter preserves
+session metadata, version IDs, actor tracks, and ego ground truth. It does not
+vendor AlpaSim, require a GPU, or infer safety outcomes from actor poses alone.
+
 ## Usage
 
 ```bash
@@ -234,6 +258,7 @@ The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCau
 - MCAP export in the native CLI; Rerun export via `pyroboreplay-export`.
 - Clippy is clean and gates CI (`-D warnings`).
 - PyTerrainMap `pyterrainmap-gridmap` v1 JSON reader.
+- AlpaSim ASL framing, decoded-entry mapping, and JSON/Markdown rollout reports.
 
 **Blocked / deferred:**
 - Typed Python APIs for the remaining Phase 16-20 library types.
