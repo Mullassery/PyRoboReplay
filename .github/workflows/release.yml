@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: Release ${{ github.ref_name }}
           draft: false
@@ -181,7 +181,7 @@ jobs:
         run: ls -l dist
 
       - name: Attach wheels to GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*.whl
         env:
