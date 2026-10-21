@@ -1,6 +1,6 @@
 # Project status
 
-**PyPI version:** 2.12.1 · **Source version:** 2.12.1 · **Updated:** 2026-10-20
+**PyPI version:** 2.13.0 · **Source version:** 2.13.0 · **Updated:** 2026-10-21
 
 For the long engineering snapshot, see
 [`ROADMAP_HONEST.md`](../ROADMAP_HONEST.md),

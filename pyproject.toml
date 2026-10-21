@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pyroboreplay"
-version = "2.12.1"
+version = "2.13.0"
 description = "Offline forensic debugging for recorded robot missions: causal analysis, multispectral sensor fusion, and mission replay"
 authors = [{name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}]
 license = "Apache-2.0"

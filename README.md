@@ -52,7 +52,7 @@ PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timelin
 
 ## Project status
 
-Beta (Development Status 4). Current source version is **2.12.1**; the latest PyPI release is also **2.12.1** (published 2026-10-20) and includes the Phase 16-20 operation bridge. The CLI and Python API are the tested, supported surface. 869 `cargo test --lib` unit tests pass plus public-surface Python tests (including 10 for the Phase 16-20 bridge) and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-20). See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
+Beta (Development Status 4). Current source version is **2.13.0**; the latest PyPI release is also **2.13.0** (published 2026-10-21) and includes the Phase 16-20 operation bridge. The CLI and Python API are the tested, supported surface. 869 `cargo test --lib` unit tests pass plus public-surface Python tests (including 10 for the Phase 16-20 bridge) and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-20). See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
 
 ## Installation
 

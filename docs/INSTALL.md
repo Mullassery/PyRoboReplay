@@ -64,9 +64,9 @@ prerequisites.
 
 ## Platform matrix
 
-### Published on PyPI (2.12.1)
+### Published on PyPI (2.13.0)
 
-Verified 2026-10-20. PyPI 2.12.1 ships a macOS arm64 wheel and an sdist.
+Verified 2026-10-21. PyPI 2.13.0 ships a macOS arm64 wheel and an sdist.
 
 | Platform | Availability |
 |---|---|

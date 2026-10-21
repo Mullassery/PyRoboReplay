@@ -14,6 +14,8 @@ dated section when released.
 
 ## [Unreleased]
 
+## [2.13.0] - 2026-10-21
+
 ### Added
 - `pyroboreplay.asl`: CPU-only AlpaSim ASL framing checks, decoded-entry
   mapping, and JSON/Markdown rollout reports. The upstream `alpasim_grpc`
