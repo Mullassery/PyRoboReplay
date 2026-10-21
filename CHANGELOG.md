@@ -17,6 +17,11 @@ dated section when released.
 ### Added
 - Multi-frame ASL inspection test covering 5,000 framed entries.
 
+### Changed
+- Bumped `ratatui` to 0.30, removing the transitive `lru 0.12` advisory.
+- Updated `rustls-webpki` and `webpki-roots` for RUSTSEC-2026-0382/RUSTSEC-2026-0381.
+- Updated GitHub Actions to Node 24-compatible releases.
+
 ### Fixed
 - Import ordering in `pyroboreplay.__init__` now passes Ruff.
 

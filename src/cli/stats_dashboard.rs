@@ -401,7 +401,7 @@ impl StatsDashboard {
         let current_idx = *self.current_index.lock().unwrap();
         let speed = *self.playback_speed.lock().unwrap();
 
-        let size = f.size();
+        let size = f.area();
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![

@@ -214,7 +214,7 @@ impl ReplayState {
     }
 
     fn draw_ui(&mut self, f: &mut Frame) {
-        let size = f.size();
+        let size = f.area();
 
         if size.width < MIN_TERMINAL_WIDTH || size.height < MIN_TERMINAL_HEIGHT {
             let message = format!(
