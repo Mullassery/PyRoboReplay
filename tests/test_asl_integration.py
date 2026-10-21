@@ -202,3 +202,17 @@ def test_read_asl_requires_optional_upstream_package(tmp_path):
         path.write_bytes(b"")
         with pytest.raises(ASLInputError, match="alpasim-grpc"):
             asyncio.run(read_asl(path))
+
+
+def test_inspect_asl_many_frames(tmp_path):
+    path = tmp_path / "many.asl"
+    with path.open("wb") as handle:
+        for index in range(5000):
+            payload = f"frame-{index}".encode()
+            handle.write(_varint(len(payload)) + payload)
+
+    info = inspect_asl(path)
+
+    assert info.frame_count == 5000
+    assert info.max_frame_bytes == len("frame-4999")
+    assert info.payload_bytes > 0

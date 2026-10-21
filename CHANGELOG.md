@@ -14,6 +14,12 @@ dated section when released.
 
 ## [Unreleased]
 
+### Added
+- Multi-frame ASL inspection test covering 5,000 framed entries.
+
+### Fixed
+- Import ordering in `pyroboreplay.__init__` now passes Ruff.
+
 ## [2.13.0] - 2026-10-21
 
 ### Added
