@@ -3561,7 +3561,7 @@ dependencies = [
 
 [[package]]
 name = "pyroboreplay"
-version = "2.13.0"
+version = "2.13.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3588,7 +3588,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "sha2 0.10.9",
+ "sha2 0.11.1",
  "thiserror 1.0.69",
  "tokio",
  "tokio-postgres",
