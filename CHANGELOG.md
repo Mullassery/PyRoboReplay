@@ -25,6 +25,11 @@ dated section when released.
 ### Fixed
 - Import ordering in `pyroboreplay.__init__` now passes Ruff.
 
+## [2.13.1] - 2026-10-23
+
+### Fixed
+- Fixed the MCP connector import and replaced placeholder integration-test bags with real CDR-generated fixtures.
+
 ## [2.13.0] - 2026-10-21
 
 ### Added
