@@ -47,3 +47,6 @@ temp/
 tmp/
 
 graphify-out/
+
+# Generated integration-test bag
+warehouse_exploration_v1.db3

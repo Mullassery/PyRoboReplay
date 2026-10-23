@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 logger = logging.getLogger(__name__)
 
 try:
-    from statguardian._mcp_connector import BaseMCPConnector
+    from statguardian import BaseMCPConnector
 except ImportError:
     class BaseMCPConnector(ABC):
         def __init__(self, project_name: str, port: int = 8765):

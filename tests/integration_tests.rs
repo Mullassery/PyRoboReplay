@@ -2,18 +2,11 @@
 /// Tests end-to-end pipeline: generation → parsing → replay → queries
 use pyroboreplay::adapters::{ros2::Ros2Adapter, MissionAdapter};
 use pyroboreplay::core::Timeline;
-use std::path::Path;
 
-/// Helper to ensure test bag file exists
+mod support;
+
 fn ensure_test_bag() -> String {
-    let bag_path = "warehouse_exploration_v1.db3";
-    if !Path::new(bag_path).exists() {
-        panic!(
-            "Test bag file not found: {}. Run: cargo run --example generate_warehouse_mission --release",
-            bag_path
-        );
-    }
-    bag_path.to_string()
+    support::ensure_test_bag()
 }
 
 #[test]
