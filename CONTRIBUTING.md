@@ -166,7 +166,7 @@ None / Describe any perf implications
 
 ## Areas We're Looking For Help
 
-See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the current, code-verified list of
+See [docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md) for the current, code-verified list of
 what's built, what's partial, and what's missing. As of this writing, the
 highest-leverage gap is CLI/Python exposure for Phases 12-20 (the analysis
 logic already exists in the Rust core with unit tests; it just isn't wired up
@@ -239,7 +239,7 @@ Check status in [Actions](https://github.com/Mullassery/pyroboreplay/actions).
 - **[docs/CLAUDE.md](docs/CLAUDE.md)** — Product vision, principles
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — System architecture
 - **[.github/CI_SETUP.md](.github/CI_SETUP.md)** — CI/CD architecture
-- **[ROADMAP_HONEST.md](ROADMAP_HONEST.md)** — What's actually built, partial, or missing (no fabricated timelines)
+- **[docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md)** — What's actually built, partial, or missing (no fabricated timelines)
 
 ---
 

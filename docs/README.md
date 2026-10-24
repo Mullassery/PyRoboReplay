@@ -46,6 +46,6 @@ These are maintainer or snapshot documents, not onboarding material:
 
 ## Status files
 
-`ROADMAP_HONEST.md`, `QUEUE_STATUS.md`, and `IMPLEMENTATION_STATUS.md` in the
+`internal/ROADMAP_HONEST.md`, `internal/QUEUE_STATUS.md`, and `IMPLEMENTATION_STATUS.md` in the
 repository root are dated engineering snapshots. For the current user-facing
 status, use [STATUS.md](STATUS.md).

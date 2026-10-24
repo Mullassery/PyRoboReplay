@@ -3,8 +3,8 @@
 **PyPI version:** 2.13.0 · **Source version:** 2.13.0 · **Updated:** 2026-10-21
 
 For the long engineering snapshot, see
-[`ROADMAP_HONEST.md`](../ROADMAP_HONEST.md),
-[`QUEUE_STATUS.md`](../QUEUE_STATUS.md), and
+[`internal/ROADMAP_HONEST.md`](internal/ROADMAP_HONEST.md),
+[`internal/QUEUE_STATUS.md`](internal/QUEUE_STATUS.md), and
 [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md).
 
 ## Verified working

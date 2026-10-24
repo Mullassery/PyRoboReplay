@@ -226,8 +226,8 @@ done
 
 ## See Also
 
-- [Stats Dashboard Documentation](STATS_DASHBOARD.md) - Complete technical details
-- [Example Code](examples/stats_dashboard_demo.rs) - Programmatic usage
+- [Stats Dashboard Documentation](../STATS_DASHBOARD.md) - Complete technical details
+- [Example Code](../../examples/stats_dashboard_demo.rs) - Programmatic usage
 - [PyRoboReplay CLI Guide](https://github.com/mullassery/pyroboreplay#cli-reference)
 
 ---

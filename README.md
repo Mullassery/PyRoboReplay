@@ -112,7 +112,7 @@ PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timelin
 
 ## Project status
 
-Beta (Development Status 4). Current source version is **2.13.1**; the latest PyPI release is **2.13.1** (published 2026-10-23) and includes the Phase 16-20 operation bridge. The CLI and Python API are the tested, supported surface. 869 `cargo test --lib` unit tests pass plus public-surface Python tests (including 10 for the Phase 16-20 bridge) and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-20). See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
+Beta (Development Status 4). Current source version is **2.13.1**; the latest PyPI release is **2.13.1** (published 2026-10-23) and includes the Phase 16-20 operation bridge. The CLI and Python API are the tested, supported surface. 869 `cargo test --lib` unit tests pass plus public-surface Python tests (including 10 for the Phase 16-20 bridge) and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-20). See [docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
 
 ## Installation
 
@@ -285,7 +285,7 @@ Canonical facts for automated tooling and coding agents:
 | Alpamayo / AlpaSim execution | **External**; adapters parse artifacts only |
 | SANA-WM | **Not integrated** |
 
-Agent-friendly docs: [docs/CLAUDE.md](docs/CLAUDE.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API.md](docs/API.md), [ROADMAP_HONEST.md](ROADMAP_HONEST.md).
+Agent-friendly docs: [docs/CLAUDE.md](docs/CLAUDE.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API.md](docs/API.md), [docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md).
 
 ## Documentation
 
@@ -301,7 +301,7 @@ Agent-friendly docs: [docs/CLAUDE.md](docs/CLAUDE.md), [docs/ARCHITECTURE.md](do
 - [docs/QUICKSTART.md](docs/QUICKSTART.md) — getting started
 - [docs/STATS_DASHBOARD.md](docs/STATS_DASHBOARD.md) — live metrics dashboard (`replay --stats-dashboard`)
 - [examples/](examples/) — runnable demos (`cargo run --example root_cause_analysis_demo`)
-- [ROADMAP_HONEST.md](ROADMAP_HONEST.md) — implemented vs planned, technical debt
+- [docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md) — implemented vs planned, technical debt
 - [CHANGELOG.md](CHANGELOG.md) — notable changes
 
 ## Known issues and deferred work
@@ -323,7 +323,7 @@ Agent-friendly docs: [docs/CLAUDE.md](docs/CLAUDE.md), [docs/ARCHITECTURE.md](do
 **Rejected / deferred:**
 - Live fleet dashboard.
 
-Full shipped/blocked/rejected detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
+Full shipped/blocked/rejected detail: [`docs/internal/QUEUE_STATUS.md`](docs/internal/QUEUE_STATUS.md).
 
 ## Contributing
 

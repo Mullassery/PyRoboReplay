@@ -187,7 +187,7 @@ Pre-release versions use: `0.8.0-alpha`, `0.8.0-beta`
 
 ## Contributing
 
-Found a bug? Want a feature? See [CONTRIBUTING.md](CONTRIBUTING.md) for how to help!
+Found a bug? Want a feature? See [CONTRIBUTING.md](../../CONTRIBUTING.md) for how to help!
 
 ---
 

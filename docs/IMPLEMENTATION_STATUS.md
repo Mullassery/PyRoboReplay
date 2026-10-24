@@ -135,7 +135,7 @@ fixture bag (`tests/fixtures/ros2_cdr_fixture.db3`, built with the third-party
 `rosbags` library) in `tests/test_ros2_cdr_decoding.rs`, and against a real
 901-message benchmark bag with an injected covariance spike (81/81 real
 localization-loss frames now correctly detected, previously 0/81) — see
-`CHANGELOG.md` and `ROADMAP_HONEST.md` for full detail. Note this is a different
+`CHANGELOG.md` and `internal/ROADMAP_HONEST.md` for full detail. Note this is a different
 code path from the `RosBagAdapter` in `src/phase14/modality_adapters.rs` described
 above — that adapter extracts raw per-topic message bytes (format-correct, doesn't
 need message-type semantics) rather than populating typed sensor fields.

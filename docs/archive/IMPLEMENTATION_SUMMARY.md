@@ -329,10 +329,10 @@ cargo test --lib
 ## See Also
 
 - [Quick Start Guide](STATS_DASHBOARD_QUICKSTART.md)
-- [Technical Documentation](STATS_DASHBOARD.md)
-- [Example Code](examples/stats_dashboard_demo.rs)
+- [Technical Documentation](../STATS_DASHBOARD.md)
+- [Example Code](../../examples/stats_dashboard_demo.rs)
 - [PyRoboReplay Main Docs](README.md)
-- [CLAUDE.md](CLAUDE.md) - Project guidelines
+- [CLAUDE.md](../CLAUDE.md) - Project guidelines
 
 ---
 

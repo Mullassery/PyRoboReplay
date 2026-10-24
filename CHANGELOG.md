@@ -156,7 +156,7 @@ dated section when released.
   `tests/test_ros2_cdr_decoding.rs` (7 tests) against a real,
   independently-generated fixture (`tests/fixtures/ros2_cdr_fixture.db3`,
   built with the third-party `rosbags` Python library) as a permanent
-  regression test. Full detail in `ROADMAP_HONEST.md` and README's "vs
+  regression test. Full detail in `docs/internal/ROADMAP_HONEST.md` and README's "vs
   Rerun" section.
 - `src/lib.rs:504` — `Hypothesis`'s `#[pyclass]` relied on PyO3's deprecated
   automatic `FromPyObject` derive for `Clone` types; migrated to the explicit
@@ -214,8 +214,8 @@ dated section when released.
   contained a stale, fabricated-sounding quarterly roadmap (Q4 2026 / 2027
   dates) that pre-dated the actual v2.10.0 codebase and listed already-shipped
   work (Postgres/S3/BigQuery backends) as still-needed. Replaced with a
-  pointer to `ROADMAP_HONEST.md`.
-- Renamed `ROADMAP.md` to `ROADMAP_HONEST.md` and added a "Technical debt"
+  pointer to `docs/internal/ROADMAP_HONEST.md`.
+- Renamed `ROADMAP.md` to `docs/internal/ROADMAP_HONEST.md` and added a "Technical debt"
   section with concrete `file:line` findings (see that file).
 - Moved 19 stale phase/status/strategy/testing snapshot docs (from both the
   repo root and `docs/`) into `docs/archive/` with an index explaining why
@@ -230,7 +230,7 @@ dated section when released.
 
 ## Known issues as of this pass
 
-See `ROADMAP_HONEST.md` for the full, current list. Highlights:
+See `docs/internal/ROADMAP_HONEST.md` for the full, current list. Highlights:
 - The MCP tool integration (`pyroboreplay/_mcp_tools.py`, `_mcp_connector.py`)
   is unshippable dead code — it lives outside the directory maturin actually
   packages, so it's not importable from an installed wheel, despite
