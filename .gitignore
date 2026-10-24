@@ -38,7 +38,7 @@ env/
 target/
 # Cargo.lock is intentionally committed: this crate ships a real binary
 # (`pyroboreplay`, src/main.rs) in addition to the library, so the lockfile
-# is kept for reproducible builds (see ROADMAP_HONEST.md technical debt notes).
+# is kept for reproducible builds (see docs/internal/ROADMAP_HONEST.md technical debt notes).
 
 # Temp files
 *.tmp

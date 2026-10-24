@@ -30,5 +30,5 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: I checked ROADMAP_HONEST.md and this isn't already listed as built-but-unexposed
+        - label: I checked docs/internal/ROADMAP_HONEST.md and this isn't already listed as built-but-unexposed
           required: false
