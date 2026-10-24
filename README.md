@@ -1,12 +1,69 @@
 # PyRoboReplay
 
-Forensic debugging and mission-replay platform for autonomous robots: replay ROS 2 missions, run causal / root-cause analysis on failures, and perform multispectral (RGB + thermal) forensics. Rust core with Python bindings.
+**Ask a recorded robot mission why it failed.** Replay ROS 2 missions, run causal / root-cause analysis, quantify the reality gap, and fuse RGB + thermal evidence. Rust core, Python bindings, CLI-first forensics.
 
 [![CI](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyRoboReplay/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/pyroboreplay)](https://pypi.org/project/pyroboreplay/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
+[![NVIDIA](https://img.shields.io/badge/NVIDIA-Alpamayo%20%2B%20AlpaSim%20adapters-76B900?logo=nvidia&logoColor=white)](#nvidia-ecosystem)
+
+> **Why it exists:** robot logs tell you *what* happened. Incident reviews need *why* — which event preceded the failure, what perception missed, and what the robot should have detected. PyRoboReplay turns recorded missions into causal evidence you can diff, export, and defend.
+
+## 60-second quickstart
+
+```bash
+pip install pyroboreplay
+pyroboreplay replay mission.bag
+pyroboreplay analyze mission.bag --detect-gaps --detail --format json --output investigation.json
+```
+
+```python
+from pyroboreplay import Mission
+
+mission = Mission.from_ros_bag("warehouse.bag")
+failures = mission.detect_failures()
+analysis = mission.analyze_failure(timestamp=1234567890.0)
+
+print(len(failures))
+print(analysis.get_primary_hypothesis())
+print(f"{analysis.get_diagnostic_confidence():.0%}")
+```
+
+Interactive replay keys: **Space** play/pause, **n / →** next event, **p / ←** previous event, **↑ / ↓** speed, **?** help, **q / Esc** quit.
+
+## NVIDIA ecosystem
+
+PyRoboReplay is **NVIDIA-optional**: replay, causal analysis, CLI, and tests run on CPU. NVIDIA appears where it matters — as a **provenance-preserving adapter layer** for physical-AI model and simulator runs.
+
+| Component | Status | What it actually does |
+|---|---|---|
+| Alpamayo trajectory + reasoning reports | **Available** | Loads offline Alpamayo artifacts (`.json`, `.jsonl`, `.npz`, mapping), computes minADE/minFDE, preserves reasoning traces, and correlates failures already detected in the mission. No `torch`, no weights, no GPU. |
+| AlpaSim ASL rollout reports | **Available** | Parses size-delimited `.asl` rollouts (lazy upstream reader), preserves session/version/actor/ego-ground-truth metadata, and emits JSON or Markdown. Does not vendor AlpaSim or infer safety from poses alone. |
+| Alpamayo / AlpaSim model execution | **External** | Generate artifacts with the upstream NVIDIA stacks; PyRoboReplay analyzes the evidence. |
+| SANA-WM synthetic mission replay | **Not integrated** | No SANA-WM loader, generator, or synthetic-scenario provenance ships today. Replay accepts recorded mission sources, not generated video. |
+
+**The honest headline:** this is the forensic layer for NVIDIA physical-AI outputs, not an NVIDIA runtime. The adapters are real and tested; model execution and GPU requirements stay upstream.
+
+## At a glance
+
+| Area | Status |
+|---|---|
+| ROS 2 SQLite `.db3` / `.bag` mission ingest | **Supported** |
+| Interactive replay + timeline scrubber | **Stable** |
+| Failure detection / root-cause hypotheses | **Stable** |
+| Reality-gap analysis + JSON reports | **Stable** |
+| Mission comparison + topic listing | **Stable** |
+| Native MCAP export | **Stable** |
+| Rerun `.rrd` export | **Optional** (`[rerun]`) |
+| DINO detection-gap ingest, RGB + thermal fusion | **Available** (Phase 12/13) |
+| Nav2 root-cause heuristics, navigation sessions | **Available** (Phase 14/15) |
+| Alpamayo + AlpaSim report adapters | **Available** |
+| Phase 16-20 ops | **JSON bridge only** (`ops()` / `run_op()`) |
+| MCAP **import** | **Not wired** |
+| Live fleet dashboard / streaming | **Not a product** |
+| SANA-WM synthetic replay | **Not shipped** |
 
 ## What it is
 
@@ -39,28 +96,31 @@ PyRoboReplay ingests recorded robot missions (ROS 2 bags) into a unified timelin
 - **Warehouse and logistics fleets** — reconstruct why a run failed, find missed detections and coverage gaps, compare two strategy revisions.
 - **Safety and compliance review** — produce auditable, saved JSON findings for an incident (`analyze --detect-gaps --format json --output report.json`).
 - **Perception R&D** — compare perception strategies over matched missions and quantify regressions.
+- **NVIDIA physical-AI teams** — turn Alpamayo / AlpaSim runs into trajectory, reasoning, and provenance reports correlated with real mission failures.
 - **Field autonomy teams** — investigate localization loss, planner oscillation, and sensor disagreement from recorded missions.
 
 ## What it is not
 
 - **Not a real-time monitoring or fleet dashboard.** It works on recorded missions, not live streams. The `streaming` modules are internal building blocks, not a supported live fleet product.
+- **Not an MCAP importer yet.** MCAP export is supported; the Phase 14 MCAP adapter exists but is not wired into `Mission.from_ros_bag()`. ROS 2 SQLite `.db3` / `.bag` is the supported ingest today.
 - **Phases 16-20 are not typed Python APIs.** Six implemented Rust operations are reachable through the JSON-only `ops()` / `run_op()` bridge ([Advanced operations](docs/ADVANCED_OPS.md)); the rest of those modules, including decision reconstruction, clustering, scenario analysis, and rule extraction, remain Rust-library-only.
 - **Phase 12 does not run DINO/SAM models.** It ingests detections produced by an external open-vocabulary run and performs gap analysis; the in-crate `run_dino_detection` method remains a deterministic test stub.
+- **Alpamayo / AlpaSim are not executed here.** The adapters consume offline artifacts; model weights, licensing, and GPU requirements stay upstream.
 - **PyTerrainMap interop is file-based, not a runtime dependency.** PyRoboReplay reads the documented `pyterrainmap-gridmap` v1 JSON export; there is still no Cargo/pip dependency, H3 store integration, or ROS bridge. `src/core/pyterrain_bridge.rs` remains self-contained terrain-modeling logic.
 - **Not published to crates.io** — build the Rust crate from source if you need it directly.
 - **Not a certified or safety-verified system.**
 
 ## Project status
 
-Beta (Development Status 4). Current source version is **2.13.0**; the latest PyPI release is also **2.13.0** (published 2026-10-21) and includes the Phase 16-20 operation bridge. The CLI and Python API are the tested, supported surface. 869 `cargo test --lib` unit tests pass plus public-surface Python tests (including 10 for the Phase 16-20 bridge) and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-20). See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
+Beta (Development Status 4). Current source version is **2.13.1**; the latest PyPI release is **2.13.1** (published 2026-10-23) and includes the Phase 16-20 operation bridge. The CLI and Python API are the tested, supported surface. 869 `cargo test --lib` unit tests pass plus public-surface Python tests (including 10 for the Phase 16-20 bridge) and 7 real-fixture ROS 2 CDR tests. `cargo fmt --check` and `cargo clippy --all-targets --all-features -- -D warnings` are clean (re-verified 2026-10-20). See [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for the implemented/partial/missing breakdown.
 
 ## Installation
 
-> **Packaging:** the 2.12.x wheel ships both the `pyroboreplay` and
+> **Packaging:** the 2.13.x wheel ships both the `pyroboreplay` and
 > `pyroboreplay-export` console scripts and declares `numpy`, so installing
 > the package is enough for both the Python API and the CLI.
 
-> **Wheel coverage:** PyPI 2.12.x publishes a macOS arm64 wheel plus an sdist;
+> **Wheel coverage:** PyPI publishes a macOS arm64 wheel plus an sdist;
 > the sdist builds on other platforms. Release CI is configured to build and
 > smoke-test Linux x86_64/aarch64, macOS arm64/x86_64, and Windows x86_64 for
 > Python 3.10–3.13, and those wheels are produced when the release workflow's
@@ -86,34 +146,6 @@ maturin develop --release      # install the Python package
 # or, for the Rust binary/crate only:
 cargo build --release
 ```
-
-## Quick start
-
-```bash
-# Interactive timeline scrubber
-pyroboreplay replay mission.bag
-
-# Reality-gap analysis, saved as JSON
-pyroboreplay analyze mission.bag --detect-gaps --detail --format json --output investigation.json
-```
-
-```python
-from pyroboreplay import Mission
-
-mission = Mission.from_ros_bag("warehouse.bag")
-
-failures = mission.detect_failures()
-print(f"Failures detected: {len(failures)}")
-
-analysis = mission.analyze_failure(timestamp=1234567890.0)
-print(f"Root cause: {analysis.get_primary_hypothesis()}")
-print(f"Confidence: {analysis.get_diagnostic_confidence():.0%}")
-
-for action in mission.recommend_actions(timestamp=1234567890.0):
-    print(f"[{action.get_priority()}] {action.get_description()}")
-```
-
-Interactive replay keys: **Space** play/pause, **n / →** next event, **p / ←** previous event, **↑ / ↓** speed, **?** help, **q / Esc** quit.
 
 ## MCAP export
 
@@ -233,6 +265,28 @@ pyroboreplay terrain terrain-grid.json --format json
 
 The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCauseAnalysis`, `Action`, `FleetStatistics`, `GeoHotspot`, plus `load_pyterrainmap_grid`, `analyze_detection_gaps`, `fuse_rgb_thermal`, `analyze_nav2_diagnostics`, `build_navigation_session`, and the Phase 16-20 JSON bridge (`ops`, `run_op`; see [Advanced operations](docs/ADVANCED_OPS.md)). World-knowledge and typed advanced-analysis APIs still live in the Rust core only.
 
+## For AI agents
+
+Canonical facts for automated tooling and coding agents:
+
+| Fact | Value |
+|---|---|
+| Package / CLI | `pyroboreplay` / `pyroboreplay` + `pyroboreplay-export` |
+| Python | `>=3.10` |
+| Core | Rust/PyO3 extension; Rust crate also exposes a CLI |
+| Main Python entry points | `Mission.from_ros_bag()`, `detect_failures()`, `analyze_failure()`, `analyze_detection_gaps()`, `build_alpamayo_report()`, `ops()` |
+| Supported ingest | ROS 2 SQLite `.db3` / `.bag` only (MCAP import not wired) |
+| Source layout | `src/` (Rust), `pyroboreplay/` (Python surface), `tests/` |
+| Python tests | `pytest tests/ -v` after `maturin develop --release` (local; not wired into CI) |
+| Rust unit tests | `cargo test --lib` (CI) |
+| Rust integration tests | `cargo test --tests` (present; not wired into CI) |
+| Lint | `cargo fmt --check`, `cargo clippy --all-targets --all-features -- -D warnings` (CI) |
+| GPU needed? | **No** for replay, analysis, adapters, or tests |
+| Alpamayo / AlpaSim execution | **External**; adapters parse artifacts only |
+| SANA-WM | **Not integrated** |
+
+Agent-friendly docs: [docs/CLAUDE.md](docs/CLAUDE.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API.md](docs/API.md), [ROADMAP_HONEST.md](ROADMAP_HONEST.md).
+
 ## Documentation
 
 - [Documentation index](docs/README.md) — start here
@@ -263,6 +317,8 @@ The Python package exports `Mission`, `Event`, `Failure`, `Hypothesis`, `RootCau
 **Blocked / deferred:**
 - Typed Python APIs for the remaining Phase 16-20 library types.
 - Full PyTerrainMap runtime integration (H3 store, ROS bridge).
+- MCAP mission import (adapter exists, not wired).
+- SANA-WM synthetic mission replay / provenance (not shipped).
 
 **Rejected / deferred:**
 - Live fleet dashboard.
