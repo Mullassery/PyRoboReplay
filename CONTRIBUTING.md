@@ -6,7 +6,7 @@ Thanks for your interest in contributing! We welcome contributions of all kinds.
 
 ### Report Bugs 🐛
 
-Found a bug? [Open an issue](https://github.com/Mullassery/pyroboreplay/issues) with:
+Found a bug? [Open an issue](../pyroboreplay/issues) with:
 - Clear title: "Bug: [component] description"
 - Steps to reproduce
 - Expected vs actual behavior
@@ -15,7 +15,7 @@ Found a bug? [Open an issue](https://github.com/Mullassery/pyroboreplay/issues) 
 
 ### Suggest Features 💡
 
-Have an idea? Start a [discussion](https://github.com/Mullassery/pyroboreplay/discussions) or [issue](https://github.com/Mullassery/pyroboreplay/issues) with:
+Have an idea? Start a [discussion](../pyroboreplay/discussions) or [issue](../pyroboreplay/issues) with:
 - Use case: why would this be useful?
 - Proposed solution (if you have one)
 - Alternative approaches you've considered
@@ -27,7 +27,7 @@ Have an idea? Start a [discussion](https://github.com/Mullassery/pyroboreplay/di
 
 ```bash
 # Clone repo
-git clone https://github.com/Mullassery/pyroboreplay.git
+git clone ../pyroboreplay
 cd pyroboreplay
 
 # Install Rust (if needed)
@@ -177,9 +177,9 @@ suites — that work is done, not needed.
 ### Good First Issues
 
 ### Good First Issues
-- Look for [good-first-issue](https://github.com/Mullassery/pyroboreplay/labels/good-first-issue) label
+- Look for [good-first-issue](../pyroboreplay/labels/good-first-issue) label
 - Start with documentation or small bug fixes
-- Ask questions in [discussions](https://github.com/Mullassery/pyroboreplay/discussions) if stuck
+- Ask questions in [discussions](../pyroboreplay/discussions) if stuck
 
 ---
 
@@ -230,7 +230,7 @@ Workflows run automatically on push/PR:
 - **security.yml**: Vulnerability scanning, coverage
 - **release.yml**: Auto-publish on version tags
 
-Check status in [Actions](https://github.com/Mullassery/pyroboreplay/actions).
+Check status in [Actions](../pyroboreplay/actions).
 
 ---
 
@@ -256,7 +256,7 @@ Check status in [Actions](https://github.com/Mullassery/pyroboreplay/actions).
 
 ## Getting Help
 
-- **Questions?** Ask in [GitHub Discussions](https://github.com/Mullassery/pyroboreplay/discussions)
+- **Questions?** Ask in [GitHub Discussions](../pyroboreplay/discussions)
 - **Stuck?** Open an issue and label it `help-wanted`
 - **Chat?** Connect via GitHub issues/discussions. This is currently maintained by one person in their spare time — there is no guaranteed response time.
 

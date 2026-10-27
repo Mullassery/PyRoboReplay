@@ -43,7 +43,7 @@ pyroboreplay --version
 **From source today** (works with this repository):
 
 ```bash
-git clone https://github.com/Mullassery/PyRoboReplay.git
+git clone ../PyRoboReplay
 cd pyroboreplay
 python -m venv .venv && source .venv/bin/activate
 pip install maturin

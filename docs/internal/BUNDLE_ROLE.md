@@ -1,7 +1,7 @@
 # Bundle role — Robotics data & fleet loop (deferred)
 
 Portfolio-level decision: **deferred**. See
-[`Mullassery/BUNDLES.md`](https://github.com/Mullassery/Mullassery/blob/main/BUNDLES.md).
+[`Mullassery/BUNDLES.md`](../Mullassery/blob/main/BUNDLES.md).
 
 - **Role:** Mission replay and forensic RCA
 - **Upstream/downstream:** PyRoboFrames, PyTerrainMap, SyncFleet

@@ -8,7 +8,7 @@ Welcome! PyRoboReplay is a time-travel debugger for robot fleets. Replay mission
 
 ```bash
 # Clone the repo
-git clone https://github.com/Mullassery/pyroboreplay.git
+git clone ../pyroboreplay
 cd pyroboreplay
 
 # Build the CLI
@@ -226,7 +226,7 @@ pyroboreplay replay mission.bag --sensor Lidar  # ❌ wrong
 
 ## 🤝 Contributing
 
-Found a bug? Have a suggestion? [Open an issue](https://github.com/Mullassery/pyroboreplay/issues)
+Found a bug? Have a suggestion? [Open an issue](../pyroboreplay/issues)
 
 ---
 

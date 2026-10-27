@@ -84,7 +84,7 @@ Optional additions:
 ```markdown
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baadc.svg)](../CODE_OF_CONDUCT.md)
 [![Downloads](https://img.shields.io/pypi/dm/pyroboreplay.svg)](https://pypi.org/project/pyroboreplay/)
-[![Issues](https://img.shields.io/github/issues/mullassery/pyroboreplay.svg)](https://github.com/Mullassery/pyroboreplay/issues)
+[![Issues](https://img.shields.io/github/issues/mullassery/pyroboreplay.svg)](../pyroboreplay/issues)
 ```
 
 ## GitHub Topics Tags
@@ -101,7 +101,7 @@ python
 mission-replay
 ```
 
-Visit: https://github.com/Mullassery/pyroboreplay/settings/topics
+Visit: ../pyroboreplay/settings/topics
 
 ## Release Management
 

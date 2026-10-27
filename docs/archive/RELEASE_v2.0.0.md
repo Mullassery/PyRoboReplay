@@ -160,8 +160,8 @@ git log --oneline -3
 ```
 
 Verify on GitHub:
-- https://github.com/Mullassery/PyRoboReplay/commits/master
-- https://github.com/Mullassery/PyRoboReplay/releases/tag/v2.0.0
+- ../PyRoboReplay/commits/master
+- ../PyRoboReplay/releases/tag/v2.0.0
 
 ## Post-Release Verification
 
